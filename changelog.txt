@@ -1,0 +1,3 @@
+v0.5RC - (September 4, 2023)
+       - RELEASE: First release candidate of BACKUPMON! After some extensive backup and restoration testing, I believe it's
+         ready for the masses to try out! :)
