@@ -524,8 +524,9 @@ backup() {
         echo '1.) Format a new USB drive on your router using AMTM, calling it the exact same name as before (see above)!'
         echo '2.) Enable JFFS scripting in the router OS, and perform a reboot.'
         echo '3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder.'
-        echo '4.) Run "backupmon.sh -setup" and ensure that all of the settings/variables are correct before running a restore!'
-        echo '5.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
+        echo '4.) Run "backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
+        echo '5.) Run "backupmon.sh -restore", pick which backup you want to restore, and confirm before proceding!'
+        echo '6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
       } > ${UNCDRIVE}${BKDIR}/instructions.txt
       echo -e "${CGreen}STATUS: Finished copying restore instructions.txt to ${UNCDRIVE}${BKDIR}.${CClear}"
 
@@ -564,8 +565,9 @@ restore() {
   echo -e "${CGreen}    (please refer to your restore instruction.txt file to find your original USB drive label)"
   echo -e "${CGreen}2.) Enable JFFS scripting in the router OS, and perform a reboot."
   echo -e "${CGreen}3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder."
-  echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings/variables are correct before running a restore!"
-  echo -e "${CGreen}5.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
+  echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings are correct before running a restore!"
+  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceding!'"
+  echo -e "${CGreen}6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
   echo -e "${CCyan}Messages:"
 
