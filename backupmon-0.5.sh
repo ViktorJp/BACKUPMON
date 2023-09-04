@@ -556,10 +556,15 @@ restore() {
   fi
 
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
+
+    if [ $BUILD -eq 388 ]; then
       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
-      echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
-      sleep 5
+    fi
+
+    mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
+    echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+    sleep 5
+
   fi
 
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
