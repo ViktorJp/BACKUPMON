@@ -566,7 +566,7 @@ restore() {
   echo -e "${CGreen}2.) Enable JFFS scripting in the router OS, and perform a reboot."
   echo -e "${CGreen}3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder."
   echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings are correct before running a restore!"
-  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceding!'"
+  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceding!"
   echo -e "${CGreen}6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
   echo -e "${CCyan}Messages:"
