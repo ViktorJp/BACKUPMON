@@ -1,6 +1,19 @@
 #!/bin/sh
-# Functional Backup Script by: @Jeffrey Young, August 9, 2023
-# Heavily modified and restore functionality added by @Viktor Jaep, 2023
+
+# Original functional backup script by: @Jeffrey Young, August 9, 2023
+# BACKUPMON v0.5 heavily modified and restore functionality added by @Viktor Jaep, 2023
+#
+# BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
+# external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
+# this location, and perform a daily backup to this mounted drive. To perform daily, unattended backups, simply add a
+# statement to your cron schedule, and launch backupmon.sh at any time you wish. During a situation of need to restore a
+# backup after a catastrophic event with either your router or attached USB storage, simply copy the backupmon.sh & .cfg
+# files over to a newly formatted /jffs/scripts folder, ensuring that your external USB storage was formatted with the same
+# exact name (which is retrievable from the instructions.txt in your backup folder), and perform the restore by running the
+# "backupmon.sh -restore" command, selecting the backup you want to use, and going through the prompts to complete the
+# restoration of both your /jffs and external USB drive environments.
+#
+# Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 Version=0.5
 Beta=1
@@ -131,6 +144,11 @@ updatecheck () {
 
 # vconfig is a function that guides you through the various configuration options for wxmon
 vconfig () {
+
+  if [ -f /jffs/scripts/backupmon.cfg ]; then
+    source /jffs/scripts/backupmon.cfg
+    cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+  fi
 
   if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
     source $CFGPATH
@@ -504,10 +522,9 @@ backup() {
         echo 'Please ensure your have performed the following before restoring your backups:'
         echo '1.) Format a new USB drive on your router using AMTM, calling it the exact same name as before (see above)!'
         echo '2.) Enable JFFS scripting in the router OS, and perform a reboot.'
-        echo '3.) Restore the backupmon.sh script (located under your backup folder) into your /jffs/scripts folder.'
-        echo '4.) Restore the backupmon.cfg file (located under your backup folder) into the /jffs/addons/backupmon.d folder.'
-        echo '5.) Run "backupmon.sh -setup" and ensure that all of the settings/variables are correct before running a restore!'
-        echo '6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
+        echo '3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder.'
+        echo '4.) Run "backupmon.sh -setup" and ensure that all of the settings/variables are correct before running a restore!'
+        echo '5.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
       } > ${UNCDRIVE}${BKDIR}/instructions.txt
       echo -e "${CGreen}STATUS: Finished copying restore instructions.txt to ${UNCDRIVE}${BKDIR}.${CClear}"
 
@@ -541,10 +558,9 @@ restore() {
   echo -e "${CGreen}1.) Format a new USB drive on your router using AMTM, calling it the exact same name as before!"
   echo -e "${CGreen}    (please refer to your restore instruction.txt file to find your original USB drive label)"
   echo -e "${CGreen}2.) Enable JFFS scripting in the router OS, and perform a reboot."
-  echo -e "${CGreen}3.) Restore the backupmon.sh script (located under your backup folder) into your /jffs/scripts folder."
-  echo -e "${CGreen}4.) Restore the backupmon.cfg file (located under your backup folder) into the /jffs/addons/backupmon.d folder."
-  echo -e "${CGreen}5.) Run 'backupmon.sh -setup' and ensure that all of the settings/variables are correct before running a restore!"
-  echo -e "${CGreen}6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
+  echo -e "${CGreen}3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder."
+  echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings/variables are correct before running a restore!"
+  echo -e "${CGreen}5.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
   echo -e "${CCyan}Messages:"
 
@@ -590,7 +606,7 @@ restore() {
             ok=1
           fi
         done
-      #read -n 2 BACKUPDATE1
+
       if [ -z "$BACKUPDATE1" ]; then BACKUPDATE=0; else BACKUPDATE=$BACKUPDATE1; fi
       if [ $BACKUPDATE -eq 0 ]; then echo ""; echo -e "${CRed}ERROR: Invalid Backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; fi
 
@@ -621,6 +637,7 @@ restore() {
         # Exit gracefully
         echo ""
         echo ""
+        sleep 10
         umount $UNCDRIVE
         echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
         echo -e "${CClear}"
@@ -631,6 +648,7 @@ restore() {
       # Exit gracefully
       echo ""
       echo ""
+      sleep 10
       umount $UNCDRIVE
       echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
       echo -e "${CClear}"
@@ -691,7 +709,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo ""
   echo "  -h | -help (this output)"
   echo "  -setup (displays the setup menu)"
-  echo "  -backup (starts the normal backup procedures)"
+  echo "  -backup (runs the normal backup procedures)"
   echo "  -restore (initiates the restore procedures)"
   echo ""
   echo -e "${CClear}"
@@ -705,6 +723,9 @@ if [ "$1" == "-restore" ]
     # Grab the config and read it in
     if [ -f $CFGPATH ]; then
       source $CFGPATH
+    elif [ -f /jffs/scripts/backupmon.cfg ]; then
+      source /jffs/scripts/backupmon.cfg
+      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
     else
       clear
       echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
@@ -741,6 +762,9 @@ echo ""
 
 if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
   source $CFGPATH
+elif [ -f /jffs/scripts/backupmon.cfg ]; then
+  source /jffs/scripts/backupmon.cfg
+  cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
 else
   clear
   echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
@@ -768,3 +792,5 @@ backup
 
 echo -e "${CClear}"
 exit 0
+
+#} #2>&1 | tee $LOG | logger -t $(basename $0)[$$]  # uncomment/comment to enable/disable debug mode
