@@ -620,15 +620,15 @@ restore() {
         echo ""
         echo ""
         echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs.${CClear}"
-        echo "tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs"
+        tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
         echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE.${CClear}"
-        echo "tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE"
+        tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
         echo ""
         sleep 10
         umount $UNCDRIVE
         echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
         echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
-        read -rsp $'Press any key to continue...\n' -n1 key
+        # read -rsp $'Press any key to continue...\n' -n1 key
         # Exit gracefully
         echo ""
         echo -e "${CClear}"
