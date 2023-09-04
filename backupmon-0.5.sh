@@ -15,16 +15,17 @@
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
-Version=0.5
-Beta=0
-CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"
-DLVERPATH="/jffs/addons/backupmon.d/version.txt"
-DAY="$(date +%d)"
-EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"
-EXTLABEL="$(nvram get usb_path_sda1_label)"
-BUILD="$(nvram get buildno | grep -o '^[^.]\+')"
-UNCUPDATED="False"
-UpdateNotify=0
+# Variable list -- please do not change any of these
+Version=0.5                                                     # Current version
+Beta=0                                                          # Beta release Y/N
+CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
+DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
+DAY="$(date +%d)"                                               # Current day #
+EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"            # Grabbing the External USB Drive path
+EXTLABEL="$(nvram get usb_path_sda1_label)"                     # Grabbing the External USB Label name
+BUILD="$(nvram get buildno | grep -o '^[^.]\+')"                # Getting the current Merlin FW Build
+UNCUPDATED="False"                                              # Tracking if the UNC was updated or not
+UpdateNotify=0                                                  # Tracking whether a new update is available
 
 # Color variables
 CBlack="\e[1;30m"
@@ -62,6 +63,7 @@ logoNM () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
+# Promptyn is a simple function that accepts y/n input
 promptyn () {   # No defaults, just y or n
   while true; do
     read -p "[y/n]? " -n 1 -r yn
@@ -75,7 +77,7 @@ promptyn () {   # No defaults, just y or n
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# Preparebar and Progressbar is a script that provides a nice progressbar to show script activity
+# Preparebar and Progressbaroverride is a script that provides a nice progressbar to show script activity
 preparebar() {
   # $1 - bar length
   # $2 - bar char
@@ -143,7 +145,7 @@ updatecheck () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vconfig is a function that guides you through the various configuration options for wxmon
+# vconfig is a function that guides you through the various configuration options for backupmon
 vconfig () {
 
   if [ -f /jffs/scripts/backupmon.cfg ]; then
@@ -285,7 +287,7 @@ vconfig () {
         echo 'EXCLUSION=""'
       } > $CFGPATH
 
-      #Re-run wxmon -config to restart setup process
+      #Re-run backupmon -config to restart setup process
       vconfig
 
   fi
@@ -294,7 +296,7 @@ vconfig () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vuninstall is a function that uninstalls and removes all traces of wxmon from your router...
+# vuninstall is a function that uninstalls and removes all traces of backupmon from your router...
 vuninstall () {
   clear
   logoNM
@@ -371,12 +373,12 @@ vupdate () {
       if promptyn " (y/n): "; then
         echo ""
         echo -e "${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/wxmon.sh"
+        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
         echo -e "${CCyan}Download successful!${CClear}"
         logger "BACKUPMON - Successfully downloaded BACKUPMON v$DLVersion"
         echo ""
-        echo -e "${CYellow}Please exit, restart and configure new options using: 'wxmon.sh -config'.${CClear}"
+        echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -config'.${CClear}"
         echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
         echo -e "${CYellow}advantage of its full functionality.${CClear}"
         echo ""
@@ -394,10 +396,10 @@ vupdate () {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# vsetup is a function that sets up, confiures and allows you to launch wxmon on your router...
+# vsetup is a function that sets up, confiures and allows you to launch backupmon on your router...
 vsetup () {
 
-  # Check for and add an alias for wxmon
+  # Check for and add an alias for backupmon
   if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
 		echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
   fi
@@ -459,6 +461,7 @@ vsetup () {
 # backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 backup() {
 
+  # Check to see if a local drive mount is available, if not, create one.
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
       chmod 777 $UNCDRIVE
@@ -466,25 +469,33 @@ backup() {
       sleep 3
   fi
 
+  # If everything successfully was created, proceed
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
+      # Check the build to see if modprobe needs to be called
       if [ $BUILD -eq 388 ]; then
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
+
+      # Connect the UNC to the local drive mount
       mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
       sleep 5
   fi
 
+  # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
       echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
 
+      # Create the backup directories and daily directories if they do not exist yet
       if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}"; echo -e "${CGreen}STATUS: Backup Directory successfully created."; fi
       if ! [ -d "${UNCDRIVE}${BKDIR}/${DAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${DAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
 
+      # Remove old tar files if they exist in the daily folders
       [ -f ${UNCDRIVE}${BKDIR}/${DAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${DAY}/jffs.tar*
       [ -f ${UNCDRIVE}${BKDIR}/${DAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${DAY}/${EXTLABEL}.tar*
 
+      # If a TAR exclusion file exists, use it for the /jffs backup
       if ! [ -z $EXCLUSION ]; then
         tar -zcf ${UNCDRIVE}${BKDIR}/${DAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
       else
@@ -494,6 +505,7 @@ backup() {
       echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${DAY}/jffs.tar.gz.${CClear}"
       sleep 1
 
+      # If a TAR exclusion file exists, use it for the USB drive backup
       if ! [ -z $EXCLUSION ]; then
         tar -zcf ${UNCDRIVE}${BKDIR}/${DAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
       else
@@ -503,7 +515,7 @@ backup() {
       echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${DAY}/${EXTLABEL}.tar.gz.${CClear}"
       sleep 1
 
-      #added copies of the backup.sh, backup.cfg and exclusions list to backup location for easy copy/restore
+      #added copies of the backupmon.sh, backupmon.cfg and exclusions list to backup location for easy copy/restore
       cp /jffs/scripts/backupmon.sh ${UNCDRIVE}${BKDIR}/backupmon.sh
       echo -e "${CGreen}STATUS: Finished copying backupmon.sh script to ${UNCDRIVE}${BKDIR}.${CClear}"
       cp $CFGPATH ${UNCDRIVE}${BKDIR}/backupmon.cfg
@@ -525,17 +537,19 @@ backup() {
         echo '2.) Enable JFFS scripting in the router OS, and perform a reboot.'
         echo '3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder.'
         echo '4.) Run "backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
-        echo '5.) Run "backupmon.sh -restore", pick which backup you want to restore, and confirm before proceding!'
+        echo '5.) Run "backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
         echo '6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
       } > ${UNCDRIVE}${BKDIR}/instructions.txt
       echo -e "${CGreen}STATUS: Finished copying restore instructions.txt to ${UNCDRIVE}${BKDIR}.${CClear}"
 
       sleep 10
+      # Unmount the locally connected mounted drive
       umount $UNCDRIVE
       echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
 
   else
 
+      # There's problems with mounting the drive - check paths and permissions!
       echo -e "${CRed}ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!${CClear}"
       logger "Backup Script ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!"
       sleep 3
@@ -546,15 +560,18 @@ backup() {
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-# restore routine
+# restore function is a routine that allows you to pick a backup to be restored
 restore() {
 
   clear
+  # Notify if a new version awaits
   if [ "$UpdateNotify" == "0" ]; then
     echo -e "${CGreen}BACKUPMON v$Version"
   else
     echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
   fi
+
+  # Display instructions
   echo ""
   echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
   echo ""
@@ -566,11 +583,12 @@ restore() {
   echo -e "${CGreen}2.) Enable JFFS scripting in the router OS, and perform a reboot."
   echo -e "${CGreen}3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder."
   echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings are correct before running a restore!"
-  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceding!"
+  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
   echo -e "${CGreen}6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
   echo -e "${CCyan}Messages:"
 
+  # Create the local drive mount directory
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
       chmod 777 $UNCDRIVE
@@ -578,20 +596,25 @@ restore() {
       sleep 3
   fi
 
+  # If the mount does not exist yet, proceed
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
+    # Check if the build supports modprobe
     if [ $BUILD -eq 388 ]; then
       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
     fi
 
+    # Mount the local drive directory to the UNC
     mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
     echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
     sleep 5
 
   fi
 
+  # If the UNC is successfully mounted, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
+    # Show a list of valid backups on screen
     echo -e "${CGreen}Available Backup Selections:${CClear}"
     ls -ld ${UNCDRIVE}${BKDIR}/*/
 
@@ -626,12 +649,14 @@ restore() {
       if promptyn "(y/n): "; then
         echo ""
         echo ""
+        # Run the TAR commands to restore backups to their original locations
         echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs.${CClear}"
         tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
         echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE.${CClear}"
         tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
         echo ""
         sleep 10
+        # Unmount the backup drive
         umount $UNCDRIVE
         echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
         echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
@@ -725,7 +750,7 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   exit 0
 fi
 
-# Check to see if the populate option is being called
+# Check to see if the restore option is being called
 if [ "$1" == "-restore" ]
   then
 
@@ -754,16 +779,17 @@ if [ "$1" == "-setup" ]
     vsetup
 fi
 
-# Check to see if the monitor option is being called
+# Check to see if the backup option is being called
 if [ "$1" == "-backup" ]
   then
-    # Check for and add an alias for RTRMON
+    # Check for and add an alias for BACKUPMON
     if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
   		echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
     fi
 fi
 
 clear
+# Check for updates
 if [ "$UpdateNotify" == "0" ]; then
   echo -e "${CGreen}BACKUPMON v$Version"
 else
@@ -774,6 +800,7 @@ echo ""
 echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
 echo ""
 
+# Determine if the config is local or under /jffs/addons/backupmon.d
 if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
   source $CFGPATH
 elif [ -f /jffs/scripts/backupmon.cfg ]; then
@@ -790,6 +817,7 @@ echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCy
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo ""
 
+# Run a 10sec timer
 i=0
 while [ $i -ne 10 ]
 do
@@ -798,6 +826,7 @@ do
     i=$(($i+1))
 done
 
+# Run a normal backup
 echo -e "${CGreen}[Normal Backup Commencing]..."
 echo ""
 echo -e "${CCyan}Messages:"
