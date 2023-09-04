@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 Version=0.5
-Beta=1
+Beta=0
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"
 DAY="$(date +%d)"
@@ -24,6 +24,7 @@ EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"
 EXTLABEL="$(nvram get usb_path_sda1_label)"
 BUILD="$(nvram get buildno | grep -o '^[^.]\+')"
 UNCUPDATED="False"
+UpdateNotify=0
 
 # Color variables
 CBlack="\e[1;30m"
@@ -548,7 +549,11 @@ backup() {
 restore() {
 
   clear
-  echo -e "${CGreen}BACKUPMON v$Version"
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${CGreen}BACKUPMON v$Version"
+  else
+    echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+  fi
   echo ""
   echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
   echo ""
@@ -671,6 +676,8 @@ if [ ! -d "/jffs/addons/backupmon.d" ]; then
   mkdir -p "/jffs/addons/backupmon.d"
 fi
 
+updatecheck
+
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
   then
@@ -755,7 +762,12 @@ if [ "$1" == "-backup" ]
 fi
 
 clear
-echo -e "${CGreen}BACKUPMON v$Version"
+if [ "$UpdateNotify" == "0" ]; then
+  echo -e "${CGreen}BACKUPMON v$Version"
+else
+  echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+fi
+
 echo ""
 echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
 echo ""
