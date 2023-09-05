@@ -449,6 +449,7 @@ vupdate () {
       echo -e "${CCyan}This will overwrite your local copy with the current build.${CClear}"
       if promptyn "(y/n): "; then
         echo ""
+        echo ""
         echo -e "${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
@@ -471,6 +472,7 @@ vupdate () {
     else
       echo -e "${CCyan}Score! There is a new version out there! Would you like to update?${CClear}"
       if promptyn " (y/n): "; then
+        echo ""
         echo ""
         echo -e "${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
