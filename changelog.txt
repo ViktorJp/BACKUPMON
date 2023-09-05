@@ -3,8 +3,8 @@ v0.6RC - (September 5, 2023)
          necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
          choice will remove it from both CRON and the service-start file. This item can be configured under the config
          menu, item #7.
-       - ADDED: Ability to choose between 3 different backup frequency strategies. You have to choice of cycling through a
-         week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
+       - ADDED: Ability to choose between 3 different backup frequency strategies. You get to choose between cycling through
+         a week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
          it creates folder from day 01 through day 31... and with the year, day 001 all the way through day 365. You better
          be prepared to allocate some space. ;)  You can pick your backup frequency under the config menu, item #8.
 
