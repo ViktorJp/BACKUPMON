@@ -1,10 +1,10 @@
 Future Enhancements (Planned)
 -----------------------------
-* Allow choice between doing backups in 1 week, 1 month, or 1 year cycles
-* Schedule a regular backup event in CRON
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Allow choice between doing backups in 1 week, 1 month, or 1 year cycles
+* Schedule a regular backup event in CRON
