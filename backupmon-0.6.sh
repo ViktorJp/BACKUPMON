@@ -574,7 +574,7 @@ backup() {
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
       # Check the build to see if modprobe needs to be called
-      if [ $(find /lib -name md41.ko | wc -l) -gt 0 ]; then
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
