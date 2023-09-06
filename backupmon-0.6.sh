@@ -757,7 +757,7 @@ restore() {
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
     # Check if the build supports modprobe
-    if [ $BUILD -eq 388 ]; then
+    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
     fi
 
