@@ -25,7 +25,6 @@ MDAY="$(date +%d)"                                              # Current day # 
 YDAY="$(date +%j)"                                              # Current day # of the year
 EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"            # Grabbing the External USB Drive path
 EXTLABEL="$(nvram get usb_path_sda1_label)"                     # Grabbing the External USB Label name
-BUILD="$(nvram get buildno | grep -o '^[^.]\+')"                # Getting the current Merlin FW Build
 UNCUPDATED="False"                                              # Tracking if the UNC was updated or not
 UpdateNotify=0                                                  # Tracking whether a new update is available
 SCHEDULE=0                                                      # Tracking whether automatic backups are scheduled
@@ -575,7 +574,7 @@ backup() {
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
       # Check the build to see if modprobe needs to be called
-      if [ $BUILD -eq 388 ]; then
+      if [ $(find /lib -name md41.ko | wc -l) -gt 0 ]; then
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
