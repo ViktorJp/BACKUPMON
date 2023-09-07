@@ -701,7 +701,7 @@ backup() {
 
       sleep 10
       # Unmount the locally connected mounted drive
-      umount $UNCDRIVE
+      umount -l $UNCDRIVE
       echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
 
   else
@@ -774,6 +774,8 @@ restore() {
     # Show a list of valid backups on screen
     echo -e "${CGreen}Available Backup Selections:${CClear}"
     ls -ld ${UNCDRIVE}${BKDIR}/*/
+    echo
+    ls -ld ${UNCDRIVE}${BKDIR}/*/*/
 
     echo ""
     echo -e "${CGreen}Would you like to continue to restore from backup?"
@@ -833,7 +835,7 @@ restore() {
         echo ""
         sleep 10
         # Unmount the backup drive
-        umount $UNCDRIVE
+        umount -l $UNCDRIVE
         echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
         echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
         # read -rsp $'Press any key to continue...\n' -n1 key
@@ -846,7 +848,7 @@ restore() {
         echo ""
         echo ""
         sleep 10
-        umount $UNCDRIVE
+        umount -l $UNCDRIVE
         echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
         echo -e "${CClear}"
         exit 0
@@ -857,7 +859,7 @@ restore() {
       echo ""
       echo ""
       sleep 10
-      umount $UNCDRIVE
+      umount -l $UNCDRIVE
       echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
       echo -e "${CClear}"
       exit 0
