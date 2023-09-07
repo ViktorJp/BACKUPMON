@@ -1,3 +1,7 @@
+v0.7RC - (September 7, 2023)
+       - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
+         before giving up due to a failure. The error will be written to the syslog.
+
 v0.6RC - (September 5, 2023)
        - ADDED: Ability to set a scheduled daily CRON job with the time of your choice. This function will create the 
          necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
