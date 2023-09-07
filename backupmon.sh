@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v0.6 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v0.7 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=0.6                                                     # Current version
+Version=0.7                                                     # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -578,9 +578,24 @@ backup() {
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
-      # Connect the UNC to the local drive mount
-      mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
-      sleep 5
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to external drive path. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to external drive path. Please check your configuration. Exiting."
+              logger "ERROR: Unable to mount to external drive path. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
   fi
 
   # If the local mount is connected to the UNC, proceed
@@ -698,17 +713,35 @@ backup() {
         echo '6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
       } > ${UNCDRIVE}${BKDIR}/instructions.txt
       echo -e "${CGreen}STATUS: Finished copying restore instructions.txt to ${UNCDRIVE}${BKDIR}.${CClear}"
-
+      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
       sleep 10
+
       # Unmount the locally connected mounted drive
-      umount -l $UNCDRIVE
-      echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          umount -l $UNCDRIVE  # unmount the local drive from the UNC
+          URC=$?
+          if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+              logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
 
   else
 
       # There's problems with mounting the drive - check paths and permissions!
       echo -e "${CRed}ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!${CClear}"
-      logger "Backup Script ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!"
+      logger "ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!"
       sleep 3
 
   fi
@@ -762,10 +795,26 @@ restore() {
     fi
 
     # Mount the local drive directory to the UNC
-    mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"
-    echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
-    sleep 5
-
+    CNT=0
+    TRIES=12
+      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
+        MRC=$?
+        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+          echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+          break
+        else
+          echo -e "${CYellow}WARNING: Unable to mount to external drive path. Trying every 10 seconds for 2 minutes."
+          sleep 10
+          CNT=$((CNT+1))
+          if [ $CNT -eq $TRIES ];then
+            echo -e "${CRed}ERROR: Unable to mount to external drive path. Please check your configuration. Exiting."
+            logger "ERROR: Unable to mount to external drive path. Please check your configuration!"
+            exit 0
+          fi
+        fi
+      done
+    sleep 2
   fi
 
   # If the UNC is successfully mounted, proceed
@@ -774,9 +823,6 @@ restore() {
     # Show a list of valid backups on screen
     echo -e "${CGreen}Available Backup Selections:${CClear}"
     ls -ld ${UNCDRIVE}${BKDIR}/*/
-    echo
-    ls -ld ${UNCDRIVE}${BKDIR}/*/*/
-
     echo ""
     echo -e "${CGreen}Would you like to continue to restore from backup?"
     if promptyn "(y/n): "; then
@@ -833,38 +879,100 @@ restore() {
         echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE.${CClear}"
         tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
         echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
+
         # Unmount the backup drive
-        umount -l $UNCDRIVE
-        echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
-        echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
-        # read -rsp $'Press any key to continue...\n' -n1 key
-        # Exit gracefully
+        CNT=0
+        TRIES=12
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            umount -l $UNCDRIVE  # unmount the local drive from the UNC
+            URC=$?
+            if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+              echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
+              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+                logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+                exit 0
+              fi
+            fi
+          done
+
         echo ""
         echo -e "${CClear}"
         exit 0
+
       else
+
         # Exit gracefully
         echo ""
         echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
-        umount -l $UNCDRIVE
-        echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+
+        CNT=0
+        TRIES=12
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            umount -l $UNCDRIVE  # unmount the local drive from the UNC
+            URC=$?
+            if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+              echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+                logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+                exit 0
+              fi
+            fi
+          done
+
         echo -e "${CClear}"
         exit 0
+
       fi
 
     else
+
       # Exit gracefully
       echo ""
       echo ""
+      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
       sleep 10
-      umount -l $UNCDRIVE
-      echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          umount -l $UNCDRIVE  # unmount the local drive from the UNC
+          URC=$?
+          if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+              logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
+
       echo -e "${CClear}"
       exit 0
-    fi
 
+    fi
   fi
 
 }
