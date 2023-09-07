@@ -586,12 +586,12 @@ backup() {
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
             break
           else
-            echo -e "${CYellow}WARNING: Unable to mount to external drive path. Trying every 10 seconds for 2 minutes."
+            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
             sleep 10
             CNT=$((CNT+1))
             if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to external drive path. Please check your configuration. Exiting."
-              logger "ERROR: Unable to mount to external drive path. Please check your configuration!"
+              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+              logger "ERROR: Unable to mount to external drive. Please check your configuration!"
               exit 0
             fi
           fi
@@ -726,7 +726,7 @@ backup() {
             echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
             break
           else
-            echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+            echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
             sleep 10
             CNT=$((CNT+1))
             if [ $CNT -eq $TRIES ];then
@@ -804,12 +804,12 @@ restore() {
           echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
           break
         else
-          echo -e "${CYellow}WARNING: Unable to mount to external drive path. Trying every 10 seconds for 2 minutes."
+          echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
           sleep 10
           CNT=$((CNT+1))
           if [ $CNT -eq $TRIES ];then
-            echo -e "${CRed}ERROR: Unable to mount to external drive path. Please check your configuration. Exiting."
-            logger "ERROR: Unable to mount to external drive path. Please check your configuration!"
+            echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+            logger "ERROR: Unable to mount to external drive. Please check your configuration!"
             exit 0
           fi
         fi
@@ -893,7 +893,7 @@ restore() {
               echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
               break
             else
-              echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+              echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
               sleep 10
               CNT=$((CNT+1))
               if [ $CNT -eq $TRIES ];then
@@ -925,7 +925,7 @@ restore() {
               echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
               break
             else
-              echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+              echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
               sleep 10
               CNT=$((CNT+1))
               if [ $CNT -eq $TRIES ];then
@@ -958,7 +958,7 @@ restore() {
             echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
             break
           else
-            echo -e "${CYellow}WARNING: Unable to unmount from external drive path. Trying every 10 seconds for 2 minutes."
+            echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
             sleep 10
             CNT=$((CNT+1))
             if [ $CNT -eq $TRIES ];then
