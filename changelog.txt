@@ -1,3 +1,22 @@
+v0.8RC - (September 8, 2023)
+       - ADDED: New functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference between
+         this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
+
+              BASIC
+              - Only backs up one backup set per daily folder
+              - Backup file names have standard names based on jffs and USB drive label names
+              - Self-prunes the daily backup folders by deleting contents before backing up new set
+              - Will overwrite daily backups, even if multiple are made on the same day
+              - Restore more automated, and only required to pick which day to restore from
+
+              ADVANCED
+              - Backs up multiple daily backup sets per daily folder"
+              - Backup file names contain extra unique date and time identifiers"
+              - Keeps all daily backups forever, and no longer self-prunes"
+              - Will not overwrite daily backups, even if multiple are made on the same day"
+              - Restore more tedious, and required to type exact backup file names before restore"
+
+
 v0.7RC - (September 7, 2023)
        - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
          before giving up due to a failure. The error will be written to the syslog.
