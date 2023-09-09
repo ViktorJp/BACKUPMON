@@ -376,6 +376,10 @@ vconfig () {
               echo -e "${CGreen}- Will not overwrite daily backups, even if multiple are made on the same day"
               echo -e "${CGreen}- Restore more tedious, and required to type exact backup file names before restore"
               echo ""
+              echo -e "${CYellow}NOTE: When choosing BASIC mode while using 'Perpetual Frequency', your daily backup"
+              echo -e "${CYellow}folders will not self-prune or overwrite, even if multiple backups are made on the"
+              echo -e "${CYellow}same day."
+              echo ""
               echo -e "${CYellow}(0=Basic, 1=Advanced) (Default = 0)${CClear}"
               while true; do
                 read -p 'Mode (0/1)?: ' MODE1
