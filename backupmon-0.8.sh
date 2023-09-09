@@ -1033,6 +1033,11 @@ restore() {
         fi
 
         # Unmount the backup drive
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
         unmountdrv
 
         echo ""
