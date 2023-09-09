@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v0.8 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v0.9 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=0.8                                                     # Current version
+Version=0.9                                                     # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -194,7 +194,9 @@ vconfig () {
       elif [ "$FREQUENCY" == "M" ]; then
         printf "Monthly"; printf "%s\n";
       elif [ "$FREQUENCY" == "Y" ]; then
-        printf "Yearly"; printf "%s\n"; fi
+        printf "Yearly"; printf "%s\n";
+      elif [ "$FREQUENCY" == "P" ]; then
+        printf "Perpetual"; printf "%s\n"; fi
       echo -e "${InvDkGray}${CWhite} 9 ${CClear}${CCyan}: Backup/Restore Mode         :"${CGreen}$MODE
       echo -e "${InvDkGray}${CWhite} | ${CClear}"
       echo -e "${InvDkGray}${CWhite} s ${CClear}${CCyan}: Save & Exit"
@@ -322,18 +324,33 @@ vconfig () {
 
             8) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}8. What frequency would you like BACKUPMON to run backup jobs each day? You have"
-              echo -e "${CCyan}3 different choices -- Weekly, Monthly and Yearly. For Weekly backups, 7 different"
-              echo -e "${CCyan}folders for each day of the week are created. Monthly, 31 different folders, and"
-              echo -e "${CCyan}yearly, 365 different folders are created. As each week/month/year rolls over,"
-              echo -e "${CCyan}those backups will be overwritten."
-              echo -e "${CYellow}(Weekly=W, Monthly=M, Yearly=Y) (Default = M)${CClear}"
+              echo -e "${CCyan}8. What backup frequency would you like BACKUPMON to run daily backup jobs each"
+              echo -e "${CCyan}day? There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual."
+              echo -e "${CCyan}Backup folders based on the week, month, year, or perpetual are created under"
+              echo -e "${CCyan}your network share. Explained below:"
+              echo ""
+              echo -e "${CYellow}WEEKLY:"
+              echo -e "${CGreen}7 different folders for each day of the week are created (ex: Mon, Tue... Sun)."
+              echo ""
+              echo -e "${CYellow}MONTHLY:"
+              echo -e "${CGreen}31 different folders for each day are created (ex: 01, 02, 03... 30, 31)."
+              echo ""
+              echo -e "${CYellow}YEARLY:"
+              echo -e "${CGreen}365 different folders are created for each day (ex: 001, 002, 003... 364, 365)."
+              echo ""
+              echo -e "${CYellow}PERPETUAL:"
+              echo -e "${CGreen}A unique backup folder is created each time it runs based on the date-time"
+              echo -e "${CGreen}(ex: 20230909-084322). NOTE: When using the Perpetual backup frequency option,"
+              echo -e "${CGreen}you may only use BASIC mode."
+              echo ""
+              echo -e "${CYellow}(Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)${CClear}"
               while true; do
-                read -p 'Frequency (W/M/Y)?: ' FREQUENCY
+                read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
                     [Ww] ) FREQUENCY="W"; break ;;
                     [Mm] ) FREQUENCY="M"; break ;;
                     [Yy] ) FREQUENCY="Y"; break ;;
+                    [Pp] ) FREQUENCY="P"; MODE="Basic" break ;;
                     "" ) echo -e "\n Error: Please use either M, W, or Y\n";;
                     * ) echo -e "\n Error: Please use either M, W, or Y\n";;
                   esac
@@ -364,7 +381,7 @@ vconfig () {
                 read -p 'Mode (0/1)?: ' MODE1
                   case $MODE1 in
                     [0] ) MODE="Basic"; break ;;
-                    [1] ) MODE="Advanced"; break ;;
+                    [1] ) if [ $FREQUENCY == "P" ]; then MODE="Basic"; else MODE="Advanced"; fi; break ;;
                     "" ) echo -e "\n Error: Please use either 0 or 1\n";;
                     * ) echo -e "\n Error: Please use either 0 or 1\n";;
                   esac
@@ -389,7 +406,6 @@ vconfig () {
                   echo 'FREQUENCY="'"$FREQUENCY"'"'
                   echo 'MODE="'"$MODE"'"'
                 } > $CFGPATH
-              echo ""
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
               logger "BACKUPMON INFO: Successfully wrote a new config file"
               sleep 3
@@ -652,13 +668,16 @@ backup() {
       # Create the backup directories and daily directories if they do not exist yet
       if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}"; echo -e "${CGreen}STATUS: Backup Directory successfully created."; fi
 
-      # Create frequency folders by week, month or year
+      # Create frequency folders by week, month, year or perpetual
       if [ $FREQUENCY == "W" ]; then
         if ! [ -d "${UNCDRIVE}${BKDIR}/${WDAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${WDAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
       elif [ $FREQUENCY == "M" ]; then
         if ! [ -d "${UNCDRIVE}${BKDIR}/${MDAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${MDAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
       elif [ $FREQUENCY == "Y" ]; then
         if ! [ -d "${UNCDRIVE}${BKDIR}/${YDAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${YDAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
+      elif [ $FREQUENCY == "P" ]; then
+        PDAY=$(date +"%Y%m%d-%H%M%S")
+        if ! [ -d "${UNCDRIVE}${BKDIR}/${PDAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${PDAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
       fi
 
       if [ $MODE == "Basic" ]; then
@@ -672,6 +691,9 @@ backup() {
         elif [ $FREQUENCY == "Y" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar*
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar*
+        elif [ $FREQUENCY == "P" ]; then
+          [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar*
         fi
       fi
 
@@ -704,6 +726,15 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+        elif [ $FREQUENCY == "P" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
         fi
 
         # If a TAR exclusion file exists, use it for the USB drive backup
@@ -733,6 +764,15 @@ backup() {
           fi
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "P" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
         fi
 
@@ -957,10 +997,19 @@ restore() {
               else
                 ok=1
               fi
+            elif [ $FREQUENCY == "P" ]; then
+              echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422): "
+              read BACKUPDATE1
+              if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
+              then
+                echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
+              else
+                ok=1
+              fi
             fi
           done
 
-          if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid Backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
+          if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
 
           if [ $MODE == "Basic" ]; then
             break
@@ -971,14 +1020,14 @@ restore() {
             ls -lR /${UNCDRIVE}${BKDIR}/$BACKUPDATE
 
             echo ""
-            echo -e "${CGreen}Would you like to continue to using this backup set?"
+            echo -e "${CGreen}Would you like to continue using this backup set?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
               echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
               read ADVJFFS
               echo ""
-              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the USB backup you wish to restore?${CClear}"
+              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
               read ADVUSB
               break
             fi
@@ -1221,6 +1270,7 @@ fi
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
+if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perptual"; fi
 echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
