@@ -1,3 +1,11 @@
+v0.9RC - (September 9, 2023)
+       - ADDED: Major new functionality was added to give you an additional backup frequency choice... So in addition to
+         weekly, monthly and yearly backup frequencies, you will now have a 'perpetual' option. (Thanks to @Stephen
+         Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
+         weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
+         For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
+         naming convention, and easier restoration process.
+
 v0.8RC - (September 8, 2023)
        - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
          between this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
