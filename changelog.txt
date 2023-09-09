@@ -18,7 +18,7 @@ v0.8RC - (September 8, 2023)
 
          Please note, that during a restore in advanced mode, you will be able to see the files under the directories
          you specify, but you will be required to enter in the EXACT full filename of the JFFS and USB backup filenames
-         you wish to haver estored. 
+         you wish to have restored. 
 
        - ADDED: New menu items under the setup menu, allow you to launch a backup or restore. Thanks to @Kingp!n for the
          suggestion!
