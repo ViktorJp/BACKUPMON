@@ -142,7 +142,7 @@ updatecheck () {
         UpdateNotify=0
       elif [ "$DLVersion" != "$Version" ]; then
         UpdateNotify="Update available: v$Version -> v$DLVersion"
-        logger "BACKUPMON - A new update (v$DLVersion) is available to download"
+        logger "BACKUPMON INFO: A new update (v$DLVersion) is available to download"
       else
         UpdateNotify=0
       fi
@@ -391,7 +391,7 @@ vconfig () {
                 } > $CFGPATH
               echo ""
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
-              logger "BACKUPMON - Successfully wrote a new config file"
+              logger "BACKUPMON INFO: Successfully wrote a new config file"
               sleep 3
               UNCUPDATED="False"
               return
@@ -487,7 +487,7 @@ vupdate () {
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
         echo -e "${CCyan}Download successful!${CClear}"
-        logger "BACKUPMON - Successfully downloaded BACKUPMON v$DLVersion"
+        logger "BACKUPMON INFO: Successfully downloaded BACKUPMON v$DLVersion"
         echo ""
         echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -setup'.${CClear}"
         echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
@@ -510,7 +510,7 @@ vupdate () {
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
         echo -e "${CCyan}Download successful!${CClear}"
-        logger "BACKUPMON - Successfully downloaded BACKUPMON v$DLVersion"
+        logger "BACKUPMON INFO: Successfully downloaded BACKUPMON v$DLVersion"
         echo ""
         echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -setup'.${CClear}"
         echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
@@ -637,7 +637,7 @@ backup() {
             CNT=$((CNT+1))
             if [ $CNT -eq $TRIES ];then
               echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-              logger "ERROR: Unable to mount to external drive. Please check your configuration!"
+              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
               exit 0
             fi
           fi
@@ -683,7 +683,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "M" ]; then
@@ -692,7 +692,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "Y" ]; then
@@ -701,7 +701,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           sleep 1
         fi
@@ -713,7 +713,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "M" ]; then
@@ -722,7 +722,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "Y" ]; then
@@ -731,7 +731,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
         fi
@@ -746,7 +746,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "M" ]; then
@@ -755,7 +755,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "Y" ]; then
@@ -764,7 +764,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
           fi
-          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
         fi
@@ -776,7 +776,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "M" ]; then
@@ -785,7 +785,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
         elif [ $FREQUENCY == "Y" ]; then
@@ -794,7 +794,7 @@ backup() {
           else
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
           fi
-          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
         fi
@@ -836,8 +836,8 @@ backup() {
   else
 
       # There's problems with mounting the drive - check paths and permissions!
-      echo -e "${CRed}ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!${CClear}"
-      logger "ERROR: Failed to run Backup Script -- Drive mount failed.  Please check your configuration!"
+      echo -e "${CRed}ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!${CClear}"
+      logger "BACKUPMON ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!"
       sleep 3
 
   fi
@@ -905,7 +905,7 @@ restore() {
           CNT=$((CNT+1))
           if [ $CNT -eq $TRIES ];then
             echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-            logger "ERROR: Unable to mount to external drive. Please check your configuration!"
+            logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
             exit 0
           fi
         fi
@@ -1010,7 +1010,7 @@ restore() {
           echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo -e "JFFS filename: $ADVJFFS"
-          echo -e "USB filename: $ADVUSB"
+          echo -e "EXT USB filename: $ADVUSB"
           echo ""
           echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
@@ -1088,7 +1088,7 @@ unmountdrv () {
         CNT=$((CNT+1))
         if [ $CNT -eq $TRIES ];then
           echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-          logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+          logger "BACKUPMON ERROR: Unable to unmount from external drive. Please check your configuration!"
           exit 0
         fi
       fi
