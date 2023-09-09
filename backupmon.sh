@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v0.7 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v0.8 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=0.7                                                     # Current version
+Version=0.8                                                     # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -31,6 +31,7 @@ SCHEDULE=0                                                      # Tracking wheth
 SCHEDULEHRS=2                                                   # Automatic backup hours (in 24hr format)
 SCHEDULEMIN=30                                                  # Automatic backup minutes
 FREQUENCY="M"                                                   # Frequency of backups -- weekly, monthly or yearly
+MODE="Basic"                                                    # The operational mode of BACKUPMON - basic/advanced
 
 # Color variables
 CBlack="\e[1;30m"
@@ -194,6 +195,7 @@ vconfig () {
         printf "Monthly"; printf "%s\n";
       elif [ "$FREQUENCY" == "Y" ]; then
         printf "Yearly"; printf "%s\n"; fi
+      echo -e "${InvDkGray}${CWhite} 9 ${CClear}${CCyan}: Backup/Restore Mode         :"${CGreen}$MODE
       echo -e "${InvDkGray}${CWhite} | ${CClear}"
       echo -e "${InvDkGray}${CWhite} s ${CClear}${CCyan}: Save & Exit"
       echo -e "${InvDkGray}${CWhite} e ${CClear}${CCyan}: Exit & Discard Changes"
@@ -338,6 +340,37 @@ vconfig () {
               done
             ;;
 
+            9) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}9. What mode of operation would you like BACKUPMON to run in? You have 2 different"
+              echo -e "${CCyan}choices -- Basic or Advanced. Choose wisely! These are the differences:"
+              echo ""
+              echo -e "${CYellow}BASIC:"
+              echo -e "${CGreen}- Only backs up one backup set per daily folder"
+              echo -e "${CGreen}- Backup files have standard names based on jffs and USB drive label names"
+              echo -e "${CGreen}- Self-prunes the daily backup folders by deleting contents before backing up new set"
+              echo -e "${CGreen}- Will overwrite daily backups, even if multiple are made on the same day"
+              echo -e "${CGreen}- Restore more automated, and only required to pick which day to restore from"
+              echo ""
+              echo -e "${CYellow}ADVANCED:"
+              echo -e "${CGreen}- Backs up multiple daily backup sets per daily folder"
+              echo -e "${CGreen}- Backup files contain extra unique date and time identifiers"
+              echo -e "${CGreen}- Keeps all daily backups forever, and no longer self-prunes"
+              echo -e "${CGreen}- Will not overwrite daily backups, even if multiple are made on the same day"
+              echo -e "${CGreen}- Restore more tedious, and required to type exact backup file names before restore"
+              echo ""
+              echo -e "${CYellow}(0=Basic, 1=Advanced) (Default = 0)${CClear}"
+              while true; do
+                read -p 'Mode (0/1)?: ' MODE1
+                  case $MODE1 in
+                    [0] ) MODE="Basic"; break ;;
+                    [1] ) MODE="Advanced"; break ;;
+                    "" ) echo -e "\n Error: Please use either 0 or 1\n";;
+                    * ) echo -e "\n Error: Please use either 0 or 1\n";;
+                  esac
+              done
+            ;;
+
             [Ss]) # -----------------------------------------------------------------------------------------
               echo ""
               if [ $UNCUPDATED == "False" ]; then
@@ -354,6 +387,7 @@ vconfig () {
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
                   echo 'FREQUENCY="'"$FREQUENCY"'"'
+                  echo 'MODE="'"$MODE"'"'
                 } > $CFGPATH
               echo ""
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
@@ -384,6 +418,7 @@ vconfig () {
         echo 'SCHEDULEHRS=2'
         echo 'SCHEDULEMIN=30'
         echo 'FREQUENCY="M"'
+        echo 'MODE="Basic"'
       } > $CFGPATH
 
       #Re-run backupmon -config to restart setup process
@@ -514,6 +549,9 @@ vsetup () {
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${CGreen}Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a manual backup"
+    echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a manual restore"
+    echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure BACKUPMON"
     echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
     echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
@@ -526,7 +564,17 @@ vsetup () {
     # Execute chosen selections
         case "$InstallSelection" in
 
-          sc) # run backupmon -config
+          bk)
+            clear
+            sh /jffs/scripts/backupmon.sh -backup
+          ;;
+
+          rs)
+            clear
+            sh /jffs/scripts/backupmon.sh -restore
+          ;;
+
+          sc)
             clear
             vconfig
           ;;
@@ -615,76 +663,144 @@ backup() {
         if ! [ -d "${UNCDRIVE}${BKDIR}/${YDAY}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}/${YDAY}"; echo -e "${CGreen}STATUS: Daily Backup Directory successfully created.${CClear}";fi
       fi
 
-      # Remove old tar files if they exist in the daily folders
-      if [ $FREQUENCY == "W" ]; then
-        [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar*
-        [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar*
-      elif [ $FREQUENCY == "M" ]; then
-        [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar*
-        [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar*
-      elif [ $FREQUENCY == "Y" ]; then
-        [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar*
-        [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar*
+      if [ $MODE == "Basic" ]; then
+        # Remove old tar files if they exist in the daily folders
+        if [ $FREQUENCY == "W" ]; then
+          [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar*
+        elif [ $FREQUENCY == "M" ]; then
+          [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar*
+        elif [ $FREQUENCY == "Y" ]; then
+          [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar*
+        fi
       fi
 
-      # If a TAR exclusion file exists, use it for the /jffs backup
-      if [ $FREQUENCY == "W" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz -C /jffs . >/dev/null
+      if [ $MODE == "Basic" ]; then
+        # If a TAR exclusion file exists, use it for the /jffs backup
+        if [ $FREQUENCY == "W" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "M" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "Y" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
         fi
-        logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
-        sleep 1
-      elif [ $FREQUENCY == "M" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -C /jffs . >/dev/null
-        fi
-        logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
-        sleep 1
-      elif [ $FREQUENCY == "Y" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -C /jffs . >/dev/null
-        fi
-        logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
-        sleep 1
-      fi
 
-      # If a TAR exclusion file exists, use it for the USB drive backup
-      if [ $FREQUENCY == "W" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ $FREQUENCY == "W" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "M" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "Y" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
         fi
-        logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
-        sleep 1
-      elif [ $FREQUENCY == "M" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+
+      elif [ $MODE == "Advanced" ]; then
+
+        datelabel=$(date +"%Y%m%d-%H%M%S")
+        # If a TAR exclusion file exists, use it for the /jffs backup
+        if [ $FREQUENCY == "W" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "M" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "Y" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
         fi
-        logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
-        sleep 1
-      elif [ $FREQUENCY == "Y" ]; then
-        if ! [ -z $EXCLUSION ]; then
-          tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-        else
-          tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ $FREQUENCY == "W" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "M" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $FREQUENCY == "Y" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
         fi
-        logger "Backup Script: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
-        echo -e "${CGreen}STATUS: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
-        sleep 1
+
       fi
 
       #added copies of the backupmon.sh, backupmon.cfg and exclusions list to backup location for easy copy/restore
@@ -717,25 +833,7 @@ backup() {
       sleep 10
 
       # Unmount the locally connected mounted drive
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          umount -l $UNCDRIVE  # unmount the local drive from the UNC
-          URC=$?
-          if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-              logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+      unmountdrv
 
   else
 
@@ -825,90 +923,123 @@ restore() {
     ls -ld ${UNCDRIVE}${BKDIR}/*/
     echo ""
     echo -e "${CGreen}Would you like to continue to restore from backup?"
+
     if promptyn "(y/n): "; then
 
-      echo ""
-      echo -e "${CGreen}"
-        ok=0
-        while [ $ok = 0 ]
-        do
-          if [ $FREQUENCY == "W" ]; then
-            echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri): "
-            read BACKUPDATE1
-            if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
-            then
-              echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
-            else
-              ok=1
-            fi
-          elif [ $FREQUENCY == "M" ]; then
-            echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27): "
-            read BACKUPDATE1
-            if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
-            then
-              echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
-            else
-              ok=1
-            fi
-          elif [ $FREQUENCY == "Y" ]; then
-            echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270): "
-            read BACKUPDATE1
-            if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
-            then
-              echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
-            else
-              ok=1
-            fi
-          fi
-        done
-
-      if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid Backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
-
-      echo ""
-      echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS and the entire contents of your External"
-      echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
-      echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
-      echo ""
-      echo -e "${CGreen}Are you absolutely sure you like to continue to restore from backup?"
-      if promptyn "(y/n): "; then
+      while true; do
         echo ""
-        echo ""
-        # Run the TAR commands to restore backups to their original locations
-        echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs.${CClear}"
-        tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-        echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE.${CClear}"
-        tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
-        echo ""
-        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-        sleep 10
-
-        # Unmount the backup drive
-        CNT=0
-        TRIES=12
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            umount -l $UNCDRIVE  # unmount the local drive from the UNC
-            URC=$?
-            if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-              echo -e "${CGreen}STATUS: External Drive ($UNC) unmounted successfully.${CClear}"
-              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-                logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
-                exit 0
+        echo -e "${CGreen}"
+          ok=0
+          while [ $ok = 0 ]
+          do
+            if [ $FREQUENCY == "W" ]; then
+              echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri): "
+              read BACKUPDATE1
+              if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+              then
+                echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+              else
+                ok=1
+              fi
+            elif [ $FREQUENCY == "M" ]; then
+              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27): "
+              read BACKUPDATE1
+              if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
+              then
+                echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
+              else
+                ok=1
+              fi
+            elif [ $FREQUENCY == "Y" ]; then
+              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270): "
+              read BACKUPDATE1
+              if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+              then
+                echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+              else
+                ok=1
               fi
             fi
           done
+
+          if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid Backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
+
+          if [ $MODE == "Basic" ]; then
+            break
+          elif [ $MODE == "Advanced" ]; then
+            echo ""
+            echo -e "${CGreen}Available Backup Files under:${CClear}"
+
+            ls -lR /${UNCDRIVE}${BKDIR}/$BACKUPDATE
+
+            echo ""
+            echo -e "${CGreen}Would you like to continue to using this backup set?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
+              read ADVJFFS
+              echo ""
+              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the USB backup you wish to restore?${CClear}"
+              read ADVUSB
+              break
+            fi
+          fi
+      done
+
+        if [ $MODE == "Basic" ]; then
+          echo ""
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS and the entire contents of your External"
+          echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+            echo ""
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
+            echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+            sleep 10
+          fi
+
+        elif [ $MODE == "Advanced" ]; then
+          echo ""
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS and the entire contents of your External"
+          echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
+          echo -e "JFFS filename: $ADVJFFS"
+          echo -e "USB filename: $ADVUSB"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+            echo ""
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
+            echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+            sleep 10
+          fi
+        fi
+
+        # Unmount the backup drive
+        unmountdrv
 
         echo ""
         echo -e "${CClear}"
         exit 0
 
-      else
+    else
 
         # Exit gracefully
         echo ""
@@ -916,64 +1047,53 @@ restore() {
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
 
-        CNT=0
-        TRIES=12
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            umount -l $UNCDRIVE  # unmount the local drive from the UNC
-            URC=$?
-            if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-              echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-                logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
-                exit 0
-              fi
-            fi
-          done
+        unmountdrv
 
         echo -e "${CClear}"
         exit 0
 
       fi
 
-    else
+  else
 
-      # Exit gracefully
-      echo ""
-      echo ""
-      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-      sleep 10
+    # Exit gracefully
+    echo ""
+    echo ""
+    echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+    sleep 10
 
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          umount -l $UNCDRIVE  # unmount the local drive from the UNC
-          URC=$?
-          if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") unmounted successfully.${CClear}"; printf "%s\n"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-              logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+    unmountdrv
 
-      echo -e "${CClear}"
-      exit 0
+    echo -e "${CClear}"
+    exit 0
 
-    fi
   fi
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# unmountdrv is a function to gracefully unmount the drive, and retry for up to 2 minutes
+unmountdrv () {
+
+  CNT=0
+  TRIES=12
+    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+      umount -l $UNCDRIVE  # unmount the local drive from the UNC
+      URC=$?
+      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+        echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -e ") unmounted successfully.${CClear}"
+        break
+      else
+        echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
+        sleep 10
+        CNT=$((CNT+1))
+        if [ $CNT -eq $TRIES ];then
+          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+          logger "ERROR: Unable to unmount from external drive. Please check your configuration!"
+          exit 0
+        fi
+      fi
+    done
 
 }
 
@@ -1103,7 +1223,9 @@ if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
-echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR} ${CCyan}-- Frequency: ${CGreen}$FREQEXPANDED"
+echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
+echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
+echo -e "${CCyan}Mode: ${CGreen}$MODE"
 echo ""
 
 # Run a 10sec timer
