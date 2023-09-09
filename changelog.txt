@@ -4,7 +4,9 @@ v0.9RC - (September 9, 2023)
          Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
          weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
          For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
-         naming convention, and easier restoration process.
+         naming convention, and easier restoration process. When using the 'perpetual frequency' option under BASIC mode,
+         backups are not pruned, nor are they overwritten if multiple backups are taken on the same day. In this case, a
+         new, uniquely named backup folder is created each time.
 
 v0.8RC - (September 8, 2023)
        - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
