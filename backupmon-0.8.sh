@@ -483,7 +483,6 @@ vupdate () {
       echo -e "${CCyan}This will overwrite your local copy with the current build.${CClear}"
       if promptyn "(y/n): "; then
         echo ""
-        echo ""
         echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
@@ -506,7 +505,6 @@ vupdate () {
     else
       echo -e "${CCyan}Score! There is a new version out there! Would you like to update?${CClear}"
       if promptyn " (y/n): "; then
-        echo ""
         echo ""
         echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
@@ -1004,8 +1002,6 @@ restore() {
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
             echo ""
             echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
-            echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-            sleep 10
           fi
 
         elif [ $MODE == "Advanced" ]; then
@@ -1027,8 +1023,6 @@ restore() {
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
             echo ""
             echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
-            echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-            sleep 10
           fi
         fi
 
