@@ -839,7 +839,9 @@ vsetup () {
 
           pg)
             clear
-            purgebackups
+            if [ $FREQUENCY == "P" ]; then
+              purgebackups
+            fi
           ;;
 
           sc)
