@@ -1,16 +1,30 @@
-v0.9RC - (September 9, 2023)
-       - ADDED: Major new functionality was added to give you an additional backup frequency choice... So in addition to
-         weekly, monthly and yearly backup frequencies, you will now have a 'perpetual' option. (Thanks to @Stephen
-         Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
-         weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
-         For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
-         naming convention, and easier restoration process. When using the 'perpetual frequency' option under BASIC mode,
-         backups are not pruned, nor are they overwritten if multiple backups are taken on the same day. In this case, a
-         new, uniquely named backup folder is created each time.
+v0.91RC - (September 10, 2023)
+        - ADDED: Major new functionality to help purge perpetual backups, with much thanks to @Martinski for supplying a
+          great function to help with this! Under the config menu, when selecting "perpetual" backup frequency, you will
+          have the option to choose whether you want to enable backup purging for everything older than a certain number
+          of days. Once configured, you can access the purge backups functionality under the operations area under the
+          setup menu. This function will step you through multiple prompts before committing to delete any backups, and
+          will show you which backups are affected. PLEASE NOTE: deleting backups is permanent, and advise caution on what
+          you are deleting, and ensure that the list presented to you is what you want deleted. Also, PLEASE NOTE: if there
+          are any backups that you want to save or store for later use, PLEASE move these to a SAFE and otherwise secure
+          location outside of the backup folder structure that BACKUPMON utilizes, else there will be a chance these
+          backups will get deleted.
+        - RELEASE CANDIDATE: This completes all work for the release candidate. I will be taking another week to thoroughly
+          test all functionality before releasing v1.0! 
 
-v0.8RC - (September 8, 2023)
-       - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
-         between this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
+v0.9RC  - (September 9, 2023)
+        - ADDED: Major new functionality was added to give you an additional backup frequency choice... So in addition to
+          weekly, monthly and yearly backup frequencies, you will now have a 'perpetual' option. (Thanks to @Stephen
+          Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
+          weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
+          For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
+          naming convention, and easier restoration process. When using the 'perpetual frequency' option under BASIC mode,
+          backups are not pruned, nor are they overwritten if multiple backups are taken on the same day. In this case, a
+          new, uniquely named backup folder is created each time.
+
+v0.8RC  - (September 8, 2023)
+        - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
+          between this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
 
               BASIC
               - Only backs up one backup set per daily folder
@@ -26,29 +40,29 @@ v0.8RC - (September 8, 2023)
               - Will not overwrite daily backups, even if multiple are made on the same day
               - Restore more tedious, and required to type exact backup file names before restore
 
-         Please note, that during a restore in advanced mode, you will be able to see the files under the directories
-         you specify, but you will be required to enter in the EXACT full filename of the JFFS and USB backup filenames
-         you wish to have restored. 
+          Please note, that during a restore in advanced mode, you will be able to see the files under the directories
+          you specify, but you will be required to enter in the EXACT full filename of the JFFS and USB backup filenames
+          you wish to have restored. 
 
-       - ADDED: New menu items under the setup menu, allow you to launch a backup or restore. Thanks to @Kingp!n for the
-         suggestion!
+        - ADDED: New menu items under the setup menu, allow you to launch a backup or restore. Thanks to @Kingp!n for the
+          suggestion!
 
-v0.7RC - (September 7, 2023)
-       - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
-         before giving up due to a failure. The error will be written to the syslog.
+v0.7RC  - (September 7, 2023)
+        - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
+          before giving up due to a failure. The error will be written to the syslog.
 
-v0.6RC - (September 5, 2023)
-       - ADDED: Ability to set a scheduled daily CRON job with the time of your choice. This function will create the 
-         necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
-         choice will remove it from both CRON and the service-start file. This item can be configured under the config
-         menu, item #7.
-       - ADDED: Ability to choose between 3 different backup frequency strategies. You get to choose between cycling through
-         a week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
-         it creates folder from day 01 through day 31... and with the year, day 001 all the way through day 365. You better
-         be prepared to allocate some space. ;)  You can pick your backup frequency under the config menu, item #8.
-       - FIXED: Based on some feedback, I reworked the way modprobe is being used. No longer using the build of the FW as a
-         and indicator, but as Jeff suggested, just seeing if the file exists, and if it does, use it. 
+v0.6RC  - (September 5, 2023)
+        - ADDED: Ability to set a scheduled daily CRON job with the time of your choice. This function will create the 
+          necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
+          choice will remove it from both CRON and the service-start file. This item can be configured under the config
+          menu, item #7.
+        - ADDED: Ability to choose between 3 different backup frequency strategies. You get to choose between cycling through
+          a week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
+          it creates folder from day 01 through day 31... and with the year, day 001 all the way through day 365. You better
+          be prepared to allocate some space. ;)  You can pick your backup frequency under the config menu, item #8.
+        - FIXED: Based on some feedback, I reworked the way modprobe is being used. No longer using the build of the FW as a
+          and indicator, but as Jeff suggested, just seeing if the file exists, and if it does, use it. 
 
-v0.5RC - (September 4, 2023)
-       - RELEASE: First release candidate of BACKUPMON! After some extensive backup and restoration testing, I believe it's
-         ready for the masses to try out! :)
+v0.5RC  - (September 4, 2023)
+        - RELEASE: First release candidate of BACKUPMON! After some extensive backup and restoration testing, I believe it's
+          ready for the masses to try out! :)
