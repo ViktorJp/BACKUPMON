@@ -655,7 +655,7 @@ purgebackups () {
   echo ""
   echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible and permanent."
   echo -e "${CCyan}But no worries! BACKUPMON will first show you which backups are affected by the"
-  echo -e "${CYellow}$PURGELIMIT days${CCyan} limit you have configued."
+  echo -e "${CYellow}$PURGELIMIT days${CCyan} limit you have configured."
   echo ""
   echo -e "${CCyan}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
