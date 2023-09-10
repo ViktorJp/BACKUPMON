@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v0.9 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v0.91RC heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=0.9                                                     # Current version
+Version=0.91                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -30,8 +30,10 @@ UpdateNotify=0                                                  # Tracking wheth
 SCHEDULE=0                                                      # Tracking whether automatic backups are scheduled
 SCHEDULEHRS=2                                                   # Automatic backup hours (in 24hr format)
 SCHEDULEMIN=30                                                  # Automatic backup minutes
-FREQUENCY="M"                                                   # Frequency of backups -- weekly, monthly or yearly
+FREQUENCY="M"                                                   # Frequency of backups -- weekly, monthly, yearly, perpetual
 MODE="Basic"                                                    # The operational mode of BACKUPMON - basic/advanced
+PURGE=0                                                         # Tracking whether perpetual backup purging is active
+PURGELIMIT=0                                                    # Age of older perpetual backups to be purged
 
 # Color variables
 CBlack="\e[1;30m"
@@ -197,6 +199,22 @@ vconfig () {
         printf "Yearly"; printf "%s\n";
       elif [ "$FREQUENCY" == "P" ]; then
         printf "Perpetual"; printf "%s\n"; fi
+      if [ "$FREQUENCY" == "P" ]; then
+        echo -en "${InvDkGray}${CWhite} |-${CClear}${CCyan}-  Purge Backups?             :${CGreen}"
+        if [ "$PURGE" == "0" ]; then
+          printf "No"; printf "%s\n";
+        elif [ "$PURGE" == "1" ]; then
+          printf "Yes"; printf "%s\n";fi
+        echo -en "${InvDkGray}${CWhite} |-${CClear}${CCyan}-  Purge older than (days):   :${CGreen}"
+        if [ "$PURGELIMIT" == "0" ]; then
+          printf "N/A"; printf "%s\n";
+        else
+          printf $PURGELIMIT; printf "%s\n";
+        fi
+      else
+        echo -e "${InvDkGray}${CWhite} |-${CClear}${CDkGray}-  Purge Backups?             :${CDkGray}No"
+        echo -e "${InvDkGray}${CWhite} | ${CClear}${CDkGray}-  Purge older than (days):   :${CDkGray}N/A"
+      fi
       echo -e "${InvDkGray}${CWhite} 9 ${CClear}${CCyan}: Backup/Restore Mode         :"${CGreen}$MODE
       echo -e "${InvDkGray}${CWhite} | ${CClear}"
       echo -e "${InvDkGray}${CWhite} s ${CClear}${CCyan}: Save & Exit"
@@ -351,10 +369,50 @@ vconfig () {
                     [Mm] ) FREQUENCY="M"; break ;;
                     [Yy] ) FREQUENCY="Y"; break ;;
                     [Pp] ) FREQUENCY="P"; MODE="Basic" break ;;
-                    "" ) echo -e "\n Error: Please use either M, W, or Y\n";;
-                    * ) echo -e "\n Error: Please use either M, W, or Y\n";;
+                    "" ) echo -e "\n Error: Please use either M, W, Y or P\n";;
+                    * ) echo -e "\n Error: Please use either M, W, Y or P\n";;
                   esac
               done
+
+              if [ $FREQUENCY == "P" ]; then
+                echo ""
+                echo -e "${CCyan}8a. Would you like to purge perpetual backups after a certain age? This can help"
+                echo -e "${CCyan}trim your backups and reclaim disk space, but also gives you more flexibility on"
+                echo -e "${CCyan}the length of time you can keep your backups. Purging backups is run manually from"
+                echo -e "${CCyan}the setup menu, and gives you the ability to see which backups will be purged"
+                echo -e "${CCyan}before they are deleted permanently."
+                echo ""
+                echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
+                echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
+                echo ""
+                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                read -p 'Purge Backups? (0/1): ' PURGE1
+                if [ "$PURGE1" == "" ] || [ -z "$PURGE1" ]; then PURGE=0; else PURGE="$PURGE1"; fi # Using default value on enter keypress
+
+                if [ "$PURGE" == "0" ]; then
+
+                  PURGELIMIT=0
+
+                elif [ "$PURGE" == "1" ]; then
+
+                  echo ""
+                  echo -e "${CCyan}8b. How many days would you like to keep your perpetual backups? Example: 90"
+                  echo -e "${CCyan}Note that all perpetual backups older than 90 days would be permanently deleted."
+                  echo ""
+                  echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
+                  echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
+                  echo ""
+                  echo -e "${CYellow}(Default = 90)${CClear}"
+                  read -p 'Backup Age? (in days): ' PURGELIMIT1
+                  if [ "$PURGELIMIT1" == "" ] || [ -z "$PURGELIMIT1" ]; then PURGELIMIT=0; else PURGELIMIT="$PURGELIMIT1"; fi # Using default value on enter keypress
+
+                else
+                  PURGE=0
+                  PURGELIMIT=0
+                fi
+
+              fi
+
             ;;
 
             9) # -----------------------------------------------------------------------------------------
@@ -409,6 +467,8 @@ vconfig () {
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
                   echo 'FREQUENCY="'"$FREQUENCY"'"'
                   echo 'MODE="'"$MODE"'"'
+                  echo 'PURGE='$PURGE
+                  echo 'PURGELIMIT='$PURGELIMIT
                 } > $CFGPATH
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
               logger "BACKUPMON INFO: Successfully wrote a new config file"
@@ -439,6 +499,8 @@ vconfig () {
         echo 'SCHEDULEMIN=30'
         echo 'FREQUENCY="M"'
         echo 'MODE="Basic"'
+        echo 'PURGE=0'
+        echo 'PURGELIMIT=0'
       } > $CFGPATH
 
       #Re-run backupmon -config to restart setup process
@@ -549,6 +611,171 @@ vupdate () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# This amazing function was borrowed from none other than @Martinski... a genius approach to filtering and deleting files/folders
+# $1 = path, $2 = age, $3 = show/delete
+_DeleteFileDirAfterNumberOfDays_ ()
+{
+   local retCode=1  minNumOfDays=1
+   if [ $# -eq 0 ] || [ -z "$1" ] || [ -z "$2" ] || \
+      { [ ! -f "$1" ] && [ ! -d "$1" ] ; }
+   then
+      printf "\nFile or Directory [$1] is *NOT* FOUND.\n"
+      return 1
+   fi
+   if ! echo "$2" | grep -qE "^[1-9][0-9]*$" || [ "$2" -lt "$minNumOfDays" ]
+   then
+      printf "\nNumber of days [$2] is *NOT* VALID.\n"
+      return 1
+   fi
+   if [ "$(($(date +%s) - $(date +%s -r "$1")))" -gt "$(($2 * 86400))" ]
+   then
+       count=$((count+1))
+       if [ "$3" == "show" ]; then
+         printf "$1\n"
+       elif [ "$3" == "delete" ]; then
+         if [ -f "$1" ]
+         then rmOpts="-f"
+         else rmOpts="-fr"
+         fi
+         printf "Deleting $1...\n"
+         rm $rmOpts "$1" ; retCode="$?"
+       fi
+   fi
+   return "$retCode"
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# purgebackups is a function that allows you to see which backups will be purged before deleting them...
+purgebackups () {
+  clear
+  logoNM
+  echo ""
+  echo -e "${CYellow}Purge Perpetual Backups Utility${CClear}"
+  echo ""
+  echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible and permanent."
+  echo -e "${CCyan}But no worries! BACKUPMON will first show you which backups are affected by the"
+  echo -e "${CYellow}$PURGELIMIT days${CCyan} limit you have configured."
+  echo ""
+  echo -e "${CCyan}Do you wish to proceed?${CClear}"
+  if promptyn "(y/n): "; then
+
+    echo ""
+    echo -e "\n${CCyan}Messages:"
+
+    # Create the local drive mount directory
+    if ! [ -d $UNCDRIVE ]; then
+        mkdir -p $UNCDRIVE
+        chmod 777 $UNCDRIVE
+        echo -e "${CYellow}ALERT: External Drive directory not set. Created under: $UNCDRIVE ${CClear}"
+        sleep 3
+    fi
+
+    # If the mount does not exist yet, proceed
+    if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
+
+      # Check if the build supports modprobe
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+      fi
+
+      # Mount the local drive directory to the UNC
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
+      sleep 2
+    fi
+
+    # If the UNC is successfully mounted, proceed
+    if [ -n "`mount | grep $UNCDRIVE`" ]; then
+
+      # Show a list of valid backups on screen
+      count=0
+      echo -e "${CGreen}STATUS: Perpetual backup folders identified below are older than $PURGELIMIT days:${CRed}"
+      for FOLDER in $(ls ${UNCDRIVE}${BKDIR} -1)
+      do
+        _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT show
+      done
+
+      # If there are no valid backups within range, display a message and exit
+      if [ $count -eq 0 ]; then
+        echo -e "${CYellow}INFO: No perpetual backup folders were identified older than $PURGELIMIT days.${CClear}"
+        read -rsp $'Press any key to acknowledge...\n' -n1 key
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+        sleep 2
+        return
+      fi
+
+      # Continue with deleting backups permanently
+      echo ""
+      echo -e "${CGreen}Would you like to permanently purge these backups?${CClear}"
+
+      if promptyn "(y/n): "; then
+        echo -e "\n${CRed}"
+        for FOLDER in $(ls ${UNCDRIVE}${BKDIR} -1)
+        do
+          _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT delete
+        done
+
+        echo ""
+        echo -e "${CGreen}STATUS: Perpetual backup folders older than $PURGELIMIT days deleted.${CClear}"
+        read -rsp $'Press any key to acknowledge...\n' -n1 key
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+        sleep 2
+        return
+
+      else
+
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+        sleep 2
+        return
+      fi
+    fi
+
+  else
+    echo ""
+    echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+    sleep 2
+    return
+  fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 
 # vsetup is a function that sets up, confiures and allows you to launch backupmon on your router...
 vsetup () {
@@ -556,6 +783,19 @@ vsetup () {
   # Check for and add an alias for backupmon
   if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
 		echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
+  fi
+
+  # Determine if the config is local or under /jffs/addons/backupmon.d
+  if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+    source $CFGPATH
+  elif [ -f /jffs/scripts/backupmon.cfg ]; then
+    source /jffs/scripts/backupmon.cfg
+    cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+  else
+    clear
+    echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+    echo -e "${CClear}"
+    exit 0
   fi
 
   while true; do
@@ -569,6 +809,11 @@ vsetup () {
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a manual backup"
     echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a manual restore"
+    if [ $PURGE == "1" ]; then
+      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CCyan}: Purge Perpetual Backups"
+    else
+      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CDkGray}: Purge Perpetual Backups"
+    fi
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure BACKUPMON"
     echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
@@ -590,6 +835,11 @@ vsetup () {
           rs)
             clear
             sh /jffs/scripts/backupmon.sh -restore
+          ;;
+
+          pg)
+            clear
+            purgebackups
           ;;
 
           sc)
@@ -1274,7 +1524,7 @@ fi
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
-if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perptual"; fi
+if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
 echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
