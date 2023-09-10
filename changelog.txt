@@ -8,7 +8,8 @@ v0.91RC - (September 10, 2023)
           you are deleting, and ensure that the list presented to you is what you want deleted. Also, PLEASE NOTE: if there
           are any backups that you want to save or store for later use, PLEASE move these to a SAFE and otherwise secure
           location outside of the backup folder structure that BACKUPMON utilizes, else there will be a chance these
-          backups will get deleted.
+          backups will get deleted. I will be keeping the purge backups utility manual for the time being, giving you more
+          control over when and what gets deleted. I may automate this in the future depending on demand.
         - RELEASE CANDIDATE: This completes all work for the release candidate. I will be taking another week to thoroughly
           test all functionality before releasing v1.0! 
 
