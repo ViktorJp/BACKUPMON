@@ -1,3 +1,7 @@
+v0.92RC - (September 12, 2023)
+        - FIXED: Issue where when backupmon was newly downloaded and installed, the setup menu would be going through a
+          loop because it was referencing that the .cfg file was not found, and telling you to run setup. All fixed!
+
 v0.91RC - (September 10, 2023)
         - ADDED: Major new functionality to help purge perpetual backups, with much thanks to @Martinski for supplying a
           great function to help with this! Under the config menu, when selecting "perpetual" backup frequency, you will
