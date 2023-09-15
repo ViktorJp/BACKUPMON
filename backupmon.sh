@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v0.91RC heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.0 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=0.91                                                    # Current version
+Version=1.0                                                     # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -637,8 +637,9 @@ _DeleteFileDirAfterNumberOfDays_ ()
          then rmOpts="-f"
          else rmOpts="-fr"
          fi
-         printf "Deleting $1...\n"
+         printf "${CRed}Deleting $1..."
          rm $rmOpts "$1" ; retCode="$?"
+         printf "${CGreen}OK\n"
        fi
    fi
    return "$retCode"
@@ -793,9 +794,9 @@ vsetup () {
     cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
   else
     clear
-    echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-    echo -e "${CClear}"
-    exit 0
+    echo -e "${CRed} WARNING: BACKUPMON is not configured. Going through 1st time setup!"
+    sleep 3
+    vconfig
   fi
 
   while true; do
@@ -1227,8 +1228,9 @@ restore() {
           while [ $ok = 0 ]
           do
             if [ $FREQUENCY == "W" ]; then
-              echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri): "
+              echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
               read BACKUPDATE1
+              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
               if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
               then
                 echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -1236,8 +1238,9 @@ restore() {
                 ok=1
               fi
             elif [ $FREQUENCY == "M" ]; then
-              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27): "
+              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
               read BACKUPDATE1
+              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
               if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
               then
                 echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
@@ -1245,8 +1248,9 @@ restore() {
                 ok=1
               fi
             elif [ $FREQUENCY == "Y" ]; then
-              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270): "
+              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
               read BACKUPDATE1
+              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
               if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
               then
                 echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -1254,8 +1258,9 @@ restore() {
                 ok=1
               fi
             elif [ $FREQUENCY == "P" ]; then
-              echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422): "
+              echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
               read BACKUPDATE1
+              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
               if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
               then
                 echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
