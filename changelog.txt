@@ -1,3 +1,6 @@
+v1.0    - (September 14, 2023)
+        - RELEASE:  I'm satisfied... let's go live!
+
 v0.92RC - (September 12, 2023)
         - FIXED: Issue where when backupmon was newly downloaded and installed, the setup menu would be going through a
           loop because it was referencing that the .cfg file was not found, and telling you to run setup. All fixed!
