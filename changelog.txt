@@ -1,3 +1,10 @@
+v1.02   - (September 15, 2023)
+        - ADDED: Thanks to @maghuro and @alan6854321 for the suggestion to include a copy of the NVRAM settings. Please
+          note... this extract is for reference purposes only, and cannot be used to import old NVRAM values back into
+          your router. The 'nvram.txt' file is now included with the other assortment of files that are exported into
+          the root of your external backup folder.
+        - FIXED: Thanks to @maghuro for finding the typo in the config for the username/password labels.
+
 v1.0    - (September 14, 2023)
         - RELEASE:  I'm satisfied... let's go live!
 
