@@ -1,8 +1,8 @@
 v1.1    - (September 16, 2023)
         - MAJOR: Many thanks to @maghuro and @ColinTaylor for their advice on NVRAM backups! BACKUPMON will now not only
           take backups of JFFS, your external USB drive, but also NVRAM! These 3 backups are stored under each of your
-          daily folders. In case of a restore, these snapshots will in concert together to bring your router back to its
-          exact same state as before, settings and ALL!
+          daily folders. In case of a restore, these snapshots will work in concert together to bring your router back to
+          its exact same state as before, settings and ALL!
         - FIXED: Some minor instruction verbiage changes in the restore instructions, as I blew away my old AC86U during
           the testing process of getting it restored back to a previous state with BACKUPMON. 
 
