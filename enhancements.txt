@@ -1,5 +1,6 @@
 Future Enhancements (Planned)
 -----------------------------
+* Allow for automated purging
 
 In Progress:
 ------------
