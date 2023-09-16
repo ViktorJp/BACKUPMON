@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.1 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.12 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.1                                                     # Current version
+Version=1.12                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -164,6 +164,11 @@ vconfig () {
   if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
     source $CFGPATH
 
+    # Determine router model
+    if [ -z "$ROUTERMODEL" ]; then
+      [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
+    fi
+
     while true; do
       clear
       logoNM
@@ -171,6 +176,7 @@ vconfig () {
       echo -e "${CGreen}----------------------------------------------------------------"
       echo -e "${CGreen}Configuration Utility Options"
       echo -e "${CGreen}----------------------------------------------------------------"
+      echo -e "${InvDkGray}${CWhite}   ${CClear}${CCyan}: Source Router Model         :"${CGreen}$ROUTERMODEL
       echo -e "${InvDkGray}${CWhite} 1 ${CClear}${CCyan}: Backup Target Username      :"${CGreen}$USERNAME
       echo -e "${InvDkGray}${CWhite} 2 ${CClear}${CCyan}: Backup Target Password      :"${CGreen}$PASSWORD
       if [ "$UNCUPDATED" == "True" ]; then
@@ -455,7 +461,9 @@ vconfig () {
               if [ $UNCUPDATED == "False" ]; then
                 UNC=$(echo $UNC | sed -e 's,\\,\\\\,g')
               fi
-                { echo 'BKCONFIG="'"Custom"'"'
+
+                { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
+                  echo 'BKCONFIG="'"Custom"'"'
                   echo 'USERNAME="'"$USERNAME"'"'
                   echo 'PASSWORD="'"$PASSWORD"'"'
                   echo 'UNC="'"$UNC"'"'
@@ -486,8 +494,13 @@ vconfig () {
     done
 
   else
+
+      # Determine router model
+      [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
+
       #Create a new config file with default values to get it to a basic running state
-      { echo 'BKCONFIG="Default"'
+      { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
+        echo 'BKCONFIG="Default"'
         echo 'USERNAME="admin"'
         echo 'PASSWORD="admin"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
@@ -1217,6 +1230,18 @@ restore() {
   echo ""
   echo -e "${CCyan}Messages:"
 
+  # Determine router model
+  [ -z "$(nvram get odmpid)" ] && RESTOREMODEL="$(nvram get productid)" || RESTOREMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
+
+  if [ "$ROUTERMODEL" != "$RESTOREMODEL" ]; then
+    echo -e "${CRed}ERROR: Original source router model is different from target router model."
+    echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
+    echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
+    logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
+    echo ""
+    exit 0
+  fi
+
   # Create the local drive mount directory
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
@@ -1362,11 +1387,9 @@ restore() {
             echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
             nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
             echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
-            printf "Reboot? "
-            if promptyn "Reboot? (y/n): "; then
-              /sbin/service 'reboot'
-            fi
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            /sbin/service 'reboot'
           fi
 
         elif [ $MODE == "Advanced" ]; then
@@ -1390,11 +1413,9 @@ restore() {
             echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
             nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
             echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
-            printf "Reboot? "
-            if promptyn "(y/n): "; then
-              /sbin/service 'reboot'
-            fi
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            /sbin/service 'reboot'
           fi
         fi
 
