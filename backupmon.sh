@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.02 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.1 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.02                                                    # Current version
+Version=1.1                                                     # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -941,15 +941,19 @@ backup() {
         # Remove old tar files if they exist in the daily folders
         if [ $FREQUENCY == "W" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg*
           [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "M" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg*
           [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "Y" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg*
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "P" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar*
+          [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg*
           [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar*
         fi
       fi
@@ -1004,6 +1008,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -1013,6 +1022,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
+
         elif [ $FREQUENCY == "Y" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -1022,6 +1036,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
+
         elif [ $FREQUENCY == "P" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -1031,6 +1050,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg.${CClear}"
+
         fi
 
       elif [ $MODE == "Advanced" ]; then
@@ -1076,6 +1100,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -1085,6 +1114,11 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+
         elif [ $FREQUENCY == "Y" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -1094,6 +1128,10 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
         fi
 
       fi
@@ -1110,9 +1148,9 @@ backup() {
         echo -e "${CGreen}STATUS: Finished copying ${CYellow}$EXCLFILE${CGreen} script to ${UNCDRIVE}${BKDIR}.${CClear}"
       fi
 
-      #Please note: the NVRAM export is for reference only. This file cannot be used to restore from, just reference from.
+      #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
       nvram show 2>/dev/null > ${UNCDRIVE}${BKDIR}/nvram.txt
-      echo -e "${CGreen}STATUS: Finished copying ${CYellow}nvram.txt${CGreen} extract to ${UNCDRIVE}${BKDIR}.${CClear}"
+      echo -e "${CGreen}STATUS: Finished copying reference ${CYellow}nvram.txt${CGreen} extract to ${UNCDRIVE}${BKDIR}.${CClear}"
 
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
@@ -1120,12 +1158,14 @@ backup() {
         echo 'IMPORTANT: Your original USB Drive name was:' ${EXTLABEL}
         echo ''
         echo 'Please ensure your have performed the following before restoring your backups:'
-        echo '1.) Format a new USB drive on your router using AMTM, calling it the exact same name as before (see above)!'
-        echo '2.) Enable JFFS scripting in the router OS, and perform a reboot.'
-        echo '3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder.'
-        echo '4.) Run "backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
-        echo '5.) Run "backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
-        echo '6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
+        echo '1.) Enable SSH in UI, and connect via an SSH Terminal (like PuTTY).'
+        echo '2.) Run "AMTM" and format a new USB drive on your router - call it exactly the same name as before (see above)! Reboot.'
+        echo '3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS.'
+        echo '4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot.'
+        echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
+        echo '6.) Run "sh backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
+        echo '7.) Run "sh backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
+        echo '8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
       } > ${UNCDRIVE}${BKDIR}/instructions.txt
       echo -e "${CGreen}STATUS: Finished copying restoration ${CYellow}instructions.txt${CGreen} to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "${CGreen}STATUS: Settling for 10 seconds..."
@@ -1165,13 +1205,15 @@ restore() {
   echo -e "${CGreen}[Restore Backup Commencing]..."
   echo ""
   echo -e "${CGreen}Please ensure your have performed the following before restoring your backups:"
-  echo -e "${CGreen}1.) Format a new USB drive on your router using AMTM, calling it the exact same name as before!"
-  echo -e "${CGreen}    (please refer to your restore instruction.txt file to find your original USB drive label)"
-  echo -e "${CGreen}2.) Enable JFFS scripting in the router OS, and perform a reboot."
-  echo -e "${CGreen}3.) Restore the backupmon.sh & .cfg files (located under your backup folder) into your /jffs/scripts folder."
-  echo -e "${CGreen}4.) Run 'backupmon.sh -setup' and ensure that all of the settings are correct before running a restore!"
-  echo -e "${CGreen}5.) Run 'backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
-  echo -e "${CGreen}6.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
+  echo -e "${CGreen}1.) Enable SSH in UI, and connect via an SSH Terminal (like PuTTY)."
+  echo -e "${CGreen}2.) Run 'AMTM' and format a new USB drive on your router - call it exactly the same name as before! Reboot."
+  echo -e "${CYellow}    (please refer to your restore instruction.txt file to find your original USB drive label)"
+  echo -e "${CGreen}3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
+  echo -e "${CGreen}4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot."
+  echo -e "${CGreen}5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder."
+  echo -e "${CGreen}6.) Run 'sh backupmon.sh -setup' and ensure that all of the settings are correct before running a restore."
+  echo -e "${CGreen}7.) Run 'sh backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
+  echo -e "${CGreen}8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
   echo -e "${CCyan}Messages:"
 
@@ -1294,6 +1336,9 @@ restore() {
               echo ""
               echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
               read ADVUSB
+              echo ""
+              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
+              read ADVNVRAM
               break
             fi
           fi
@@ -1301,8 +1346,8 @@ restore() {
 
         if [ $MODE == "Basic" ]; then
           echo ""
-          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS and the entire contents of your External"
-          echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo ""
           echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
@@ -1314,17 +1359,24 @@ restore() {
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
             echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
             echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
+            printf "Reboot? "
+            if promptyn "Reboot? (y/n): "; then
+              /sbin/service 'reboot'
+            fi
           fi
 
         elif [ $MODE == "Advanced" ]; then
           echo ""
-          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS and the entire contents of your External"
-          echo -e "USB drive back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo -e "JFFS filename: $ADVJFFS"
           echo -e "EXT USB filename: $ADVUSB"
+          echo -e "NVRAM filename: $ADVNVRAM"
           echo ""
           echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
@@ -1335,8 +1387,14 @@ restore() {
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
             echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
             tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
             echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot!${CClear}"
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Please reboot now!${CClear}"
+            printf "Reboot? "
+            if promptyn "(y/n): "; then
+              /sbin/service 'reboot'
+            fi
           fi
         fi
 
