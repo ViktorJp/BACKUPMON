@@ -1,3 +1,13 @@
+v1.12   - (September 16, 2023)
+        - FIXED: You guys are getting a BOGO today. Thanks to @ColinTaylor for the recommendation to force a reboot after
+          restoring the NVRAM.cfg file, instead of prompting the user to choose y/n. I agree... this should be done
+          immediately after, just like when restoring NVRAM from the UI.
+        - ADDED: Good suggestion from @maghuro to check to make sure the source/target routers are the same, so that
+          people aren't trying to restore an RT-AC86U backup onto a GT-AX6000, thinking this is all fine and all. Added
+          some logic in there that captures router model and saves it to your config, and will compare that to the router
+          model when you start a restore. Please make sure you save a fresh copy of your configs as this value will need
+          to be written before a restore can happen.
+
 v1.1    - (September 16, 2023)
         - MAJOR: Many thanks to @maghuro and @ColinTaylor for their advice on NVRAM backups! BACKUPMON will now not only
           take backups of JFFS, your external USB drive, but also NVRAM! These 3 backups are stored under each of your
