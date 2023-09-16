@@ -5,8 +5,9 @@ v1.12   - (September 16, 2023)
         - ADDED: Good suggestion from @maghuro to check to make sure the source/target routers are the same, so that
           people aren't trying to restore an RT-AC86U backup onto a GT-AX6000, thinking this is all fine and all. Added
           some logic in there that captures router model and saves it to your config, and will compare that to the router
-          model when you start a restore. Please make sure you save a fresh copy of your configs as this value will need
-          to be written before a restore can happen.
+          model when you start a restore. This is the best attempt I can come up with to prevent people from bricking
+          their router, and a last stop-gap measure to prevent a restore from doing potential damage. Please make sure you
+          save a fresh copy of your configs as this value will need to be written before a restore can happen.
 
 v1.1    - (September 16, 2023)
         - MAJOR: Many thanks to @maghuro and @ColinTaylor for their advice on NVRAM backups! BACKUPMON will now not only
