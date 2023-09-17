@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.14 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.15 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.14                                                    # Current version
+Version=1.15                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1619,19 +1619,6 @@ if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/nul
   echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
 fi
 
-# Determine if the config is local or under /jffs/addons/backupmon.d
-if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-  source $CFGPATH
-elif [ -f /jffs/scripts/backupmon.cfg ]; then
-  source /jffs/scripts/backupmon.cfg
-  cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-else
-  clear
-  echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-  echo -e "${CClear}"
-  exit 0
-fi
-
 updatecheck
 
 # Check and see if any commandline option is being used
@@ -1704,12 +1691,40 @@ fi
 # Check to see if the backup option is being called
 if [ "$1" == "-backup" ]
   then
+
+    # Determine if the config is local or under /jffs/addons/backupmon.d
+    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+      source $CFGPATH
+    elif [ -f /jffs/scripts/backupmon.cfg ]; then
+      source /jffs/scripts/backupmon.cfg
+      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+    else
+      clear
+      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CClear}"
+      exit 0
+    fi
+
     BSWITCH="True"
 fi
 
 # Check to see if the backup option is being called
 if [ "$1" == "-noswitch" ]
   then
+
+    # Determine if the config is local or under /jffs/addons/backupmon.d
+    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+      source $CFGPATH
+    elif [ -f /jffs/scripts/backupmon.cfg ]; then
+      source /jffs/scripts/backupmon.cfg
+      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+    else
+      clear
+      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CClear}"
+      exit 0
+    fi
+
     BSWITCH="False"
 fi
 
