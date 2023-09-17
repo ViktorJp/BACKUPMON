@@ -1,3 +1,7 @@
+v1.15   - (September 17, 2023)
+        - FIXED: Minor bug fix preventing a new install from getting into setup! So much for optimizations! :) Thanks
+          much to @visortgw for the catch!
+
 v1.14   - (September 17, 2023)
         - MAJOR: Added an auto-purge feature! Based on the existing purge feature from the operations section under the
           setup menu, when calling "sh backupmon.sh -purge", it will use the purge settings you have configured to trim
