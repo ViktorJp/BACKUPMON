@@ -796,6 +796,13 @@ purgebackups () {
 # autopurge is a function that allows you to purge backups throught a commandline switch... if you're daring!
 autopurge () {
   clear
+  
+  if [ $FREQUENCY != "P" ]; then
+    echo -e "${CRed}ERROR: Perpetual backups are not configured. Please check your configuration. Exiting.${CClear}\n"
+    logger "BACKUPMON ERROR: Perpetual backups are not configured. Please check your configuration."
+    exit 0
+  fi
+  
   logoNM
   echo ""
   echo -e "${CYellow}Auto Purge Perpetual Backups Utility${CClear}"
