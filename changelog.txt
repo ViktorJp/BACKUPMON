@@ -1,7 +1,7 @@
 v1.14   - (September 17, 2023)
         - ADDED: Thanks to @visortgw, added functionality to bypass the 10 second initial timer when using the -backup
           switch. If BACKUPMON is called without switches, it will use the 10 second timer.
-        - MINOR: General improvements to visual spacing, messaging and logging
+        - MINOR: General improvements to visual spacing, messaging and logging.
 
 v1.12   - (September 16, 2023)
         - FIXED: You guys are getting a BOGO today. Thanks to @ColinTaylor for the recommendation to immediately force a 
