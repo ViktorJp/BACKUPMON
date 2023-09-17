@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.12 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.14 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.12                                                    # Current version
+Version=1.14                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -34,6 +34,7 @@ FREQUENCY="M"                                                   # Frequency of b
 MODE="Basic"                                                    # The operational mode of BACKUPMON - basic/advanced
 PURGE=0                                                         # Tracking whether perpetual backup purging is active
 PURGELIMIT=0                                                    # Age of older perpetual backups to be purged
+BSWITCH="False"                                                 # Tracking -backup switch to eliminate timer
 
 # Color variables
 CBlack="\e[1;30m"
@@ -260,7 +261,6 @@ vconfig () {
               echo -e "${CClear}"
               read -rp 'Backup Target UNC Path: ' UNC1
               if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="\\\\\\\\192.168.50.25\\\\Backups"; else UNC="$UNC1"; fi # Using default value on enter keypress
-              #UNC=$UNC1
               UNCUPDATED="True"
             ;;
 
@@ -482,6 +482,7 @@ vconfig () {
               logger "BACKUPMON INFO: Successfully wrote a new config file"
               sleep 3
               UNCUPDATED="False"
+              UNC=$(echo -e "$UNC")
               return
             ;;
 
@@ -700,7 +701,7 @@ purgebackups () {
           mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
             break
           else
             echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
@@ -730,6 +731,7 @@ purgebackups () {
       # If there are no valid backups within range, display a message and exit
       if [ $count -eq 0 ]; then
         echo -e "${CYellow}INFO: No perpetual backup folders were identified older than $PURGELIMIT days.${CClear}"
+        logger "BACKUPMON INFO: No perpetual backup folders identified older than $PURGELIMIT days were found. Nothing to delete."
         read -rsp $'Press any key to acknowledge...\n' -n1 key
         echo ""
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
@@ -755,6 +757,7 @@ purgebackups () {
 
         echo ""
         echo -e "${CGreen}STATUS: Perpetual backup folders older than $PURGELIMIT days deleted.${CClear}"
+        logger "BACKUPMON INFO: Perpetual backup folders older than $PURGELIMIT days were deleted."
         read -rsp $'Press any key to acknowledge...\n' -n1 key
         echo ""
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
@@ -762,20 +765,19 @@ purgebackups () {
 
         unmountdrv
 
-        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}\n"
         sleep 2
         return
 
       else
 
         echo ""
-        echo ""
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
 
         unmountdrv
 
-        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}"
+        echo -e "\n${CGreen}Exiting Purge Perpetual Backups Utility...${CClear}\n"
         sleep 2
         return
       fi
@@ -787,6 +789,111 @@ purgebackups () {
     sleep 2
     return
   fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# autopurge is a function that allows you to purge backups throught a commandline switch... if you're daring!
+autopurge () {
+  clear
+  logoNM
+  echo ""
+  echo -e "${CYellow}Auto Purge Perpetual Backups Utility${CClear}"
+  echo ""
+  echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible, permanent and"
+  echo -e "${CCyan}fully automatic, so you have zero control! AWESOMESAUCE! BACKUPMON will by"
+  echo -e "${CCyan}default show you which backups older than ${CYellow}$PURGELIMIT days${CCyan} are being deleted, as you"
+  echo -e "${CCyan}rejoice in seeing disk space being freed up."
+  echo -e "\n${CCyan}Messages:"
+
+  # Create the local drive mount directory
+  if ! [ -d $UNCDRIVE ]; then
+      mkdir -p $UNCDRIVE
+      chmod 777 $UNCDRIVE
+      echo -e "${CYellow}ALERT: External Drive directory not set. Created under: $UNCDRIVE ${CClear}"
+      sleep 3
+  fi
+
+  # If the mount does not exist yet, proceed
+  if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
+
+    # Check if the build supports modprobe
+    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+    fi
+
+    # Mount the local drive directory to the UNC
+    CNT=0
+    TRIES=12
+      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
+        MRC=$?
+        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+          echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+          break
+        else
+          echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+          sleep 10
+          CNT=$((CNT+1))
+          if [ $CNT -eq $TRIES ];then
+            echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting.${CClear}\n"
+            logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+            exit 0
+          fi
+        fi
+      done
+    sleep 2
+  fi
+
+  # If the UNC is successfully mounted, proceed
+  if [ -n "`mount | grep $UNCDRIVE`" ]; then
+
+      # Continue with deleting backups permanently
+      count=0
+      for FOLDER in $(ls ${UNCDRIVE}${BKDIR} -1)
+      do
+        _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT delete
+      done
+
+      # If there are no valid backups within range, display a message and exit
+      if [ $count -eq 0 ]; then
+        echo -e "${CYellow}INFO: No perpetual backup folders were identified older than $PURGELIMIT days.${CClear}"
+        logger "BACKUPMON INFO: No perpetual backup folders were identified older than $PURGELIMIT days. Nothing to delete."
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
+        sleep 2
+        exit 0
+
+      else
+
+        echo -e "${CGreen}STATUS: Perpetual backup folders older than $PURGELIMIT days deleted.${CClear}"
+        logger "BACKUPMON INFO: Perpetual backup folders older than $PURGELIMIT days were deleted."
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
+        sleep 2
+        exit 0
+      fi
+
+  else
+
+    echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+    sleep 10
+
+    unmountdrv
+
+    echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}"
+    sleep 2
+    return
+  fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1501,18 +1608,36 @@ if [ ! -d "/jffs/addons/backupmon.d" ]; then
   mkdir -p "/jffs/addons/backupmon.d"
 fi
 
+# Check for and add an alias for BACKUPMON
+if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
+  echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
+fi
+
+# Determine if the config is local or under /jffs/addons/backupmon.d
+if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+  source $CFGPATH
+elif [ -f /jffs/scripts/backupmon.cfg ]; then
+  source /jffs/scripts/backupmon.cfg
+  cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+else
+  clear
+  echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+  echo -e "${CClear}"
+  exit 0
+fi
+
 updatecheck
 
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
   then
     clear
-    sh /jffs/scripts/backupmon.sh -backup
+    sh /jffs/scripts/backupmon.sh -noswitch
     exit 0
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ]
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-purge" ]
   then
     clear
   else
@@ -1551,24 +1676,9 @@ fi
 # Check to see if the restore option is being called
 if [ "$1" == "-restore" ]
   then
-
-    # Grab the config and read it in
-    if [ -f $CFGPATH ]; then
-      source $CFGPATH
-    elif [ -f /jffs/scripts/backupmon.cfg ]; then
-      source /jffs/scripts/backupmon.cfg
-      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-    else
-      clear
-      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-      echo -e "${CClear}"
-      exit 0
-    fi
-
     restore
     echo -e "${CClear}"
     exit 0
-
 fi
 
 # Check to see if the setup option is being called
@@ -1577,13 +1687,22 @@ if [ "$1" == "-setup" ]
     vsetup
 fi
 
+# Check to see if the purge option is being called
+if [ "$1" == "-purge" ]
+  then
+    autopurge
+fi
+
 # Check to see if the backup option is being called
 if [ "$1" == "-backup" ]
   then
-    # Check for and add an alias for BACKUPMON
-    if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
-  		echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
-    fi
+    BSWITCH="True"
+fi
+
+# Check to see if the backup option is being called
+if [ "$1" == "-noswitch" ]
+  then
+    BSWITCH="False"
 fi
 
 clear
@@ -1598,19 +1717,6 @@ echo ""
 echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
 echo ""
 
-# Determine if the config is local or under /jffs/addons/backupmon.d
-if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-  source $CFGPATH
-elif [ -f /jffs/scripts/backupmon.cfg ]; then
-  source /jffs/scripts/backupmon.cfg
-  cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-else
-  clear
-  echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-  echo -e "${CClear}"
-  exit 0
-fi
-
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
@@ -1621,16 +1727,20 @@ echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${CCyan}Mode: ${CGreen}$MODE"
 echo ""
 
-# Run a 10sec timer
-i=0
-while [ $i -ne 10 ]
-do
-    preparebar 51 "|"
-    progressbaroverride $i 10 "" "s" "Standard"
-    i=$(($i+1))
-done
+# If the -backup switch is used then bypass the counter for immediate backup
+if [ "$BSWITCH" == "False" ]; then
+  # Run a 10sec timer
+  i=0
+  while [ $i -ne 10 ]
+  do
+      preparebar 51 "|"
+      progressbaroverride $i 10 "" "s" "Standard"
+      i=$(($i+1))
+  done
+fi
 
 # Run a normal backup
+BSWITCH="False"
 echo -e "${CGreen}[Normal Backup Commencing]..."
 echo ""
 echo -e "${CCyan}Messages:"
