@@ -1,4 +1,8 @@
 v1.14   - (September 17, 2023)
+        - MAJOR: Added an auto-purge feature! Based on the existing purge feature from the operations section under the
+          setup menu, when calling "sh backupmon.sh -purge", it will use the purge settings you have configured to trim
+          your perpetual backups without any user input. You can utilize this switch in conjunction with a daily CRON job
+          to keep your backups trimmed.
         - ADDED: Thanks to @visortgw, added functionality to bypass the 10 second initial timer when using the -backup
           switch. If BACKUPMON is called without switches, it will use the 10 second timer.
         - MINOR: General improvements to visual spacing, messaging and logging.
