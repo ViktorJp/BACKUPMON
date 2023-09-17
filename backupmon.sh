@@ -371,9 +371,9 @@ vconfig () {
               while true; do
                 read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
-                    [Ww] ) FREQUENCY="W"; break ;;
-                    [Mm] ) FREQUENCY="M"; break ;;
-                    [Yy] ) FREQUENCY="Y"; break ;;
+                    [Ww] ) FREQUENCY="W"; PURGE=0; PURGELIMIT=0; break ;;
+                    [Mm] ) FREQUENCY="M"; PURGE=0; PURGELIMIT=0; break ;;
+                    [Yy] ) FREQUENCY="Y"; PURGE=0; PURGELIMIT=0; break ;;
                     [Pp] ) FREQUENCY="P"; MODE="Basic" break ;;
                     "" ) echo -e "\n Error: Please use either M, W, Y or P\n";;
                     * ) echo -e "\n Error: Please use either M, W, Y or P\n";;
@@ -416,7 +416,6 @@ vconfig () {
                   PURGE=0
                   PURGELIMIT=0
                 fi
-
               fi
 
             ;;
