@@ -1,3 +1,8 @@
+v1.17   - (September 18, 2023)
+        - FIXED: Bugs associated with adding a CRON job were found while adding the request that @Ripshod made note
+          of, and now updates the cru job with the correct time if you happen to change the time without the need to
+          first disable and then re-enable the backup scheduler!
+
 v1.16   - (September 18, 2023)
         - FIXED: Another minor bug fix that was preventing the -purge switch from working correctly. Many thanks to
           @Stephen Harrington for identifying that!
