@@ -1,6 +1,7 @@
 Future Enhancements (Planned)
 -----------------------------
 * Allow for multiple configs to perform redundant backups to multiple targets
+* Option to add the -backup switch to the cron job
 
 In Progress:
 ------------
