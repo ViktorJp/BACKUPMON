@@ -1,11 +1,12 @@
 Future Enhancements (Planned)
 -----------------------------
-* Allow for automated purging
+* Allow for multiple configs to perform redundant backups to multiple targets
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Allow for automated purging
 * Allow choice between doing backups in 1 week, 1 month, or 1 year cycles
 * Schedule a regular backup event in CRON
