@@ -1,5 +1,11 @@
-v1.1x   - (tba)
-        - FIXED: 
+v1.16   - (September 18, 2023)
+        - FIXED: Another minor bug fix that was preventing the -purge switch from working correctly. Many thanks to
+          @Stephen Harrington for identifying that!
+        - ADDED: By request, if you have enabled "Purge Backups" in the configuration menu, then auto purge will
+          automatically run if you call BACKUPMON with the -backup switch, ie: "sh backupmon.sh -backup". After it
+          completes a backup, it will auto purge any backups that fall in range with the set number of days value. You
+          can still run BACKUPMON without auto purging, even if "Purge Backups" is enabled, by just running BACKUPMON
+          without switches, ie: "sh backupmon.sh"
 
 v1.15   - (September 17, 2023)
         - FIXED: Minor bug fix preventing a new install from getting into setup! So much for optimizations! :) Thanks
