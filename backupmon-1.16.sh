@@ -1804,13 +1804,17 @@ if [ "$BSWITCH" == "False" ]; then
 fi
 
 # Run a normal backup
-BSWITCH="False"
 echo -e "${CGreen}[Normal Backup Commencing]..."
 echo ""
 echo -e "${CCyan}Messages:"
 
 backup
 
+if [ $PURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then
+  autopurge
+fi
+
+BSWITCH="False"
 echo -e "${CClear}"
 exit 0
 
