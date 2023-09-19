@@ -1629,19 +1629,6 @@ if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/nul
   echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
 fi
 
-# Determine if the config is local or under /jffs/addons/backupmon.d
-if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-  source $CFGPATH
-elif [ -f /jffs/scripts/backupmon.cfg ]; then
-  source /jffs/scripts/backupmon.cfg
-  cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-else
-  clear
-  echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-  echo -e "${CClear}"
-  exit 0
-fi
-
 updatecheck
 
 # Check and see if any commandline option is being used
