@@ -1,3 +1,7 @@
+v1.18   - (September 20, 2023)
+        - FIXED: Bug associated with generating a correct CRON statement. Thanks to @Stephen Harrington for the
+          catch. Minutes and hours were reversed, and has been corrected.
+
 v1.17   - (September 18, 2023)
         - FIXED: Bugs associated with adding a CRON job were found while adding the request that @Ripshod made note
           of, and now updates the cru job with the correct time if you happen to change the time without the need to
