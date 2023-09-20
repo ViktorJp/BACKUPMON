@@ -1,7 +1,7 @@
-#!/bin/sh
+.#!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.17 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.18 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.17                                                    # Current version
+Version=1.18                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -329,20 +329,20 @@ vconfig () {
                 if [ -f /jffs/scripts/services-start ]; then
 
                   if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
-                    echo 'cru a RunBackupMon "'"$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
-                    cru a RunBackupMon "$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"
+                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
                   else
                     #delete and re-add if it already exists in case there's a time change
                     sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
                     cru d RunBackupMon
-                    echo 'cru a RunBackupMon "'"$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
-                    cru a RunBackupMon "$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"
+                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
                   fi
 
                 else
-                  echo 'cru a RunBackupMon "'"$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+                  echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
                   chmod 755 /jffs/scripts/services-start
-                  cru a RunBackupMon "$SCHEDULEHRS $SCHEDULEMIN * * * sh /jffs/scripts/backupmon.sh"
+                  cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
                 fi
 
               else
