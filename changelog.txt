@@ -2,9 +2,11 @@ v1.20b1 - (September 24, 2023)
         - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
           the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
           set up a secondary backup target. You can choose a completely different kind of backup frequency compared
-          to your primary backup method, and will also be able to be purged/autopurged should you allow it. When you
-          install this version, **please** make sure you save a new configuration from the configuration utility as
-          many new variables have been added to keep track of this functionality.
+          to your primary backup method, and will also be able to be purged/autopurged should you allow it. Also, if
+          secondary backups are enabled, when you run the restoration procedure, it will prompt you whether you want
+          to restore from your primary or secondary backup source. When you install this version, **please** make
+          sure you save a new configuration from the configuration utility as many new variables have been added to
+          keep track of this functionality.
         - MINOR: Added a notification in the configuration utility to remind you to save when new activity has been
           noticed. 
         - MINOR: General improvements to visual consistency and messaging.
