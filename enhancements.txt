@@ -1,6 +1,6 @@
 Future Enhancements (Planned)
 -----------------------------
-* Allow for multiple configs to perform redundant backups to multiple targets
+* A connection tester functionality to test backup target username/pwd/paths for a successful connection
 * Option to add the -backup switch to the cron job
 
 In Progress:
@@ -8,6 +8,7 @@ In Progress:
 
 Completed:
 ----------
+* Allow for multiple configs to perform redundant backups to multiple targets
 * Allow for automated purging
 * Allow choice between doing backups in 1 week, 1 month, or 1 year cycles
 * Schedule a regular backup event in CRON
