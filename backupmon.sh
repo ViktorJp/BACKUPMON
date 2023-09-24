@@ -1,4 +1,4 @@
-.#!/bin/sh
+#!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
 # BACKUPMON v1.18 heavily modified and restore functionality added by @Viktor Jaep, 2023
