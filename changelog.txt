@@ -1,3 +1,14 @@
+v1.20b1 - (September 24, 2023)
+        - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
+          the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
+          set up a secondary backup target. You can choose a completely different kind of backup frequency compared
+          to your primary backup method, and will also be able to be purged/autopurged should you allow it. When you
+          install this version, **please** make sure you save a new configuration from the configuration utility as
+          many new variables have been added to keep track of this functionality.
+        - MINOR: Added a notfication in the configuration utility to remind you to save when new activity has been
+          noticed. 
+        - MINOR: General improvements to visual consistency and messaging.
+
 v1.18   - (September 20, 2023)
         - FIXED: Bug associated with generating a correct CRON statement. Thanks to @Stephen Harrington for the
           catch. Minutes and hours were reversed, and has been corrected.
