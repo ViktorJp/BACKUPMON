@@ -1,4 +1,4 @@
-v1.20b1 - (September 24, 2023)
+v1.20b3 - (September 25, 2023)
         - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
           the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
           set up a secondary backup target. You can choose a completely different kind of backup frequency compared
@@ -7,6 +7,14 @@ v1.20b1 - (September 24, 2023)
           to restore from your primary or secondary backup source. When you install this version, **please** make
           sure you save a new configuration from the configuration utility as many new variables have been added to
           keep track of this functionality.
+        - MAJOR: Added a Backup Target Network Connection Tester... in a situation where you might be setting up a new
+          device, or just trying to troubleshoot, it's easier to just try your username/password, UNC path, local drive
+          mount path and target network folders from this utility than beating your head against trying to run a backup
+          with these settings. You receive on-screen feedback when things are going right or wrong. When you have
+          achieved success, test backup folders will be created under your network target, and a testfile will have
+          been written to ensure you have proper read/write permissions. When the connection tester reports success,
+          you can copy those settings over to your primary network backup config. This item is found under the Setup +
+          Operations Menu, item "TS" allows you to run this utility. 
         - MINOR: Added a notification in the configuration utility to remind you to save when new activity has been
           noticed. 
         - MINOR: General improvements to visual consistency and messaging.
