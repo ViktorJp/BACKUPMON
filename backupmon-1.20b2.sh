@@ -185,6 +185,8 @@ vconfig () {
   if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
     source $CFGPATH
 
+    if [ -z $SECONDARYPURGE ]; then SECONDARYPURGE=0; fi
+
     # Determine router model
     if [ -z "$ROUTERMODEL" ]; then
       [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
