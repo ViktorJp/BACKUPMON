@@ -829,6 +829,8 @@ vuninstall () {
         clear
         rm -f -r /jffs/addons/backupmon.d
         rm -f /jffs/scripts/backupmon.sh
+        sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
+        cru d RunBackupMon
         echo ""
         echo -e "\n${CGreen}BACKUPMON has been uninstalled...${CClear}"
         echo ""
