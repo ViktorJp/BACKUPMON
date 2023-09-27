@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.18 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.20 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.18                                                    # Current version
+Version=1.20                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -26,15 +26,35 @@ YDAY="$(date +%j)"                                              # Current day # 
 EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"            # Grabbing the External USB Drive path
 EXTLABEL="$(nvram get usb_path_sda1_label)"                     # Grabbing the External USB Label name
 UNCUPDATED="False"                                              # Tracking if the UNC was updated or not
+SECONDARYUNCUPDATED="False"                                     # Tracking if the Secondary UNC was updated or not
 UpdateNotify=0                                                  # Tracking whether a new update is available
-SCHEDULE=0                                                      # Tracking whether automatic backups are scheduled
-SCHEDULEHRS=2                                                   # Automatic backup hours (in 24hr format)
-SCHEDULEMIN=30                                                  # Automatic backup minutes
-FREQUENCY="M"                                                   # Frequency of backups -- weekly, monthly, yearly, perpetual
-MODE="Basic"                                                    # The operational mode of BACKUPMON - basic/advanced
-PURGE=0                                                         # Tracking whether perpetual backup purging is active
-PURGELIMIT=0                                                    # Age of older perpetual backups to be purged
 BSWITCH="False"                                                 # Tracking -backup switch to eliminate timer
+
+# Config variables
+USERNAME="admin"
+PASSWORD="admin"
+UNC="\\\\192.168.50.25\\Backups"
+UNCDRIVE="/tmp/mnt/backups"
+BKDIR="/router/GT-AX6000-Backup"
+EXCLUSION=""
+SCHEDULE=0
+SCHEDULEHRS=2
+SCHEDULEMIN=30
+FREQUENCY="M"
+MODE="Basic"
+PURGE=0
+PURGELIMIT=0
+SECONDARYSTATUS=0
+SECONDARYUSER="admin"
+SECONDARYPWD="admin"
+SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"
+SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"
+SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"
+SECONDARYEXCLUSION=""
+SECONDARYFREQUENCY="M"
+SECONDARYMODE="Basic"
+SECONDARYPURGE=0
+SECONDARYPURGELIMIT=0
 
 # Color variables
 CBlack="\e[1;30m"
@@ -67,7 +87,7 @@ logoNM () {
   echo -e "    / __ )/   | / ____/ //_/ / / / __ \/  |/  / __ \/ | / /"
   echo -e "   / __  / /| |/ /   / ,< / / / / /_/ / /|_/ / / / /  |/ /"
   echo -e "  / /_/ / ___ / /___/ /| / /_/ / ____/ /  / / /_/ / /|  /"
-  echo -e " /_____/_/  |_\____/_/ |_\____/_/   /_/  /_/\____/_/ |_/  ${CGreen}v$Version${CYellow}${CClear}"
+  echo -e " /_____/_/  |_\____/_/ |_\____/_/   /_/  /_/\____/_/ |_/ ${CGreen}v$Version${CYellow}${CClear}"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -165,39 +185,43 @@ vconfig () {
   if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
     source $CFGPATH
 
+    if [ -z $SECONDARYPURGE ]; then SECONDARYPURGE=0; fi
+
     # Determine router model
     if [ -z "$ROUTERMODEL" ]; then
       [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
     fi
+
+    CHANGES=0 #track notification to save your changes
 
     while true; do
       clear
       logoNM
       echo ""
       echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${CGreen}Configuration Utility Options"
+      echo -e "${CGreen}Primary Backup Configuration Options"
       echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${InvDkGray}${CWhite}   ${CClear}${CCyan}: Source Router Model         :"${CGreen}$ROUTERMODEL
-      echo -e "${InvDkGray}${CWhite} 1 ${CClear}${CCyan}: Backup Target Username      :"${CGreen}$USERNAME
-      echo -e "${InvDkGray}${CWhite} 2 ${CClear}${CCyan}: Backup Target Password      :"${CGreen}$PASSWORD
+      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Model             :"${CGreen}$ROUTERMODEL
+      echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Backup Target Username          :"${CGreen}$USERNAME
+      echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Backup Target Password          :"${CGreen}$PASSWORD
       if [ "$UNCUPDATED" == "True" ]; then
-        echo -en "${InvDkGray}${CWhite} 3 ${CClear}${CCyan}: Backup Target UNC Path      :"${CGreen};printf '%s' $UNC; printf "%s\n"
+        echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target UNC Path          :"${CGreen};printf '%s' $UNC; printf "%s\n"
       else
-        echo -en "${InvDkGray}${CWhite} 3 ${CClear}${CCyan}: Backup Target UNC Path      :"${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
+        echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target UNC Path          :"${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
       fi
-      echo -e "${InvDkGray}${CWhite} 4 ${CClear}${CCyan}: Local Drive Mount Path      :"${CGreen}$UNCDRIVE
-      echo -e "${InvDkGray}${CWhite} 5 ${CClear}${CCyan}: Backup Target Dir Path      :"${CGreen}$BKDIR
-      echo -e "${InvDkGray}${CWhite} 6 ${CClear}${CCyan}: Backup Exclusion File Name  :"${CGreen}$EXCLUSION
-      echo -en "${InvDkGray}${CWhite} 7 ${CClear}${CCyan}: Schedule Backups?           :"${CGreen}
+      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local Drive Mount Path          :"${CGreen}$UNCDRIVE
+      echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
+      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
+      echo -en "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$SCHEDULE" == "1" ]; then
-        echo -e "${InvDkGray}${CWhite} |-${CClear}${CCyan}-  Time:                      :${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Time:                          :${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
       else
-        echo -e "${InvDkGray}${CWhite} | ${CClear}${CDkGray}-  Time:                      :${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                          :${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
       fi
-      echo -en "${InvDkGray}${CWhite} 8 ${CClear}${CCyan}: Backup Frequency?           :"${CGreen}
+      echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?               :"${CGreen}
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -207,27 +231,37 @@ vconfig () {
       elif [ "$FREQUENCY" == "P" ]; then
         printf "Perpetual"; printf "%s\n"; fi
       if [ "$FREQUENCY" == "P" ]; then
-        echo -en "${InvDkGray}${CWhite} |-${CClear}${CCyan}-  Purge Backups?             :${CGreen}"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Backups?                 :${CGreen}"
         if [ "$PURGE" == "0" ]; then
           printf "No"; printf "%s\n";
         elif [ "$PURGE" == "1" ]; then
           printf "Yes"; printf "%s\n";fi
-        echo -en "${InvDkGray}${CWhite} |-${CClear}${CCyan}-  Purge older than (days):   :${CGreen}"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge older than (days):       :${CGreen}"
         if [ "$PURGELIMIT" == "0" ]; then
           printf "N/A"; printf "%s\n";
         else
           printf $PURGELIMIT; printf "%s\n";
         fi
       else
-        echo -e "${InvDkGray}${CWhite} |-${CClear}${CDkGray}-  Purge Backups?             :${CDkGray}No"
-        echo -e "${InvDkGray}${CWhite} | ${CClear}${CDkGray}-  Purge older than (days):   :${CDkGray}N/A"
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                 :${CDkGray}No"
+        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):       :${CDkGray}N/A"
       fi
-      echo -e "${InvDkGray}${CWhite} 9 ${CClear}${CCyan}: Backup/Restore Mode         :"${CGreen}$MODE
-      echo -e "${InvDkGray}${CWhite} | ${CClear}"
-      echo -e "${InvDkGray}${CWhite} s ${CClear}${CCyan}: Save & Exit"
-      echo -e "${InvDkGray}${CWhite} e ${CClear}${CCyan}: Exit & Discard Changes"
+      echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup/Restore Mode             :"${CGreen}$MODE
+      echo -en "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Secondary Backup Config Options :"${CGreen}$SECONDARY
+      if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
+      if [ "$SECONDARYSTATUS" == "0" ]; then
+        printf "Disabled"; printf "%s\n";
+      else printf "Enabled"; printf "%s\n"; fi
+      echo -e "${InvDkGray}${CWhite} |  ${CClear}"
+      if [ $CHANGES -eq 0 ]; then
+        echo -e "${InvDkGray}${CWhite} s  ${CClear}${CCyan}: Save Config & Exit"
+      else
+        echo -e "${InvDkGray}${CWhite} s  ${CClear}${CCyan}: Save Config & Exit               ${CWhite}${InvRed}<-- Save your changes! ${CClear}"
+      fi
+      echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit & Discard Changes"
       echo -e "${CGreen}----------------------------------------------------------------"
       echo ""
+      CHANGES=1
       printf "Selection: "
       read -r ConfigSelection
 
@@ -236,7 +270,7 @@ vconfig () {
 
             1) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}1. What is the Backup Target Username?"
+              echo -e "${CCyan}1. What is the Primary Backup Target Username?"
               echo -e "${CYellow}(Default = Admin)${CClear}"
               read -p 'Username: ' USERNAME1
               if [ "$USERNAME1" == "" ] || [ -z "$USERNAME1" ]; then USERNAME="Admin"; else USERNAME="$USERNAME1"; fi # Using default value on enter keypress
@@ -244,7 +278,7 @@ vconfig () {
 
             2) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}2. What is the Backup Target Password?"
+              echo -e "${CCyan}2. What is the Primary Backup Target Password?"
               echo -e "${CYellow}(Default = Admin)${CClear}"
               read -p 'Password: ' PASSWORD1
               if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD="Admin"; else PASSWORD="$PASSWORD1"; fi # Using default value on enter keypress
@@ -292,7 +326,7 @@ vconfig () {
               echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
               echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
               echo -e "${CCyan}directories. Example below:"
-              echo -e "${CYellow}(Default = /jffs/addons/backupmon.d/backupmonexcl.txt)${CClear}"
+              echo -e "${CYellow}(Default = /jffs/addons/backupmon.d/exclusions.txt)${CClear}"
               read -p 'Local Drive Mount Path: ' EXCLUSION1
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
             ;;
@@ -465,14 +499,104 @@ vconfig () {
               done
             ;;
 
+            10) # -----------------------------------------------------------------------------------------
+            while true; do
+              clear
+              echo ""
+              echo -e "${CCyan}10. Would you like to utilize a secondary/redundant backup configuration?"
+              echo -e "${CCyan}A secondary/redundant backup would allow you to backup your data to a"
+              echo -e "${CCyan}second backup target location, for optimum safety and redundancy. Please"
+              echo -e "${CCyan}use the prompts below to configure the necessary information to initiate"
+              echo -e "${CCyan}and schedule secondary backups. Ensure that the format of the prompts"
+              echo -e "${CCyan}are followed exactly based on their example default values:"
+              echo ""
+              echo -e "${CGreen}----------------------------------------------------------------"
+              echo -e "${CGreen}Secondary Backup Configuration Options"
+              echo -e "${CGreen}----------------------------------------------------------------"
+              echo -en "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Enabled/Disabled           : ${CGreen}"
+              if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
+              if [ "$SECONDARYSTATUS" == "0" ]; then
+                printf "Disabled"; printf "%s\n";
+              else printf "Enabled"; printf "%s\n"; fi
+              if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
+              echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Secondary Target Username  : ${CGreen}$SECONDARYUSER"
+              if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="admin"; fi
+              echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Secondary Target Password  : ${CGreen}$SECONDARYPWD"
+              if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
+              if [ "$SECONDARYUNCUPDATED" == "True" ]; then
+                echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target UNC Path  : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+              else
+                echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target UNC Path  : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+              fi
+              if [ -z "$SECONDARYUNCDRIVE" ]; then SECONDARYUNCDRIVE="/tmp/mnt/backups"; fi
+              echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Drive Mount Path     : ${CGreen}$SECONDARYUNCDRIVE"
+              if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
+              echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Dir Path  : ${CGreen}$SECONDARYBKDIR"
+              echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Exclusion File Name        : ${CGreen}$SECONDARYEXCLUSION"
+              echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?          : ${CGreen}"
+              if [ "$SECONDARYFREQUENCY" == "W" ]; then
+                printf "Weekly"; printf "%s\n";
+              elif [ "$SECONDARYFREQUENCY" == "M" ]; then
+                printf "Monthly"; printf "%s\n";
+              elif [ "$SECONDARYFREQUENCY" == "Y" ]; then
+                printf "Yearly"; printf "%s\n";
+              elif [ "$SECONDARYFREQUENCY" == "P" ]; then
+                printf "Perpetual"; printf "%s\n";
+              else SECONDARYFREQUENCY="M";
+                printf "Monthly"; printf "%s\n"; fi
+              if [ "$SECONDARYFREQUENCY" == "P" ]; then
+                echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Secondary Backups?  : ${CGreen}"
+                if [ "$SECONDARYPURGE" == "0" ]; then
+                  printf "No"; printf "%s\n";
+                else printf "Yes"; printf "%s\n"; fi
+              else
+                echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Secondary Backups?  : ${CDkGray}"
+                if [ "$SECONDARYPURGE" == "0" ]; then
+                  printf "No"; printf "%s\n";
+                else printf "Yes"; printf "%s\n"; fi
+              fi
+              if [ -z $SECONDARYPURGELIMIT ]; then SECONDARYPURGELIMIT=0; fi
+              if [ "$SECONDARYFREQUENCY" == "P" ] && [ "$SECONDARYPURGE" == "1" ]; then
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Older Than (days)   : ${CGreen}$SECONDARYPURGELIMIT"
+              else
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Older Than (days)   : ${CDkGray}$SECONDARYPURGELIMIT"
+              fi
+              if [ -z "$SECONDARYMODE" ]; then SECONDARYMODE="Basic"; fi
+              echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup/Restore Mode        : ${CGreen}$SECONDARYMODE"
+              echo -e "${InvDkGray}${CWhite} |  ${CClear}"
+              echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit Back to Primary Backup Config"
+              echo -e "${CGreen}----------------------------------------------------------------"
+              echo ""
+              printf "Selection: ${CClear}"
+              read -r SECONDARYINPUT
+                  case $SECONDARYINPUT in
+                    1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
+                    2 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
+                    3 ) echo ""; read -p 'Secondary Password: ' SECONDARYPWD;;
+                    4 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
+                    5 ) echo ""; read -p 'Secondary Local Drv Mount Path (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE;;
+                    6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
+                    7 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions.txt ): ' SECONDARYEXCLUSION;;
+                    8 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
+                    9 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
+                    [Ee] ) break ;;
+                    "" ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+                    * ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+                  esac
+              done
+            ;;
+
             [Ss]) # -----------------------------------------------------------------------------------------
               echo ""
-              if [ $UNCUPDATED == "False" ]; then
+              if [ "$UNCUPDATED" == "False" ]; then
                 UNC=$(echo $UNC | sed -e 's,\\,\\\\,g')
               fi
 
+              if [ "$SECONDARYUNCUPDATED" == "False" ]; then
+                SECONDARYUNC=$(echo $SECONDARYUNC | sed -e 's,\\,\\\\,g')
+              fi
+
                 { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
-                  echo 'BKCONFIG="'"Custom"'"'
                   echo 'USERNAME="'"$USERNAME"'"'
                   echo 'PASSWORD="'"$PASSWORD"'"'
                   echo 'UNC="'"$UNC"'"'
@@ -486,17 +610,31 @@ vconfig () {
                   echo 'MODE="'"$MODE"'"'
                   echo 'PURGE='$PURGE
                   echo 'PURGELIMIT='$PURGELIMIT
+                  echo 'SECONDARYSTATUS='$SECONDARYSTATUS
+                  echo 'SECONDARYUSER="'"$SECONDARYUSER"'"'
+                  echo 'SECONDARYPWD="'"$SECONDARYPWD"'"'
+                  echo 'SECONDARYUNC="'"$SECONDARYUNC"'"'
+                  echo 'SECONDARYUNCDRIVE="'"$SECONDARYUNCDRIVE"'"'
+                  echo 'SECONDARYBKDIR="'"$SECONDARYBKDIR"'"'
+                  echo 'SECONDARYEXCLUSION="'"$SECONDARYEXCLUSION"'"'
+                  echo 'SECONDARYFREQUENCY="'"$SECONDARYFREQUENCY"'"'
+                  echo 'SECONDARYMODE="'"$SECONDARYMODE"'"'
+                  echo 'SECONDARYPURGE='$SECONDARYPURGE
+                  echo 'SECONDARYPURGELIMIT='$SECONDARYPURGELIMIT
                 } > $CFGPATH
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
               logger "BACKUPMON INFO: Successfully wrote a new config file"
               sleep 3
               UNCUPDATED="False"
+              SECONDARYUNCUPDATED="False"
               UNC=$(echo -e "$UNC")
+              SECONDARYUNC=$(echo -e "$SECONDARYUNC")
               return
             ;;
 
             [Ee]) # -----------------------------------------------------------------------------------------
               UNCUPDATED="False"
+              SECONDARYUNCUPDATED="False"
               return
             ;;
 
@@ -510,7 +648,6 @@ vconfig () {
 
       #Create a new config file with default values to get it to a basic running state
       { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
-        echo 'BKCONFIG="Default"'
         echo 'USERNAME="admin"'
         echo 'PASSWORD="admin"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
@@ -524,6 +661,17 @@ vconfig () {
         echo 'MODE="Basic"'
         echo 'PURGE=0'
         echo 'PURGELIMIT=0'
+        echo 'SECONDARYSTATUS=0'
+        echo 'SECONDARYUSER="admin"'
+        echo 'SECONDARYPWD="admin"'
+        echo 'SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"'
+        echo 'SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"'
+        echo 'SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"'
+        echo 'SECONDARYEXCLUSION=""'
+        echo 'SECONDARYFREQUENCY="M"'
+        echo 'SECONDARYMODE="Basic"'
+        echo 'SECONDARYPURGE=0'
+        echo 'SECONDARYPURGELIMIT=0'
       } > $CFGPATH
 
       #Re-run backupmon -config to restart setup process
@@ -531,6 +679,136 @@ vconfig () {
 
   fi
 
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+testtarget() {
+
+TESTUSER="admin"
+TESTPWD="admin"
+TESTUNC="\\\\192.168.50.25\\Backups"
+TESTUNCDRIVE="/tmp/mnt/testbackups"
+TESTBKDIR="/router/test-backup"
+TESTUNCUPDATED="False"
+
+while true; do
+  clear
+  logoNM
+  echo ""
+  echo -e "${CCyan}The Backup Target Network Connection Tester allows you to play with"
+  echo -e "your connection variables, such as your username/password, network UNC"
+  echo -e "path, target directories and local drive mount paths. If your network"
+  echo -e "target is configured correctly, this utility will write a test folder"
+  echo -e "out there, and copy a test file into the test folder in order to"
+  echo -e "validate that read/write permissions are correct."
+  echo ""
+  echo -e "${CGreen}----------------------------------------------------------------"
+  echo -e "${CGreen}Backup Target Network Connection Tester"
+  echo -e "${CGreen}----------------------------------------------------------------"
+  echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Test Target Username         : ${CGreen}$TESTUSER"
+  echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Test Target Password         : ${CGreen}$TESTPWD"
+  if [ "$TESTUNCUPDATED" == "True" ]; then
+    echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target UNC Path         : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
+  else
+    echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target UNC Path         : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+  fi
+  echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Local Drive Mount Path  : ${CGreen}$TESTUNCDRIVE"
+  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Dir Path         : ${CGreen}$TESTBKDIR"
+  echo -e "${InvDkGray}${CWhite} |  ${CClear}"
+  echo -e "${InvDkGray}${CWhite} t  ${CClear}${CCyan}: Test your Network Backup Connection"
+  echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit Back to Setup + Operations Menu"
+  echo -e "${CGreen}----------------------------------------------------------------"
+  echo ""
+  printf "Selection: ${CClear}"
+  read -r TESTINPUT
+      case $TESTINPUT in
+        1 ) echo ""; read -p 'Test Username: ' TESTUSER;;
+        2 ) echo ""; read -p 'Test Password: ' TESTPWD;;
+        3 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; TESTUNC="$TESTUNC1"; TESTUNCUPDATED="True";;
+        4 ) echo ""; read -p 'Test Local Drv Mount Path (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE;;
+        5 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
+        [Ee] ) break ;;
+        [Tt] )  # Connection test script
+                if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
+                echo ""
+                echo -e "${CCyan}Messages:"
+                # Check to see if a local drive mount is available, if not, create one.
+                if ! [ -d $TESTUNCDRIVE ]; then
+                    mkdir -p $TESTUNCDRIVE
+                    chmod 777 $TESTUNCDRIVE
+                    echo -e "${CYellow}ALERT: External Drive directory not set. Created test directory under: $TESTUNCDRIVE ${CClear}"
+                    sleep 3
+                else
+                  echo -e "${CGreen}INFO: External Drive directory exists. Test directory found under: ${CYellow}$TESTUNCDRIVE ${CClear}"
+                fi
+
+                # If everything successfully was created, proceed
+                if ! mount | grep $TESTUNCDRIVE > /dev/null 2>&1; then
+
+                    # Check the build to see if modprobe needs to be called
+                    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+                      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+                    fi
+
+                    CNT=0
+                    TRIES=2
+                      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+                        mount -t cifs $TESTUNC $TESTUNCDRIVE -o "vers=2.1,username=${TESTUSER},password=${TESTPWD}"  # Connect the UNC to the local drive mount
+                        MRC=$?
+                        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+                          break
+                        else
+                          echo -e "${CYellow}WARNING: Unable to mount to external drive. Retrying...${CClear}"
+                          sleep 5
+                          CNT=$((CNT+1))
+                          if [ $CNT -eq $TRIES ];then
+                            echo -e "${CRed}ERROR: Unable to mount to external drive ($TESTUNCDRIVE). Please check your configuration. Exiting.${CClear}"
+                            break
+                          fi
+                        fi
+                      done
+                fi
+
+                # If the local mount is connected to the UNC, proceed
+                if [ -n "`mount | grep $TESTUNCDRIVE`" ]; then
+
+                    echo -en "${CGreen}STATUS: External Test Drive ("; printf "%s" "${TESTUNC}"; echo -en ") mounted successfully under: ${CYellow}$TESTUNCDRIVE ${CClear}"; printf "%s\n"
+
+                    # Create the backup directories and daily directories if they do not exist yet
+                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}" ]; then mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}"; echo -e "${CGreen}STATUS: Test Backup Directory successfully created under: ${CYellow}$TESTBKDIR${CClear}"; fi
+                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}/test" ]; then mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}/test"; echo -e "${CGreen}STATUS: Daily Test Backup Subdirectory successfully created under: ${CYellow}$TESTBKDIR/test${CClear}";fi
+
+                    #include restore instructions in the backup location
+                    { echo 'TEST FILE'
+                      echo ''
+                      echo 'This is a test file created to ensure you have proper read/write access to your backup directory.'
+                      echo ''
+                      echo 'Please delete this file and associated test directories at your convenience'
+                    } > ${TESTUNCDRIVE}${TESTBKDIR}/Test/testfile.txt
+                    echo -e "${CGreen}STATUS: Finished copying ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+                    sleep 10
+
+                    # Unmount the locally connected mounted drive
+                    unmounttestdrv
+                    read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+                else
+
+                    # There's problems with mounting the drive - check paths and permissions!
+                    echo -e "${CRed}ERROR: Failed to run Network Connect Test Script -- Drive mount failed. Please check your configuration!${CClear}"
+                    read -rsp $'Press any key to acknowledge...\n' -n1 key
+
+                fi
+                TESTUNCUPDATED="False"
+
+        ;;
+        "" ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+        * ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+
+      esac
+  done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -551,6 +829,8 @@ vuninstall () {
         clear
         rm -f -r /jffs/addons/backupmon.d
         rm -f /jffs/scripts/backupmon.sh
+        sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
+        cru d RunBackupMon
         echo ""
         echo -e "\n${CGreen}BACKUPMON has been uninstalled...${CClear}"
         echo ""
@@ -672,6 +952,11 @@ _DeleteFileDirAfterNumberOfDays_ ()
 
 # purgebackups is a function that allows you to see which backups will be purged before deleting them...
 purgebackups () {
+
+  if [ "$PURGE" -eq 0 ]; then
+    return
+  fi
+
   clear
   logoNM
   echo ""
@@ -806,10 +1091,14 @@ purgebackups () {
 autopurge () {
   clear
 
-  if [ $FREQUENCY != "P" ]; then
+  if [ "$FREQUENCY" != "P" ]; then
     echo -e "${CRed}ERROR: Perpetual backups are not configured. Please check your configuration. Exiting.${CClear}\n"
     logger "BACKUPMON ERROR: Perpetual backups are not configured. Please check your configuration."
     exit 0
+  fi
+
+  if [ "$PURGE" -eq 0 ]; then
+    return
   fi
 
   logoNM
@@ -882,7 +1171,7 @@ autopurge () {
 
         echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
         sleep 2
-        exit 0
+        return
 
       else
 
@@ -895,7 +1184,7 @@ autopurge () {
 
         echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
         sleep 2
-        exit 0
+        return
       fi
 
   else
@@ -906,6 +1195,267 @@ autopurge () {
     unmountdrv
 
     echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}"
+    sleep 2
+    return
+  fi
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# purgebackups is a function that allows you to see which backups will be purged before deleting them...
+purgesecondaries() {
+
+  if [ $SECONDARYPURGE -eq 0 ]; then
+    return
+  fi
+
+  if [ $SECONDARYSTATUS -eq 0 ]; then
+    return
+  fi
+
+  clear
+  logoNM
+  echo ""
+  echo -e "${CYellow}Purge Perpetual Secondary Backups Utility${CClear}"
+  echo ""
+  echo -e "${CCyan}You are about to purge secondary backups! FUN! This action is irreversible and"
+  echo -e "${CCyan}permanent. But no worries! BACKUPMON will first show you which backups are affected"
+  echo -e "${CCyan}by the ${CYellow}$SECONDARYPURGELIMIT days${CCyan} limit you have configured."
+  echo ""
+  echo -e "${CCyan}Do you wish to proceed?${CClear}"
+  if promptyn "(y/n): "; then
+
+    echo ""
+    echo -e "\n${CCyan}Messages:"
+
+    # Create the local drive mount directory
+    if ! [ -d $SECONDARYUNCDRIVE ]; then
+        mkdir -p $SECONDARYUNCDRIVE
+        chmod 777 $SECONDARYUNCDRIVE
+        echo -e "${CYellow}ALERT: External Secondary Drive directory not set. Created under: $SECONDARYUNCDRIVE ${CClear}"
+        sleep 3
+    fi
+
+    # If the mount does not exist yet, proceed
+    if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
+
+      # Check if the build supports modprobe
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+      fi
+
+      # Mount the local drive directory to the UNC
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${SECONDARYPWD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
+      sleep 2
+    fi
+
+    # If the UNC is successfully mounted, proceed
+    if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
+
+      # Show a list of valid backups on screen
+      count=0
+      echo -e "${CGreen}STATUS: Perpetual secondary backup folders identified below are older than $SECONDARYPURGELIMIT days:${CRed}"
+      for FOLDER in $(ls ${SECONDARYUNCDRIVE}${SECONDARYBKDIR} -1)
+      do
+        _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT show
+      done
+
+      # If there are no valid backups within range, display a message and exit
+      if [ $count -eq 0 ]; then
+        echo -e "${CYellow}INFO: No perpetual secondary backup folders were identified older than $SECONDARYPURGELIMIT days.${CClear}"
+        logger "BACKUPMON INFO: No perpetual secondary backup folders identified older than $SECONDARYPURGELIMIT days were found. Nothing to delete."
+        read -rsp $'Press any key to acknowledge...\n' -n1 key
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Secondary Backups Utility...${CClear}"
+        sleep 2
+        return
+      fi
+
+      # Continue with deleting backups permanently
+      echo ""
+      echo -e "${CGreen}Would you like to permanently purge these secondary backups?${CClear}"
+
+      if promptyn "(y/n): "; then
+        echo -e "\n${CRed}"
+        for FOLDER in $(ls ${SECONDARYUNCDRIVE}${SECONDARYBKDIR} -1)
+        do
+          _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT delete
+        done
+
+        echo ""
+        echo -e "${CGreen}STATUS: Perpetual secondary backup folders older than $SECONDARYPURGELIMIT days deleted.${CClear}"
+        logger "BACKUPMON INFO: Perpetual secondary backup folders older than $SECONDARYPURGELIMIT days were deleted."
+        read -rsp $'Press any key to acknowledge...\n' -n1 key
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Secondary Backups Utility...${CClear}\n"
+        sleep 2
+        return
+
+      else
+
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo -e "\n${CGreen}Exiting Purge Perpetual Secondary Backups Utility...${CClear}\n"
+        sleep 2
+        return
+      fi
+    fi
+
+  else
+    echo ""
+    echo -e "\n${CGreen}Exiting Purge Perpetual Secondary Backups Utility...${CClear}"
+    sleep 2
+    return
+  fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# autopurgesecondaries is a function that allows you to purge secondary backups throught a commandline switch... if you're daring!
+autopurgesecondaries () {
+  clear
+
+  if [ "$SECONDARYFREQUENCY" != "P" ]; then
+    echo -e "${CRed}ERROR: Perpetual secondary backups are not configured. Please check your configuration. Exiting.${CClear}\n"
+    logger "BACKUPMON ERROR: Perpetual secondary backups are not configured. Please check your configuration."
+    exit 0
+  fi
+
+  if [ $SECONDARYPURGE -eq 0 ]; then
+    return
+  fi
+
+  if [ $SECONDARYSTATUS -eq 0 ]; then
+    return
+  fi
+
+  logoNM
+  echo ""
+  echo -e "${CYellow}Auto Purge Perpetual Secondary Backups Utility${CClear}"
+  echo ""
+  echo -e "${CCyan}You are about to purge secondary backups! FUN! This action is irreversible, permanent"
+  echo -e "${CCyan}and fully automatic, so you have zero control! AWESOMESAUCE! BACKUPMON will by"
+  echo -e "${CCyan}default show you which backups older than ${CYellow}$SECONDARYPURGELIMIT days${CCyan} are being deleted, as you"
+  echo -e "${CCyan}rejoice in seeing disk space being freed up."
+  echo -e "\n${CCyan}Messages:"
+
+  # Create the local drive mount directory
+  if ! [ -d $SECONDARYUNCDRIVE ]; then
+      mkdir -p $SECONDARYUNCDRIVE
+      chmod 777 $SECONDARYUNCDRIVE
+      echo -e "${CYellow}ALERT: External Secondary Drive directory not set. Created under: $SECONDARYUNCDRIVE ${CClear}"
+      sleep 3
+  fi
+
+  # If the mount does not exist yet, proceed
+  if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
+
+    # Check if the build supports modprobe
+    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+    fi
+
+    # Mount the local drive directory to the UNC
+    CNT=0
+    TRIES=12
+      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+        mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${SECONDARYPWD}"  # Connect the UNC to the local drive mount
+        MRC=$?
+        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+          echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+          break
+        else
+          echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+          sleep 10
+          CNT=$((CNT+1))
+          if [ $CNT -eq $TRIES ];then
+            echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting.${CClear}\n"
+            logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+            exit 0
+          fi
+        fi
+      done
+    sleep 2
+  fi
+
+  # If the UNC is successfully mounted, proceed
+  if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
+
+      # Continue with deleting backups permanently
+      count=0
+      for FOLDER in $(ls ${SECONDARYUNCDRIVE}${SECONDARYBKDIR} -1)
+      do
+        _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT delete
+      done
+
+      # If there are no valid backups within range, display a message and exit
+      if [ $count -eq 0 ]; then
+        echo -e "${CYellow}INFO: No perpetual secondary backup folders were identified older than $SECONDARYPURGELIMIT days.${CClear}"
+        logger "BACKUPMON INFO: No perpetual secondary backup folders were identified older than $SECONDARYPURGELIMIT days. Nothing to delete."
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}\n"
+        sleep 2
+        return
+
+      else
+
+        echo -e "${CGreen}STATUS: Perpetual secondary backup folders older than $SECONDARYPURGELIMIT days deleted.${CClear}"
+        logger "BACKUPMON INFO: Perpetual secondary backup folders older than $SECONDARYPURGELIMIT days were deleted."
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}\n"
+        sleep 2
+        return
+      fi
+
+  else
+
+    echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+    sleep 10
+
+    unmountsecondarydrv
+
+    echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}"
     sleep 2
     return
   fi
@@ -939,20 +1489,29 @@ vsetup () {
     clear
     logoNM
     echo ""
-    echo -e "${CYellow}Setup Utility${CClear}" # Provide main setup menu
+    echo -e "${CYellow}Setup + Operations Menu${CClear}" # Provide main setup menu
     echo ""
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${CGreen}Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a manual backup"
-    echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a manual restore"
+    echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a Manual Backup"
+    echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a Manual Restore"
     if [ $PURGE == "1" ]; then
-      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CCyan}: Purge Perpetual Backups"
+      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CCyan}: Purge Perpetual Primary Backups"
     else
-      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CDkGray}: Purge Perpetual Backups"
+      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CDkGray}: Purge Perpetual Primary Backups"
     fi
+    if [ $SECONDARYPURGE == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
+      echo -e "${InvDkGray}${CWhite} ps ${CClear}${CCyan}: Purge Perpetual Secondary Backups"
+    else
+      echo -e "${InvDkGray}${CWhite} ps ${CClear}${CDkGray}: Purge Perpetual Secondary Backups"
+    fi
+    echo ""
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${CGreen}Setup + Configuration"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure BACKUPMON"
+    echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
     echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
     echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
     echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
@@ -981,9 +1540,21 @@ vsetup () {
             fi
           ;;
 
+          ps)
+            clear
+            if [ $SECONDARYFREQUENCY == "P" ]; then
+              purgesecondaries
+            fi
+          ;;
+
           sc)
             clear
             vconfig
+          ;;
+
+          ts)
+            clear
+            testtarget
           ;;
 
           up)
@@ -1294,7 +1865,7 @@ backup() {
         echo 'IMPORTANT: Your original USB Drive name was:' ${EXTLABEL}
         echo ''
         echo 'Please ensure your have performed the following before restoring your backups:'
-        echo '1.) Enable SSH in UI, and connect via an SSH Terminal (like PuTTY).'
+        echo '1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY).'
         echo '2.) Run "AMTM" and format a new USB drive on your router - call it exactly the same name as before (see above)! Reboot.'
         echo '3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS.'
         echo '4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot.'
@@ -1321,6 +1892,323 @@ backup() {
 
 }
 
+# backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
+secondary() {
+
+  if [ $SECONDARYSTATUS -eq 0 ]; then
+    return
+  fi
+
+  # Run a secondary backup
+  echo ""
+  echo -e "${CGreen}[Secondary Backup Commencing]..."
+  echo ""
+  echo -e "${CCyan}Messages:"
+
+  # Check to see if a local drive mount is available, if not, create one.
+  if ! [ -d $SECONDARYUNCDRIVE ]; then
+      mkdir -p $SECONDARYUNCDRIVE
+      chmod 777 $SECONDARYUNCDRIVE
+      echo -e "${CYellow}ALERT: Secondary External Drive directory not set. Newly created under: $SECONDARYUNCDRIVE ${CClear}"
+      sleep 3
+  fi
+
+  # If everything successfully was created, proceed
+  if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
+
+      # Check the build to see if modprobe needs to be called
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+      fi
+
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${SECONDARYPWD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
+  fi
+
+  # If the local mount is connected to the UNC, proceed
+  if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
+
+      echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+
+      # Create the secondary backup directories and daily directories if they do not exist yet
+      if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}"; echo -e "${CGreen}STATUS: Secondary Backup Directory successfully created."; fi
+
+      # Create frequency folders by week, month, year or perpetual
+      if [ $SECONDARYFREQUENCY == "W" ]; then
+        if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"; echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}";fi
+      elif [ $SECONDARYFREQUENCY == "M" ]; then
+        if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"; echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}";fi
+      elif [ $SECONDARYFREQUENCY == "Y" ]; then
+        if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"; echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}";fi
+      elif [ $SECONDARYFREQUENCY == "P" ]; then
+        PDAY=$(date +"%Y%m%d-%H%M%S")
+        if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"; echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}";fi
+      fi
+
+      if [ $SECONDARYMODE == "Basic" ]; then
+        # Remove old tar files if they exist in the daily folders
+        if [ $SECONDARYFREQUENCY == "W" ]; then
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar*
+        elif [ $SECONDARYFREQUENCY == "M" ]; then
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar*
+        elif [ $SECONDARYFREQUENCY == "Y" ]; then
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar*
+        elif [ $SECONDARYFREQUENCY == "P" ]; then
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar*
+        fi
+      fi
+
+      if [ $SECONDARYMODE == "Basic" ]; then
+        # If a TAR exclusion file exists, use it for the /jffs backup
+        if [ $SECONDARYFREQUENCY == "W" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        elif [ $SECONDARYFREQUENCY == "M" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        elif [ $SECONDARYFREQUENCY == "Y" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        elif [ $SECONDARYFREQUENCY == "P" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
+          sleep 1
+        fi
+
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ $SECONDARYFREQUENCY == "W" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
+
+        elif [ $SECONDARYFREQUENCY == "M" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
+
+        elif [ $SECONDARYFREQUENCY == "Y" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
+
+        elif [ $SECONDARYFREQUENCY == "P" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg.${CClear}"
+
+        fi
+
+      elif [ $SECONDARYMODE == "Advanced" ]; then
+
+        datelabel=$(date +"%Y%m%d-%H%M%S")
+        # If a TAR exclusion file exists, use it for the /jffs backup
+        if [ $SECONDARYFREQUENCY == "W" ]; then
+          if ! [ -z $EXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $SECONDARYFREQUENCY == "M" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        elif [ $SECONDARYFREQUENCY == "Y" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -C /jffs . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+        fi
+
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ $SECONDARYFREQUENCY == "W" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+
+        elif [ $SECONDARYFREQUENCY == "M" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+
+        elif [ $SECONDARYFREQUENCY == "Y" ]; then
+          if ! [ -z $SECONDARYEXCLUSION ]; then
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+          else
+            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+          fi
+          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+          sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+        fi
+
+      fi
+
+      #added copies of the backupmon.sh, backupmon.cfg, exclusions list and NVRAM to backup location for easy copy/restore
+      cp /jffs/scripts/backupmon.sh ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/backupmon.sh
+      echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}backupmon.sh${CGreen} script to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
+      cp $CFGPATH ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/backupmon.cfg
+      echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}backupmon.cfg${CGreen} script to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
+
+      if ! [ -z $SECONDARYEXCLUSION ]; then
+        EXCLFILE=$(echo $SECONDARYEXCLUSION | sed 's:.*/::')
+        cp $SECONDARYEXCLUSION ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$EXCLFILE
+        echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}$EXCLFILE${CGreen} script to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
+      fi
+
+      #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
+      nvram show 2>/dev/null > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/nvram.txt
+      echo -e "${CGreen}STATUS: Finished secondary reference copy of ${CYellow}nvram.txt${CGreen} extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
+
+      #include restore instructions in the backup location
+      { echo 'RESTORE INSTRUCTIONS'
+        echo ''
+        echo 'IMPORTANT: Your original USB Drive name was:' ${EXTLABEL}
+        echo ''
+        echo 'Please ensure your have performed the following before restoring your backups:'
+        echo '1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY).'
+        echo '2.) Run "AMTM" and format a new USB drive on your router - call it exactly the same name as before (see above)! Reboot.'
+        echo '3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS.'
+        echo '4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot.'
+        echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
+        echo '6.) Run "sh backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
+        echo '7.) Run "sh backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
+        echo '8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!'
+      } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/instructions.txt
+      echo -e "${CGreen}STATUS: Finished secondary copy of restoration ${CYellow}instructions.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
+      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+      sleep 10
+
+      # Unmount the locally connected mounted drive
+      unmountsecondarydrv
+
+  else
+
+      # There's problems with mounting the drive - check paths and permissions!
+      echo -e "${CRed}ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!${CClear}"
+      logger "BACKUPMON ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!"
+      sleep 3
+
+  fi
+
+}
+
 # -------------------------------------------------------------------------------------------------------------------------
 
 # restore function is a routine that allows you to pick a backup to be restored
@@ -1341,7 +2229,7 @@ restore() {
   echo -e "${CGreen}[Restore Backup Commencing]..."
   echo ""
   echo -e "${CGreen}Please ensure your have performed the following before restoring your backups:"
-  echo -e "${CGreen}1.) Enable SSH in UI, and connect via an SSH Terminal (like PuTTY)."
+  echo -e "${CGreen}1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY)."
   echo -e "${CGreen}2.) Run 'AMTM' and format a new USB drive on your router - call it exactly the same name as before! Reboot."
   echo -e "${CYellow}    (please refer to your restore instruction.txt file to find your original USB drive label)"
   echo -e "${CGreen}3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
@@ -1351,6 +2239,21 @@ restore() {
   echo -e "${CGreen}7.) Run 'sh backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
   echo -e "${CGreen}8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
   echo ""
+  if [ $SECONDARYSTATUS -eq 1 ]; then
+    echo -e "${CYellow}Please choose whether you would like to restore from primary or secondary backups? (Primary=P, Secondary=S)"
+    while true; do
+      read -p 'Restoration Source (P/S)?: ' RESTOREFROM
+        case $RESTOREFROM in
+          [Pp] ) SOURCE="Primary"; echo ""; echo -e "${CGreen}[Primary Backup Source Selected]"; echo ""; break ;;
+          [Ss] ) SOURCE="Secondary"; echo ""; echo -e "${CGreen}[Secondary Backup Source Selected]"; echo ""; break ;;
+          "" ) echo -e "\n Error: Please use either P or S.\n";;
+          * ) echo -e "\n Error: Please use either P or S.\n";;
+        esac
+    done
+  else
+    SOURCE="Primary"
+  fi
+
   echo -e "${CCyan}Messages:"
 
   # Determine router model
@@ -1365,222 +2268,447 @@ restore() {
     exit 0
   fi
 
-  # Create the local drive mount directory
-  if ! [ -d $UNCDRIVE ]; then
-      mkdir -p $UNCDRIVE
-      chmod 777 $UNCDRIVE
-      echo -e "${CYellow}ALERT: External Drive directory not set. Created under: $UNCDRIVE ${CClear}"
-      sleep 3
-  fi
+  if [ "$SOURCE" == "Primary" ]; then
 
-  # If the mount does not exist yet, proceed
-  if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
-
-    # Check if the build supports modprobe
-    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+    # Create the local drive mount directory
+    if ! [ -d $UNCDRIVE ]; then
+        mkdir -p $UNCDRIVE
+        chmod 777 $UNCDRIVE
+        echo -e "${CYellow}ALERT: External Drive directory not set. Created under: $UNCDRIVE ${CClear}"
+        sleep 3
     fi
 
-    # Mount the local drive directory to the UNC
-    CNT=0
-    TRIES=12
-      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
-        MRC=$?
-        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-          echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
-          break
-        else
-          echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
-          sleep 10
-          CNT=$((CNT+1))
-          if [ $CNT -eq $TRIES ];then
-            echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-            logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
-            exit 0
+    # If the mount does not exist yet, proceed
+    if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
+
+      # Check if the build supports modprobe
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+      fi
+
+      # Mount the local drive directory to the UNC
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${PASSWORD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+              exit 0
+            fi
           fi
-        fi
-      done
-    sleep 2
-  fi
+        done
+      sleep 2
+    fi
 
-  # If the UNC is successfully mounted, proceed
-  if [ -n "`mount | grep $UNCDRIVE`" ]; then
+    # If the UNC is successfully mounted, proceed
+    if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
-    # Show a list of valid backups on screen
-    echo -e "${CGreen}Available Backup Selections:${CClear}"
-    ls -ld ${UNCDRIVE}${BKDIR}/*/
-    echo ""
-    echo -e "${CGreen}Would you like to continue to restore from backup?"
+      # Show a list of valid backups on screen
+      echo -e "${CGreen}Available Backup Selections:${CClear}"
+      ls -ld ${UNCDRIVE}${BKDIR}/*/
+      echo ""
+      echo -e "${CGreen}Would you like to continue to restore from backup?"
 
-    if promptyn "(y/n): "; then
+      if promptyn "(y/n): "; then
 
-      while true; do
-        echo ""
-        echo -e "${CGreen}"
-          ok=0
-          while [ $ok = 0 ]
-          do
-            if [ $FREQUENCY == "W" ]; then
-              echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
-              read BACKUPDATE1
-              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
-              if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
-              then
-                echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
-              else
-                ok=1
+        while true; do
+          echo ""
+          echo -e "${CGreen}"
+            ok=0
+            while [ $ok = 0 ]
+            do
+              if [ $FREQUENCY == "W" ]; then
+                echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "M" ]; then
+                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "Y" ]; then
+                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "P" ]; then
+                echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
+                else
+                  ok=1
+                fi
               fi
-            elif [ $FREQUENCY == "M" ]; then
-              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
-              read BACKUPDATE1
-              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
-              if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
-              then
-                echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
-              else
-                ok=1
-              fi
-            elif [ $FREQUENCY == "Y" ]; then
-              echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
-              read BACKUPDATE1
-              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
-              if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
-              then
-                echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
-              else
-                ok=1
-              fi
-            elif [ $FREQUENCY == "P" ]; then
-              echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
-              read BACKUPDATE1
-              if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
-              if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
-              then
-                echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
-              else
-                ok=1
+            done
+
+            if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
+
+            if [ $MODE == "Basic" ]; then
+              break
+            elif [ $MODE == "Advanced" ]; then
+              echo ""
+              echo -e "${CGreen}Available Backup Files under:${CClear}"
+
+              ls -lR /${UNCDRIVE}${BKDIR}/$BACKUPDATE
+
+              echo ""
+              echo -e "${CGreen}Would you like to continue using this backup set?"
+              if promptyn "(y/n): "; then
+                echo ""
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
+                read ADVJFFS
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                read ADVUSB
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
+                read ADVNVRAM
+                break
               fi
             fi
-          done
-
-          if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
+        done
 
           if [ $MODE == "Basic" ]; then
-            break
-          elif [ $MODE == "Advanced" ]; then
             echo ""
-            echo -e "${CGreen}Available Backup Files under:${CClear}"
-
-            ls -lR /${UNCDRIVE}${BKDIR}/$BACKUPDATE
-
+            echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+            echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
             echo ""
-            echo -e "${CGreen}Would you like to continue using this backup set?"
+            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
-              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
-              read ADVJFFS
+              # Run the TAR commands to restore backups to their original locations
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
               echo ""
-              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
-              read ADVUSB
+              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
               echo ""
-              echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
-              read ADVNVRAM
-              break
+              /sbin/service 'reboot'
+            fi
+
+          elif [ $MODE == "Advanced" ]; then
+            echo ""
+            echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+            echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
+            echo -e "JFFS filename: $ADVJFFS"
+            echo -e "EXT USB filename: $ADVUSB"
+            echo -e "NVRAM filename: $ADVNVRAM"
+            echo ""
+            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              # Run the TAR commands to restore backups to their original locations
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+              nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
+              echo ""
+              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+              echo ""
+              /sbin/service 'reboot'
             fi
           fi
-      done
 
-        if [ $MODE == "Basic" ]; then
+          # Unmount the backup drive
           echo ""
-          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
-          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
-          if promptyn "(y/n): "; then
-            echo ""
-            echo ""
-            # Run the TAR commands to restore backups to their original locations
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
-            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
-            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
-            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
-            echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-            echo ""
-            /sbin/service 'reboot'
-          fi
+          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+          sleep 10
 
-        elif [ $MODE == "Advanced" ]; then
+          unmountdrv
+
           echo ""
-          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
-          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
-          echo -e "JFFS filename: $ADVJFFS"
-          echo -e "EXT USB filename: $ADVUSB"
-          echo -e "NVRAM filename: $ADVNVRAM"
+          echo -e "${CClear}"
+          exit 0
+
+      else
+
+          # Exit gracefully
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
-          if promptyn "(y/n): "; then
-            echo ""
-            echo ""
-            # Run the TAR commands to restore backups to their original locations
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
-            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
-            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
-            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
-            echo ""
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-            echo ""
-            /sbin/service 'reboot'
-          fi
+          echo ""
+          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+          sleep 10
+
+          unmountdrv
+
+          echo -e "${CClear}"
+          exit 0
+
         fi
-
-        # Unmount the backup drive
-        echo ""
-        echo ""
-        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-        sleep 10
-
-        unmountdrv
-
-        echo ""
-        echo -e "${CClear}"
-        exit 0
 
     else
 
-        # Exit gracefully
-        echo ""
-        echo ""
-        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-        sleep 10
+      # Exit gracefully
+      echo ""
+      echo ""
+      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+      sleep 10
 
-        unmountdrv
+      unmountdrv
 
-        echo -e "${CClear}"
-        exit 0
+      echo -e "${CClear}"
+      exit 0
 
+    fi
+
+  elif [ "$SOURCE" == "Secondary" ]; then
+
+    # Create the local drive mount directory
+    if ! [ -d $SECONDARYUNCDRIVE ]; then
+        mkdir -p $SECONDARYUNCDRIVE
+        chmod 777 $SECONDARYUNCDRIVE
+        echo -e "${CYellow}ALERT: Secondary External Drive directory not set. Created under: $SECONDARYUNCDRIVE ${CClear}"
+        sleep 3
+    fi
+
+    # If the mount does not exist yet, proceed
+    if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
+
+      # Check if the build supports modprobe
+      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
-  else
+      # Mount the local drive directory to the Secondary UNC
+      CNT=0
+      TRIES=12
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${SECONDARYPWD}"  # Connect the UNC to the local drive mount
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            echo -e "${CGreen}STATUS: Secondary External Drive ($SECONDARYUNC) mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+              exit 0
+            fi
+          fi
+        done
+      sleep 2
+    fi
 
-    # Exit gracefully
-    echo ""
-    echo ""
-    echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-    sleep 10
+    # If the UNC is successfully mounted, proceed
+    if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
 
-    unmountdrv
+      # Show a list of valid backups on screen
+      echo -e "${CGreen}Available Backup Selections:${CClear}"
+      ls -ld ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/*/
+      echo ""
+      echo -e "${CGreen}Would you like to continue to restore from backup?"
 
-    echo -e "${CClear}"
-    exit 0
+      if promptyn "(y/n): "; then
+
+        while true; do
+          echo ""
+          echo -e "${CGreen}"
+            ok=0
+            while [ $ok = 0 ]
+            do
+              if [ $SECONDARYFREQUENCY == "W" ]; then
+                echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "M" ]; then
+                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "Y" ]; then
+                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
+                else
+                  ok=1
+                fi
+              elif [ $FREQUENCY == "P" ]; then
+                echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                read BACKUPDATE1
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
+                then
+                  echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
+                else
+                  ok=1
+                fi
+              fi
+            done
+
+            if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
+
+            if [ $SECONDARYMODE == "Basic" ]; then
+              break
+            elif [ $SECONDARYMODE == "Advanced" ]; then
+              echo ""
+              echo -e "${CGreen}Available Secondary Backup Files under:${CClear}"
+
+              ls -lR /${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE
+
+              echo ""
+              echo -e "${CGreen}Would you like to continue using this secondary backup set?"
+              if promptyn "(y/n): "; then
+                echo ""
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
+                read ADVJFFS
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                read ADVUSB
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
+                read ADVNVRAM
+                break
+              fi
+            fi
+        done
+
+          if [ $SECONDARYMODE == "Basic" ]; then
+            echo ""
+            echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
+            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
+            echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
+            echo ""
+            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              # Run the TAR commands to restore backups to their original locations
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
+              echo ""
+              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+              echo ""
+              /sbin/service 'reboot'
+            fi
+
+          elif [ $SECONDARYMODE == "Advanced" ]; then
+            echo ""
+            echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
+            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
+            echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
+            echo -e "JFFS filename: $ADVJFFS"
+            echo -e "EXT USB filename: $ADVUSB"
+            echo -e "NVRAM filename: $ADVNVRAM"
+            echo ""
+            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              # Run the TAR commands to restore backups to their original locations
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+              nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
+              echo ""
+              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+              echo ""
+              /sbin/service 'reboot'
+            fi
+          fi
+
+          # Unmount the backup drive
+          echo ""
+          echo ""
+          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+          sleep 10
+
+          unmountsecondarydrv
+
+          echo ""
+          echo -e "${CClear}"
+          exit 0
+
+      else
+
+          # Exit gracefully
+          echo ""
+          echo ""
+          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+          sleep 10
+
+          unmountsecondarydrv
+
+          echo -e "${CClear}"
+          exit 0
+
+        fi
+
+    else
+
+      # Exit gracefully
+      echo ""
+      echo ""
+      echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+      sleep 10
+
+      unmountsecondarydrv
+
+      echo -e "${CClear}"
+      exit 0
+
+    fi
 
   fi
 
@@ -1610,6 +2738,57 @@ unmountdrv () {
       fi
     done
 
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# unmountsecondarydrv is a function to gracefully unmount the secondary drive, and retry for up to 2 minutes
+unmountsecondarydrv () {
+
+  CNT=0
+  TRIES=12
+    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+      umount -l $SECONDARYUNCDRIVE  # unmount the local drive from the Secondary UNC
+      URC=$?
+      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+        echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") unmounted successfully.${CClear}"
+        break
+      else
+        echo -e "${CYellow}WARNING: Unable to unmount from secondary external drive. Trying every 10 seconds for 2 minutes."
+        sleep 10
+        CNT=$((CNT+1))
+        if [ $CNT -eq $TRIES ];then
+          echo -e "${CRed}ERROR: Unable to unmount from secondary external drive. Please check your configuration. Exiting."
+          logger "BACKUPMON ERROR: Unable to unmount from secondary external drive. Please check your configuration!"
+          exit 0
+        fi
+      fi
+    done
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# unmountdrv is a function to gracefully unmount the drive, and retry for up to 2 minutes
+unmounttestdrv () {
+
+  CNT=0
+  TRIES=3
+    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+      umount -l $TESTUNCDRIVE  # unmount the local drive from the UNC
+      URC=$?
+      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+        echo -en "${CGreen}STATUS: External Test Drive ("; printf "%s" "${TESTUNC}"; echo -e ") unmounted successfully.${CClear}"
+        break
+      else
+        echo -e "${CYellow}WARNING: Unable to unmount from external test drive. Retrying...${CClear}"
+        sleep 5
+        CNT=$((CNT+1))
+        if [ $CNT -eq $TRIES ];then
+          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting.${CClear}"
+          read -rsp $'Press any key to acknowledge...\n' -n1 key
+          break
+        fi
+      fi
+    done
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1724,6 +2903,7 @@ if [ "$1" == "-purge" ]
     fi
 
     autopurge
+    autopurgesecondaries
 fi
 
 # Check to see if the backup option is being called
@@ -1801,14 +2981,19 @@ if [ "$BSWITCH" == "False" ]; then
 fi
 
 # Run a normal backup
-echo -e "${CGreen}[Normal Backup Commencing]..."
+echo -e "${CGreen}[Primary Backup Commencing]..."
 echo ""
 echo -e "${CCyan}Messages:"
 
 backup
+secondary
 
 if [ $PURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then
   autopurge
+fi
+
+if [ $SECONDARYPURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then
+  autopurgesecondaries
 fi
 
 BSWITCH="False"
