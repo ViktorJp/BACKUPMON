@@ -1,3 +1,7 @@
+v1.2x   - (TBA)
+        - MINOR: Added a missing logger statement to indicate that the NVRAM was backed up (primary & secondary) that
+          was being left out of the syslogs after a backup.
+
 v1.20   - (September 27, 2023)
         - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
           the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
