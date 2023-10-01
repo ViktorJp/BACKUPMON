@@ -1,4 +1,8 @@
 v1.2x   - (TBA)
+        - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
+          would experience some issues backing itself up, throwing some errors and whatnot because this situation was 
+          never considered. Logic was added to factor in a missing EXT USB drive, and will now backup and restore only 
+          the JFFS and NVRAM components.
         - MINOR: Added a missing logger statement to indicate that the NVRAM was backed up (primary & secondary) that
           was being left out of the syslogs after a backup.
 
