@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.20 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.22 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.20                                                    # Current version
+Version=1.22                                                    # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -876,7 +876,7 @@ vupdate () {
         echo ""
         echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -setup'.${CClear}"
         echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow}advantage of its full functionality.${CClear}"
+        echo -e "${CYellow}advantage of its full functionality. Please save your configuration!${CClear}"
         echo ""
         read -rsp $'Press any key to continue...\n' -n1 key
         return
@@ -1676,6 +1676,13 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1685,6 +1692,13 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "Y" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1694,6 +1708,13 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "P" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1703,65 +1724,56 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           sleep 1
-        fi
-
-        # If a TAR exclusion file exists, use it for the USB drive backup
-        if [ $FREQUENCY == "W" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
-
-        elif [ $FREQUENCY == "M" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
-
-        elif [ $FREQUENCY == "Y" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
-
-        elif [ $FREQUENCY == "P" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg.${CClear}"
+          sleep 1
+        fi
 
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ "$EXTLABEL" != "NOTFOUND" ]; then
+          if [ $FREQUENCY == "W" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $FREQUENCY == "M" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $FREQUENCY == "Y" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $FREQUENCY == "P" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          fi
+        else
+          echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
+          logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
         fi
 
       elif [ $MODE == "Advanced" ]; then
@@ -1777,6 +1789,13 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg"
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1786,6 +1805,13 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg"
+          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "Y" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1795,52 +1821,49 @@ backup() {
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
-        fi
-
-        # If a TAR exclusion file exists, use it for the USB drive backup
-        if [ $FREQUENCY == "W" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
-
-        elif [ $FREQUENCY == "M" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
-
-        elif [ $FREQUENCY == "Y" ]; then
-          if ! [ -z $EXCLUSION ]; then
-            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
         fi
 
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ "$EXTLABEL" != "NOTFOUND" ]; then
+          if [ $FREQUENCY == "W" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $FREQUENCY == "M" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $FREQUENCY == "Y" ]; then
+            if ! [ -z $EXCLUSION ]; then
+              tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          fi
+        else
+          echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
+          logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
+        fi
       fi
 
       #added copies of the backupmon.sh, backupmon.cfg, exclusions list and NVRAM to backup location for easy copy/restore
@@ -1993,6 +2016,13 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "M" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2002,6 +2032,13 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2011,6 +2048,13 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "P" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2020,65 +2064,57 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           sleep 1
-        fi
-
-        # If a TAR exclusion file exists, use it for the USB drive backup
-        if [ $SECONDARYFREQUENCY == "W" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
-
-        elif [ $SECONDARYFREQUENCY == "M" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
-
-        elif [ $SECONDARYFREQUENCY == "Y" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
-
-        elif [ $SECONDARYFREQUENCY == "P" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
-          sleep 1
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg.${CClear}"
+          sleep 1
 
+        fi
+
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ "$EXTLABEL" != "NOTFOUND" ]; then
+          if [ $SECONDARYFREQUENCY == "W" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $SECONDARYFREQUENCY == "M" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $SECONDARYFREQUENCY == "Y" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $SECONDARYFREQUENCY == "P" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            sleep 1
+          fi
+        else
+          echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
+          logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
         fi
 
       elif [ $SECONDARYMODE == "Advanced" ]; then
@@ -2094,6 +2130,13 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "M" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2103,6 +2146,13 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
+
+          #Save a copy of the NVRAM
+          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg"
+          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2112,52 +2162,48 @@ secondary() {
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           sleep 1
-        fi
-
-        # If a TAR exclusion file exists, use it for the USB drive backup
-        if [ $SECONDARYFREQUENCY == "W" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
-
-        elif [ $SECONDARYFREQUENCY == "M" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
-
-          #Save a copy of the NVRAM
-          nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
-
-        elif [ $SECONDARYFREQUENCY == "Y" ]; then
-          if ! [ -z $SECONDARYEXCLUSION ]; then
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
-          else
-            tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
-          fi
-          logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
-          sleep 1
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
+          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
         fi
 
+        # If a TAR exclusion file exists, use it for the USB drive backup
+        if [ "$EXTLABEL" != "NOTFOUND" ]; then
+          if [ $SECONDARYFREQUENCY == "W" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $SECONDARYFREQUENCY == "M" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          elif [ $SECONDARYFREQUENCY == "Y" ]; then
+            if ! [ -z $SECONDARYEXCLUSION ]; then
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
+            else
+              tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
+            fi
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            sleep 1
+          fi
+        else
+          echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
+          logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
+        fi
       fi
 
       #added copies of the backupmon.sh, backupmon.cfg, exclusions list and NVRAM to backup location for easy copy/restore
@@ -2357,7 +2403,7 @@ restore() {
                   ok=1
                 fi
               elif [ $FREQUENCY == "P" ]; then
-                echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
@@ -2387,9 +2433,11 @@ restore() {
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
                 read ADVJFFS
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
-                read ADVUSB
-                echo ""
+                if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                  echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                  read ADVUSB
+                  echo ""
+                fi
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
                 break
@@ -2410,8 +2458,13 @@ restore() {
               # Run the TAR commands to restore backups to their original locations
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
               tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
-              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              else
+                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+              fi
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
               nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
               echo ""
@@ -2426,7 +2479,9 @@ restore() {
             echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
             echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
             echo -e "JFFS filename: $ADVJFFS"
-            echo -e "EXT USB filename: $ADVUSB"
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "EXT USB filename: $ADVUSB"
+            fi
             echo -e "NVRAM filename: $ADVNVRAM"
             echo ""
             echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
@@ -2436,8 +2491,13 @@ restore() {
               # Run the TAR commands to restore backups to their original locations
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
               tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
-              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+                tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              else
+                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+              fi
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
               nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
               echo ""
@@ -2578,7 +2638,7 @@ restore() {
                   ok=1
                 fi
               elif [ $FREQUENCY == "P" ]; then
-                echo -e "${CGreen}Enter the folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
@@ -2608,9 +2668,11 @@ restore() {
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
                 read ADVJFFS
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
-                read ADVUSB
-                echo ""
+                if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                  echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                  read ADVUSB
+                  echo ""
+                fi
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
                 break
@@ -2631,8 +2693,13 @@ restore() {
               # Run the TAR commands to restore backups to their original locations
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
               tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
-              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              else
+                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+              fi
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
               nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
               echo ""
@@ -2647,7 +2714,9 @@ restore() {
             echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
             echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
             echo -e "JFFS filename: $ADVJFFS"
-            echo -e "EXT USB filename: $ADVUSB"
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "EXT USB filename: $ADVUSB"
+            fi
             echo -e "NVRAM filename: $ADVNVRAM"
             echo ""
             echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
@@ -2657,8 +2726,13 @@ restore() {
               # Run the TAR commands to restore backups to their original locations
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
               tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
-              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              if [ "$EXTLABEL" != "NOTFOUND" ]; then
+                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+                tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              else
+                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+              fi
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
               nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
               echo ""
@@ -2807,6 +2881,9 @@ fi
 if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
   echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
 fi
+
+# Check to see if EXT drive exists
+if [ -z "$EXTLABEL" ]; then EXTLABEL="NOTFOUND"; fi
 
 updatecheck
 
