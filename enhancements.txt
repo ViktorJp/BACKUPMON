@@ -1,6 +1,8 @@
 Future Enhancements (Planned)
 -----------------------------
 * Option to add the -backup switch to the cron job
+* Add other info to the text file... like router model, firmware version...
+* Possibly do a check of old/current firmware version and warn before a restore (like router model)
 
 In Progress:
 ------------
