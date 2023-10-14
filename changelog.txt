@@ -1,3 +1,8 @@
+v1.23b  - (TBA)
+        - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
+          have performed a restore. This was causing some conflicts between it and a similar copy that was located
+          under the /jffs/addons/backupmon.d folder. Thanks to @Ripshod for finding this!
+
 v1.22   - (October 2, 2023)
         - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
           would experience some issues backing itself up, throwing some errors and whatnot because this situation was 
