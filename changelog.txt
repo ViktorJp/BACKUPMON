@@ -7,7 +7,7 @@ v1.23b  - (TBA)
           wreaks havoc on all kinds of stuff. Please use this as a best-practice for any device you interact with.
           Just give it a name. It's certainly easier to identify what device is having problems should you ever need
           to troubleshoot.
-        - FIXED: Incorporated changes to the way passwords are being saved, now using the base64 methods suggested by
+        - FIXED: Incorporated changes to the way passwords are being saved, now using the base64 method suggested by
           @PeterT and @ColinTaylor. Passwords are now encrypted via base64 and saved to your config file. PLEASE NOTE:
           this change will require you to go into your config, and resave your passwords into proper base64 encoding.
           I've added a test to the script to determine if your passwords need to be resaved, and will direct you to
