@@ -12,7 +12,9 @@ v1.23b  - (TBA)
           this change will require you to go into your config, and resave your passwords into proper base64 encoding.
           I've added a test to the script to determine if your passwords need to be resaved, and will direct you to
           the setup menu. This means your passwords can now be overly complex, using special characters, including the
-          \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts.
+          \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts. Many thanks goes to
+          @Somewhereovertherainbow for his help coming up with a clever way to grep openssl to determine valid base64
+          or invalid plaintext passwords!
 
 v1.22   - (October 2, 2023)
         - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
