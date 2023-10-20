@@ -77,6 +77,9 @@ CWhite="\e[1;37m"
 InvWhite="\e[1;107m"
 CClear="\e[0m"
 
+#Preferred standard router binaries path
+export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
+
 # -------------------------------------------------------------------------------------------------------------------------
 # Functions
 # -------------------------------------------------------------------------------------------------------------------------
@@ -284,11 +287,13 @@ vconfig () {
               if [ $PASSWORD == "admin" ]; then
                 echo -e "${CGreen}Old Password (Unencrypted): admin"
               else
-                echo -en "${CGreen}Old Password (Unencrypted): "; echo $PASSWORD | base64 -d
+                #echo -en "${CGreen}Old Password (Unencrypted): "; echo $PASSWORD | base64 -d
+                echo -en "${CGreen}Old Password (Unencrypted): "; echo "$PASSWORD" | openssl enc -d -base64 -A
               fi
               echo ""
               read -rp 'New Password: ' PASSWORD1
-              if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD=`echo "admin" | base64`; else PASSWORD=`echo $PASSWORD1 | base64`; fi # Using default value on enter keypress
+              #if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD=`echo "admin" | base64`; else PASSWORD=`echo $PASSWORD1 | base64`; fi # Using default value on enter keypress
+              if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD=`echo "admin" | openssl enc -base64 -A`; else PASSWORD=`echo $PASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
             ;;
 
             3) # -----------------------------------------------------------------------------------------
@@ -579,7 +584,8 @@ vconfig () {
                   case $SECONDARYINPUT in
                     1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
                     2 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
-                    3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencrypted): admin"; else echo -en "Old Secondary Password (Unencrypted): "; echo $SECONDARYPWD | base64 -d; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | base64`; else SECONDARYPWD=`echo $SECONDARYPWD1 | base64`; fi;;
+                    #3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencrypted): admin"; else echo -en "Old Secondary Password (Unencrypted): "; echo $SECONDARYPWD | base64 -d; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | base64`; else SECONDARYPWD=`echo $SECONDARYPWD1 | base64`; fi;;
+                    3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencrypted): admin"; else echo -en "Old Secondary Password (Unencrypted): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     4 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
                     5 ) echo ""; read -p 'Secondary Local Drv Mount Path (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE;;
                     6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
@@ -1001,7 +1007,8 @@ purgebackups () {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCPWD=$(echo $PASSWORD | base64 -d)
+          #UNENCPWD=$(echo $PASSWORD | base64 -d)
+          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
           mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -1141,7 +1148,8 @@ autopurge () {
     CNT=0
     TRIES=12
       while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-        UNENCPWD=$(echo $PASSWORD | base64 -d)
+        #UNENCPWD=$(echo $PASSWORD | base64 -d)
+        UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
         mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local drive mount
         MRC=$?
         if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -1260,7 +1268,8 @@ purgesecondaries() {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
           mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -1404,7 +1413,8 @@ autopurgesecondaries () {
     CNT=0
     TRIES=12
       while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-        UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+        #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+        UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
         mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local drive mount
         MRC=$?
         if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -1620,7 +1630,8 @@ backup() {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCPWD=$(echo $PASSWORD | base64 -d)
+          #UNENCPWD=$(echo $PASSWORD | base64 -d)
+          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
           mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -1961,7 +1972,8 @@ secondary() {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
           mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -2351,7 +2363,8 @@ restore() {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCPWD=$(echo $PASSWORD | base64 -d)
+          #UNENCPWD=$(echo $PASSWORD | base64 -d)
+          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
           mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -2589,7 +2602,8 @@ restore() {
       CNT=0
       TRIES=12
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
+          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
           mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local drive mount
           MRC=$?
           if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
@@ -2888,12 +2902,24 @@ unmounttestdrv () {
 # checkplaintxtpwds is a function to check if old plaintext pwds are still in use due to change to new base64 pwd storage change
 checkplaintxtpwds () {
 
-  echo $PASSWORD | base64 -d > /dev/null 2>&1
-  PRI=$?
-  echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
-  SEC=$?
+  #echo $PASSWORD | base64 -d > /dev/null 2>&1
+  echo "$PASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+  PRI="$?"
+  #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
+  echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+  SEC="$?"
 
-  if [ $PRI -eq 1 ] || [ $SEC -eq 1 ] && [ $SECONDARYSTATUS -eq 1 ]; then
+  if [ "$PRI" == "1" ]; then
+    echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+    echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+    echo -e "way passwords are encrypted and saved requires your immediate attention!${CClear}"
+    echo ""
+    read -rsp $'Press any key to enter setup menu...\n' -n1 key
+    sh /jffs/scripts/backupmon.sh -setup
+    exit 0
+  fi
+
+  if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
     echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
     echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
     echo -e "way passwords are encrypted and saved requires your immediate attention!${CClear}"
