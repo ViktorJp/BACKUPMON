@@ -5,8 +5,8 @@ v1.23b  - (TBA)
         - FIXED: Now testing to see if your EXT USB drive label is blank, and will require having at least a 2-char
           value before being able to run. It is important to name your devices, and not keep them blank/null. This
           wreaks havoc on all kinds of stuff. Please use this as a best-practice for any device you interact with.
-          Just give it a name. It's certainly easier to identify what device is having problems should you ever need
-          to troubleshoot.
+          Just give it a name. All one word, no spaces, no crazy special characters. It's certainly easier to identify
+          what device is having problems should you ever need to troubleshoot.
         - CHANGED: Incorporated changes to the way passwords are being saved, now using the base64 method suggested by
           @PeterT and @ColinTaylor. Passwords are now encrypted via base64 and saved to your config file. PLEASE NOTE:
           this change will require you to go into your config, and resave your passwords into proper base64 encoding.
