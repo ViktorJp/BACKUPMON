@@ -15,6 +15,10 @@ v1.23b  - (TBA)
           \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts. Many thanks goes to
           @Somewhereovertherainbow for his help coming up with a clever way to grep openssl to determine valid base64
           passwords or invalid plaintext passwords!
+        - ADDED: Included the current firmware/build in the instructions.txt file, including a warning not to restore
+          your router from an older build, or you may face possibly bricking your router. This info is now also shown
+          within the setup menu, and firmware/build numbers are written to your backupmon.cfg file.
+        - 
 
 v1.22   - (October 2, 2023)
         - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
