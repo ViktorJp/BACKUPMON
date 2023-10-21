@@ -3,13 +3,13 @@ Future Enhancements (Planned)
 * Option to add the -backup switch to the cron job
 * Add other info to the text file... like router model, firmware version...
 * Possibly do a check of old/current firmware version and warn before a restore (like router model)
-* Add a ping test to the network connection tester
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Add a ping test to the network connection tester
 * A connection tester functionality to test backup target username/pwd/paths for a successful connection
 * Allow for multiple configs to perform redundant backups to multiple targets
 * Allow for automated purging
