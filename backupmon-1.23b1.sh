@@ -205,6 +205,7 @@ vconfig () {
       echo -e "${CGreen}Primary Backup Configuration Options"
       echo -e "${CGreen}----------------------------------------------------------------"
       echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Model             :"${CGreen}$ROUTERMODEL
+      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Firmware/Build    :"${CGreen}$FWBUILD
       echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Backup Target Username          :"${CGreen}$USERNAME
       echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Backup Target Password (ENC)    :"${CGreen}$PASSWORD
       if [ "$UNCUPDATED" == "True" ]; then
@@ -609,8 +610,7 @@ vconfig () {
                 SECONDARYUNC=$(echo $SECONDARYUNC | sed -e 's,\\,\\\\,g')
               fi
 
-                { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
-                  echo 'USERNAME="'"$USERNAME"'"'
+                { echo 'USERNAME="'"$USERNAME"'"'
                   echo 'PASSWORD="'"$PASSWORD"'"'
                   echo 'UNC="'"$UNC"'"'
                   echo 'UNCDRIVE="'"$UNCDRIVE"'"'
@@ -660,8 +660,7 @@ vconfig () {
       [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
 
       #Create a new config file with default values to get it to a basic running state
-      { echo 'ROUTERMODEL="'"$ROUTERMODEL"'"'
-        echo 'USERNAME="admin"'
+      { echo 'USERNAME="admin"'
         echo 'PASSWORD="admin"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
@@ -746,6 +745,30 @@ while true; do
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
                 echo -e "${CCyan}Messages:"
+
+                # Ping target to see if it's reachable
+                CNT=0
+                TRIES=3
+                TARGETIP=$(echo $TESTUNC | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+                if [ ! -z $TARGETIP ]; then
+                  while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+                    ping -q -c 1 -W 2 $TARGETIP > /dev/null 2>&1
+                    RC=$?
+                    if [ $RC -eq 0 ]; then  # If ping come back successful, then proceed
+                      echo -e "${CGreen}INFO: Backup Target ($TARGETIP) reachable via PING.${CClear}"
+                      break
+                    else
+                      echo -e "${CYellow}WARNING: Unable to PING Backup Target ($TARGETIP). Retrying...${CClear}"
+                      sleep 3
+                      CNT=$((CNT+1))
+                      if [ $CNT -eq $TRIES ];then
+                        echo -e "${CRed}ERROR: Unable to PING backup target ($TARGETIP). Please check your configuration/permissions.${CClear}"
+                        break
+                      fi
+                    fi
+                  done
+                fi
+
                 # Check to see if a local drive mount is available, if not, create one.
                 if ! [ -d $TESTUNCDRIVE ]; then
                     mkdir -p $TESTUNCDRIVE
@@ -777,10 +800,16 @@ while true; do
                           CNT=$((CNT+1))
                           if [ $CNT -eq $TRIES ];then
                             echo -e "${CRed}ERROR: Unable to mount to external drive ($TESTUNCDRIVE). Please check your configuration. Exiting.${CClear}"
+                            FAILURE="TRUE"
                             break
                           fi
                         fi
                       done
+                fi
+
+                if [ "$FAILURE" == "TRUE" ]; then
+                  read -rsp $'Press any key to acknowledge...\n' -n1 key
+                  break
                 fi
 
                 # If the local mount is connected to the UNC, proceed
@@ -1674,18 +1703,22 @@ backup() {
         if [ $FREQUENCY == "W" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar*
           [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg*
+          [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw.txt* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw.txt*
           [ -f ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "M" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar*
           [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg*
+          [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw.txt* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw.txt*
           [ -f ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "Y" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar*
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg*
+          [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw.txt* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw.txt*
           [ -f ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar*
         elif [ $FREQUENCY == "P" ]; then
           [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar*
           [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg*
+          [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt*
           [ -f ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar* ] && rm ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar*
         fi
       fi
@@ -1708,6 +1741,13 @@ backup() {
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw.txt.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1722,6 +1762,13 @@ backup() {
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw.txt.${CClear}"
           sleep 1
 
         elif [ $FREQUENCY == "Y" ]; then
@@ -1740,6 +1787,13 @@ backup() {
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw.txt.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "P" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1754,6 +1808,13 @@ backup() {
           nvram save ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt.${CClear}"
           sleep 1
         fi
 
@@ -1821,6 +1882,13 @@ backup() {
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/routerfw-${datelabel}.txt.${CClear}"
+          sleep 1
+
         elif [ $FREQUENCY == "M" ]; then
           if ! [ -z $EXCLUSION ]; then
             tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $EXCLUSION -C /jffs . >/dev/null
@@ -1835,6 +1903,13 @@ backup() {
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/routerfw-${datelabel}.txt.${CClear}"
           sleep 1
 
         elif [ $FREQUENCY == "Y" ]; then
@@ -1853,6 +1928,12 @@ backup() {
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/routerfw-${datelabel}.txt.${CClear}"
+          sleep 1
         fi
 
         # If a TAR exclusion file exists, use it for the USB drive backup
@@ -1910,11 +1991,16 @@ backup() {
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
         echo ''
-        echo 'IMPORTANT: Your original USB Drive name was:' ${EXTLABEL}
+        echo 'IMPORTANT:'
+        echo 'Asus Router Model:' ${ROUTERMODEL}
+        echo 'Firmware/Build Number:' ${FWBUILD}
+        echo 'EXT USB Drive Label Name:' ${EXTLABEL}
+        echo ''
+        echo 'WARNING: Do NOT attempt to restore if your Asus Router Model or Firmware/Build Numbers differ from your backups!'
         echo ''
         echo 'Please ensure your have performed the following before restoring your backups:'
         echo '1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY).'
-        echo '2.) Run "AMTM" and format a new USB drive on your router - call it exactly the same name as before (see above)! Reboot.'
+        echo '2.) Run "AMTM" and format a new USB drive on your router - label it exactly the same name as before (see above)! Reboot.'
         echo '3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS.'
         echo '4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot.'
         echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
@@ -2016,18 +2102,22 @@ secondary() {
         if [ $SECONDARYFREQUENCY == "W" ]; then
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw.txt* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw.txt*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar*
         elif [ $SECONDARYFREQUENCY == "M" ]; then
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw.txt* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw.txt*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar*
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw.txt* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw.txt*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar*
         elif [ $SECONDARYFREQUENCY == "P" ]; then
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg*
+          [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/routerfw.txt* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/routerfw.txt*
           [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar* ] && rm ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar*
         fi
       fi
@@ -2050,6 +2140,13 @@ secondary() {
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw.txt.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "M" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2064,6 +2161,13 @@ secondary() {
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw.txt.${CClear}"
           sleep 1
 
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
@@ -2082,6 +2186,13 @@ secondary() {
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw.txt.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "P" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2096,6 +2207,13 @@ secondary() {
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/routerfw.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/routerfw.txt.${CClear}"
           sleep 1
 
         fi
@@ -2164,6 +2282,13 @@ secondary() {
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/routerfw-${datelabel}.txt.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "M" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2180,6 +2305,13 @@ secondary() {
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
           sleep 1
 
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/routerfw-${datelabel}.txt.${CClear}"
+          sleep 1
+
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
           if ! [ -z $SECONDARYEXCLUSION ]; then
             tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . >/dev/null
@@ -2194,6 +2326,13 @@ secondary() {
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
           logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+          sleep 1
+
+          #include current router model/firmware/build info in the backup location
+          { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
+            echo 'RESTOREBUILD="'"$FWBUILD"'"'
+          } > ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw-${datelabel}.txt
+          echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}routerfw.txt${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/routerfw-${datelabel}.txt.${CClear}"
           sleep 1
         fi
 
@@ -2252,11 +2391,16 @@ secondary() {
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
         echo ''
-        echo 'IMPORTANT: Your original USB Drive name was:' ${EXTLABEL}
+        echo 'IMPORTANT:'
+        echo 'Asus Router Model:' ${ROUTERMODEL}
+        echo 'Firmware/Build Number:' ${FWBUILD}
+        echo 'EXT USB Drive Label Name:' ${EXTLABEL}
+        echo ''
+        echo 'WARNING: Do NOT attempt to restore if your Asus Router Model or Firmware/Build Numbers differ from your backups!'
         echo ''
         echo 'Please ensure your have performed the following before restoring your backups:'
         echo '1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY).'
-        echo '2.) Run "AMTM" and format a new USB drive on your router - call it exactly the same name as before (see above)! Reboot.'
+        echo '2.) Run "AMTM" and format a new USB drive on your router - label it exactly the same name as before (see above)! Reboot.'
         echo '3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS.'
         echo '4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot.'
         echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
@@ -2285,7 +2429,7 @@ secondary() {
 # -------------------------------------------------------------------------------------------------------------------------
 
 # restore function is a routine that allows you to pick a backup to be restored
-restore() {
+restore () {
 
   clear
   # Notify if a new version awaits
@@ -2303,8 +2447,8 @@ restore() {
   echo ""
   echo -e "${CGreen}Please ensure your have performed the following before restoring your backups:"
   echo -e "${CGreen}1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY)."
-  echo -e "${CGreen}2.) Run 'AMTM' and format a new USB drive on your router - call it exactly the same name as before! Reboot."
-  echo -e "${CYellow}    (please refer to your restore instruction.txt file to find your original USB drive label)"
+  echo -e "${CGreen}2.) Run 'AMTM' and format a new USB drive on your router - label it exactly the same name as before! Reboot."
+  echo -e "${CYellow}    (please refer to your restore instruction.txt file to find your original EXT USB drive label)"
   echo -e "${CGreen}3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
   echo -e "${CGreen}4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot."
   echo -e "${CGreen}5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder."
@@ -2328,18 +2472,6 @@ restore() {
   fi
 
   echo -e "${CCyan}Messages:"
-
-  # Determine router model
-  [ -z "$(nvram get odmpid)" ] && RESTOREMODEL="$(nvram get productid)" || RESTOREMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
-
-  if [ "$ROUTERMODEL" != "$RESTOREMODEL" ]; then
-    echo -e "${CRed}ERROR: Original source router model is different from target router model."
-    echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
-    echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
-    logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
-    echo ""
-    exit 0
-  fi
 
   if [ "$SOURCE" == "Primary" ]; then
 
@@ -2447,6 +2579,9 @@ restore() {
             if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
 
             if [ $MODE == "Basic" ]; then
+              if [ -f ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/routerfw.txt ]; then
+                source ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/routerfw.txt
+              fi
               break
             elif [ $MODE == "Advanced" ]; then
               echo ""
@@ -2469,101 +2604,153 @@ restore() {
                 fi
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
+                read ADVRTRFW
+                if [ -f ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVRTRFW} ]; then
+                  source ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVRTRFW}
+                fi
                 break
               fi
             fi
         done
 
-          if [ $MODE == "Basic" ]; then
-            echo ""
-            echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
-            echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
-            echo ""
-            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
-            if promptyn "(y/n): "; then
-              echo ""
-              echo ""
-              # Run the TAR commands to restore backups to their original locations
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
-              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-              if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
-                tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
-              else
-                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
-                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
-              fi
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
-              nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-              echo ""
-              rm -f /jffs/scripts/backupmon.cfg
-              /sbin/service 'reboot'
-            fi
+        # Determine router model
+        [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
 
-          elif [ $MODE == "Advanced" ]; then
+        if [ ! -z $RESTOREMODEL ]; then
+          if [ "$ROUTERMODEL" != "$RESTOREMODEL" ]; then
             echo ""
-            echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
-            echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
-            echo -e "JFFS filename: $ADVJFFS"
-            if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "EXT USB filename: $ADVUSB"
-            fi
-            echo -e "NVRAM filename: $ADVNVRAM"
+            echo -e "${CRed}ERROR: Original source router model is different from target router model."
+            echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
+            echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
+            logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
             echo ""
-            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+            echo -e "${CGreen}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
-              # Run the TAR commands to restore backups to their original locations
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
-              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
-              if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
-                tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
-              else
-                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
-                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
-              fi
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
-              nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-              echo ""
-              rm -f /jffs/scripts/backupmon.cfg
-              /sbin/service 'reboot'
+              echo -e "${CYellow}WARNING: Continuing restore using backup saved from a different source router model.${CClear}"
+              echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
+              echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
+            else
+              exit 0
             fi
           fi
+        fi
 
-          # Unmount the backup drive
-          echo ""
-          echo ""
-          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-          sleep 10
+        # Determine mismatched firmware
+        if [ ! -z $RESTOREBUILD ]; then
+          if [ "$FWBUILD" != "$RESTOREBUILD" ]; then
+            echo ""
+            echo -e "${CRed}ERROR: Original source router firmware/build is different from target router firmware/build."
+            echo -e "${CRed}ERROR: Restorations can only be performed on the same router firmware/build or you may brick your router!"
+            echo -e "${CRed}ERROR: If you are certain router firmware/build is the same, please check and re-save your configuration!${CClear}"
+            logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
+            echo ""
+            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              echo -e "${CYellow}WARNING: Continuing restore using backup saved with older router firmware/build.${CClear}"
+              echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
+              echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
+            else
+              exit 0
+            fi
+          fi
+        fi
 
-          unmountdrv
-
+        if [ $MODE == "Basic" ]; then
           echo ""
-          echo -e "${CClear}"
-          exit 0
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+            else
+              echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+              logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+            fi
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
+            echo ""
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            rm -f /jffs/scripts/backupmon.cfg
+            /sbin/service 'reboot'
+          fi
+
+        elif [ $MODE == "Advanced" ]; then
+          echo ""
+          echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+          echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
+          echo -e "JFFS filename: $ADVJFFS"
+          if [ "$EXTLABEL" != "NOTFOUND" ]; then
+            echo -e "EXT USB filename: $ADVUSB"
+          fi
+          echo -e "NVRAM filename: $ADVNVRAM"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+            else
+              echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+              logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+            fi
+            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            nvram restore ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
+            echo ""
+            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            rm -f /jffs/scripts/backupmon.cfg
+            /sbin/service 'reboot'
+          fi
+        fi
+
+        # Unmount the backup drive
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountdrv
+
+        echo ""
+        echo -e "${CClear}"
+        exit 0
 
       else
 
-          # Exit gracefully
-          echo ""
-          echo ""
-          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-          sleep 10
+        # Exit gracefully
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
 
-          unmountdrv
+        unmountdrv
 
-          echo -e "${CClear}"
-          exit 0
+        echo -e "${CClear}"
+        exit 0
 
-        fi
+      fi
 
     else
 
@@ -2686,6 +2873,9 @@ restore() {
             if [ -z "$BACKUPDATE1" ]; then echo ""; echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"; echo ""; exit 0; else BACKUPDATE=$BACKUPDATE1; fi
 
             if [ $SECONDARYMODE == "Basic" ]; then
+              if [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/routerfw.txt ]; then
+                source ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/routerfw.txt
+              fi
               break
             elif [ $SECONDARYMODE == "Advanced" ]; then
               echo ""
@@ -2708,99 +2898,151 @@ restore() {
                 fi
                 echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
+                echo ""
+                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
+                read ADVRTRFW
+                if [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVRTRFW} ]; then
+                  source ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVRTRFW}
+                fi
                 break
               fi
             fi
         done
 
-          if [ $SECONDARYMODE == "Basic" ]; then
-            echo ""
-            echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
-            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
-            echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
-            echo ""
-            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
-            if promptyn "(y/n): "; then
-              echo ""
-              echo ""
-              # Run the TAR commands to restore backups to their original locations
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
-              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
-              if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
-                tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
-              else
-                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
-                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
-              fi
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
-              nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-              echo ""
-              /sbin/service 'reboot'
-            fi
+        # Determine router model
+        [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
 
-          elif [ $SECONDARYMODE == "Advanced" ]; then
+        if [ ! -z $RESTOREMODEL ]; then
+          if [ "$ROUTERMODEL" != "$RESTOREMODEL" ]; then
             echo ""
-            echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
-            echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
-            echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
-            echo -e "JFFS filename: $ADVJFFS"
-            if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "EXT USB filename: $ADVUSB"
-            fi
-            echo -e "NVRAM filename: $ADVNVRAM"
+            echo -e "${CRed}ERROR: Original source router model is different from target router model."
+            echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
+            echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
+            logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
             echo ""
-            echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+            echo -e "${CGreen}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
-              # Run the TAR commands to restore backups to their original locations
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
-              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
-              if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
-                tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
-              else
-                echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
-                logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
-              fi
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
-              nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
-              echo ""
-              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-              echo ""
-              /sbin/service 'reboot'
+              echo -e "${CYellow}WARNING: Continuing restore using backup saved from a different source router model.${CClear}"
+              echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
+              echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
+            else
+              exit 0
             fi
           fi
+        fi
 
-          # Unmount the backup drive
-          echo ""
-          echo ""
-          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-          sleep 10
+        # Determine mismatched firmware
+        if [ ! -z $RESTOREBUILD ]; then
+          if [ "$FWBUILD" != "$RESTOREBUILD" ]; then
+            echo ""
+            echo -e "${CRed}ERROR: Original source router firmware/build is different from target router firmware/build."
+            echo -e "${CRed}ERROR: Restorations can only be performed on the same router firmware/build or you may brick your router!"
+            echo -e "${CRed}ERROR: If you are certain router firmware/build is the same, please check and re-save your configuration!${CClear}"
+            logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
+            echo ""
+            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            if promptyn "(y/n): "; then
+              echo ""
+              echo ""
+              echo -e "${CYellow}WARNING: Continuing restore using backup saved with older router firmware/build.${CClear}"
+              echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
+              echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
+            else
+              exit 0
+            fi
+          fi
+        fi
 
-          unmountsecondarydrv
-
+        if [ $SECONDARYMODE == "Basic" ]; then
           echo ""
-          echo -e "${CClear}"
-          exit 0
+          echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
+          echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+            tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz -C /jffs >/dev/null
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+            else
+              echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+              logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+            fi
+            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+            nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg >/dev/null 2>&1
+            echo ""
+            echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            /sbin/service 'reboot'
+          fi
+
+        elif [ $SECONDARYMODE == "Advanced" ]; then
+          echo ""
+          echo -e "${CRed}WARNING: You will be restoring a secondary backup of your JFFS, the entire contents of your External"
+          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
+          echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
+          echo -e "JFFS filename: $ADVJFFS"
+          if [ "$EXTLABEL" != "NOTFOUND" ]; then
+            echo -e "EXT USB filename: $ADVUSB"
+          fi
+          echo -e "NVRAM filename: $ADVNVRAM"
+          echo ""
+          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          if promptyn "(y/n): "; then
+            echo ""
+            echo ""
+            # Run the TAR commands to restore backups to their original locations
+            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs >/dev/null
+            if [ "$EXTLABEL" != "NOTFOUND" ]; then
+              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+            else
+              echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
+              logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
+            fi
+            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            nvram restore ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} >/dev/null 2>&1
+            echo ""
+            echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+            echo ""
+            /sbin/service 'reboot'
+          fi
+        fi
+
+        # Unmount the backup drive
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
+
+        unmountsecondarydrv
+
+        echo ""
+        echo -e "${CClear}"
+        exit 0
 
       else
 
-          # Exit gracefully
-          echo ""
-          echo ""
-          echo -e "${CGreen}STATUS: Settling for 10 seconds..."
-          sleep 10
+        # Exit gracefully
+        echo ""
+        echo ""
+        echo -e "${CGreen}STATUS: Settling for 10 seconds..."
+        sleep 10
 
-          unmountsecondarydrv
+        unmountsecondarydrv
 
-          echo -e "${CClear}"
-          exit 0
+        echo -e "${CClear}"
+        exit 0
 
-        fi
+      fi
 
     else
 
@@ -2947,6 +3189,14 @@ fi
 if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
   echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
 fi
+
+# Determine router model
+[ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
+
+#Get FW Version for inclusion in instructions.txt and to check before a restore
+FWVER=$(nvram get firmver | tr -d '.')
+BUILDNO=$(nvram get buildno)
+FWBUILD="$FWVER.$BUILDNO"
 
 # Check to see if EXT drive exists
 USBPRODUCT="$(nvram get usb_path1_product)"
@@ -3113,6 +3363,8 @@ echo ""
 echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
 echo ""
 
+echo -e "${CCyan}Asus Router Model: ${CGreen}${ROUTERMODEL}"
+echo -e "${CCyan}Firmware/Build Number: ${CGreen}${FWBUILD}"
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
