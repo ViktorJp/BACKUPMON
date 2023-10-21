@@ -1,7 +1,7 @@
 v1.23b  - (TBA)
         - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
           have performed a restore. This was causing some conflicts between it and a similar copy that was located
-          under the /jffs/addons/backupmon.d folder. Thanks to @Ripshod for finding this!
+          under the /jffs/addons/backupmon.d/ folder. Thanks to @Ripshod for finding this!
         - FIXED: Now testing to see if your EXT USB drive label is blank, and will require having at least a 1-char
           value before being able to run. It is important to name your devices, and not keep them blank/null. This
           wreaks havoc on all kinds of stuff. Please use this as a best-practice for any device you interact with.
