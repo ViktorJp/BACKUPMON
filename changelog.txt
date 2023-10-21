@@ -17,8 +17,17 @@ v1.23b  - (TBA)
           passwords or invalid plaintext passwords!
         - ADDED: Included the current firmware/build in the instructions.txt file, including a warning not to restore
           your router from an older build, or you may face possibly bricking your router. This info is now also shown
-          within the setup menu, and firmware/build numbers are written to your backupmon.cfg file.
-        - 
+          within the setup menu, and firmware/build numbers are written to a FWBUILD.txt file located under your
+          backup folder. When going through a restore, BACKUPMON will compare your router's current firmware/build
+          compared to the firmware/build found in your FWBUILD.txt file... if they match, it proceeds with a restore.
+          This is simply a roadblock I put up to prevent people from possibly damaging their routers if they happen to
+          restore an older firmware. If it notices a difference, it will ask you whether or not you want to proceed,
+          and won't stop you from overwriting your router with an older configuration from a previous firmware. This is
+          done at your own risk.
+        - ADDED: Included a ping test in the backup target network connection tester functionality. Thought this would
+          be a worthy add-on when troubleshooting getting your router talking to your backup target. Please note, your
+          backup target must have capabilities of returning icmp/ping requests to show valid results, but this won't
+          stop the testing process.
 
 v1.22   - (October 2, 2023)
         - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
