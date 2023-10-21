@@ -15,15 +15,17 @@ v1.23b  - (TBA)
           \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts. Many thanks goes to
           @Somewhereovertherainbow for his help coming up with a clever way to grep openssl to determine valid base64
           passwords or invalid plaintext passwords!
-        - ADDED: Included the current firmware/build in the instructions.txt file, including a warning not to restore
-          your router from an older build, or you may face possibly bricking your router. This info is now also shown
-          within the setup menu, and firmware/build numbers are written to a FWBUILD.txt file located under your
-          backup folder. When going through a restore, BACKUPMON will compare your router's current firmware/build
-          compared to the firmware/build found in your FWBUILD.txt file... if they match, it proceeds with a restore.
-          This is simply a roadblock I put up to prevent people from possibly damaging their routers if they happen to
-          restore an older firmware. If it notices a difference, it will ask you whether or not you want to proceed,
-          and won't stop you from overwriting your router with an older configuration from a previous firmware. This is
-          done at your own risk.
+        - ADDED: Included the current model/firmware/build in the instructions.txt file, including a warning not to
+          restore your router from an older firmware/build or model type, or you may face possibly bricking your
+          router. This info is now also shown within the setup menu, and is written to a routerfw.txt file located
+          under each of your backup folders. This is to keep track what router model/firmware build each backup was
+          taken with. When going through a restore, BACKUPMON will compare your router's current model/firmware/build
+          and compare it to the model/firmware/build found in the backup folder's routerfw.txt file... if they match,
+          it proceeds with an uninterrupted restore. If it notices a difference, it will give you explicit warnings not
+          to proceed, and asks you whether or not you want to continue, but won't stop you from overwriting your router
+          with an older configuration from a previous firmware. This is done at your own risk. I built this roadblock
+          to prevent people from possibly unknowingly damaging their routers if they happen to restore an older
+          firmware, or think they can restore a backup from an RT-AC86U to a GT-AX6000 (or the like). 
         - ADDED: Included a ping test in the backup target network connection tester functionality. Thought this would
           be a worthy add-on when troubleshooting getting your router talking to your backup target. Please note, your
           backup target must have capabilities of returning icmp/ping requests to show valid results, but this won't
