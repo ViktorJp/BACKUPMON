@@ -30,6 +30,8 @@ v1.23b  - (TBA)
           be a worthy add-on when troubleshooting getting your router talking to your backup target. Please note, your
           backup target must have capabilities of returning icmp/ping requests to show valid results, but this won't
           stop the testing process.
+        - ADDED: Added the ability to import your primary or secondary backup settings into the Backup Target Network
+          Connection Tester. Thanks to @PeterT for the suggestion!
 
 v1.22   - (October 2, 2023)
         - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
