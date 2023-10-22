@@ -286,10 +286,10 @@ vconfig () {
               echo -e "${CYellow}(Default = admin)${CClear}"
               echo ""
               if [ $PASSWORD == "admin" ]; then
-                echo -e "${CGreen}Old Password (Unencrypted): admin"
+                echo -e "${CGreen}Old Password (Unencoded): admin"
               else
-                #echo -en "${CGreen}Old Password (Unencrypted): "; echo $PASSWORD | base64 -d
-                echo -en "${CGreen}Old Password (Unencrypted): "; echo "$PASSWORD" | openssl enc -d -base64 -A
+                #echo -en "${CGreen}Old Password (Unencoded): "; echo $PASSWORD | base64 -d
+                echo -en "${CGreen}Old Password (Unencoded): "; echo "$PASSWORD" | openssl enc -d -base64 -A
               fi
               echo ""
               read -rp 'New Password: ' PASSWORD1
@@ -585,8 +585,8 @@ vconfig () {
                   case $SECONDARYINPUT in
                     1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
                     2 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
-                    #3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencrypted): admin"; else echo -en "Old Secondary Password (Unencrypted): "; echo $SECONDARYPWD | base64 -d; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | base64`; else SECONDARYPWD=`echo $SECONDARYPWD1 | base64`; fi;;
-                    3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencrypted): admin"; else echo -en "Old Secondary Password (Unencrypted): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
+                    #3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | base64 -d; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | base64`; else SECONDARYPWD=`echo $SECONDARYPWD1 | base64`; fi;;
+                    3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     4 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
                     5 ) echo ""; read -p 'Secondary Local Drv Mount Path (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE;;
                     6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
@@ -3154,7 +3154,7 @@ checkplaintxtpwds () {
   if [ "$PRI" == "1" ]; then
     echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
     echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-    echo -e "way passwords are encrypted and saved requires your immediate attention!${CClear}"
+    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
     sh /jffs/scripts/backupmon.sh -setup
@@ -3164,7 +3164,7 @@ checkplaintxtpwds () {
   if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
     echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
     echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-    echo -e "way passwords are encrypted and saved requires your immediate attention!${CClear}"
+    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
     sh /jffs/scripts/backupmon.sh -setup
