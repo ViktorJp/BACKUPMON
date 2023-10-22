@@ -739,7 +739,7 @@ while true; do
       case $TESTINPUT in
         1 ) echo ""; read -p 'Test Username: ' TESTUSER;;
         2 ) echo ""; read -rp 'Test Password: ' TESTPWD;;
-        3 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; TESTUNC="$TESTUNC1"; TESTUNCUPDATED="True";;
+        3 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
         4 ) echo ""; read -p 'Test Local Drv Mount Path (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE;;
         5 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
         [Ee] ) break ;;
@@ -813,7 +813,6 @@ while true; do
 
                 if [ "$FAILURE" == "TRUE" ]; then
                   read -rsp $'Press any key to acknowledge...\n' -n1 key
-                  break
                 fi
 
                 # If the local mount is connected to the UNC, proceed
@@ -838,14 +837,12 @@ while true; do
 
                     # Unmount the locally connected mounted drive
                     unmounttestdrv
-                    echo ""
                     read -rsp $'Press any key to acknowledge...\n' -n1 key
 
                 else
 
                     # There's problems with mounting the drive - check paths and permissions!
                     echo -e "${CRed}ERROR: Failed to run Network Connect Test Script -- Drive mount failed. Please check your configuration!${CClear}"
-                    echo ""
                     read -rsp $'Press any key to acknowledge...\n' -n1 key
 
                 fi
