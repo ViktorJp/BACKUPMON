@@ -8,7 +8,7 @@ v1.27   - (October 24, 2023)
           Just give it a name. All one word, no spaces, no crazy special characters. It's certainly easier to identify
           what device is having problems should you ever need to troubleshoot.
         - CHANGED: Incorporated changes to the way passwords are being saved, now using the base64 method suggested by
-          @PeterT and @ColinTaylor. Passwords are now encrypted via base64 and saved to your config file. PLEASE NOTE:
+          @PeterT and @ColinTaylor. Passwords are now encoded via base64 and saved to your config file. PLEASE NOTE:
           this change will require you to go into your config, and resave your passwords into proper base64 encoding.
           I've added a test to the script to determine if your passwords need to be resaved, and will direct you to
           the setup menu. This means your passwords can now be overly complex, using special characters, including the
