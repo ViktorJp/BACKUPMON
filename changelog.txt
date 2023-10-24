@@ -1,4 +1,4 @@
-v1.23b2 - (TBA)
+v1.27   - (October 24, 2023)
         - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
           have performed a restore. This was causing some conflicts between it and a similar copy that was located
           under the /jffs/addons/backupmon.d/ folder. Thanks to @Ripshod for finding this!
