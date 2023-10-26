@@ -1,3 +1,13 @@
+v1.28b1 - (TBA)
+        - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
+          now allows you to pick a drive/partition other than sda1, which was the only supported backup source up
+          until now. This selector is available under configuration menu item #4. If an alternate selection is not
+          made, by default it will continue to backup your EXT USB drive that is mapped to sda1. Please note: 
+          BACKUPMON will only backup 1 drive/partition. It does not and will not support configurations consisting
+          of multiple partitions.
+        - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
+          the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
+
 v1.27   - (October 24, 2023)
         - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
           have performed a restore. This was causing some conflicts between it and a similar copy that was located
