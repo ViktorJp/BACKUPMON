@@ -5,6 +5,8 @@ v1.28b1 - (TBA)
           made, by default it will continue to backup your EXT USB drive that is mapped to sda1. Please note: 
           BACKUPMON will only backup 1 drive/partition. It does not and will not support configurations consisting
           of multiple partitions.
+        - ADDED: Included the EXT USB drive mount path on the top of the screen when backups run, which is displayed
+          alongside other settings, to give you some quick at-a-glanc feedback on what's being backed up, where.
         - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
           the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
 
