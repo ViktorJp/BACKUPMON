@@ -2,14 +2,14 @@ Future Enhancements (Planned)
 -----------------------------
 * Option to add the -backup switch to the cron job
 * Possiblity of supporting NFS in addition to CIFS/SMB
-* Add support to allow user to chose which device they want backed up... sda1 = default
-* Make it so that the purge doesn't have the backupmon headers, unless you run it from the config menu
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Add support to allow user to chose which device they want backed up... sda1 = default
+* Make it so that the purge doesn't have the backupmon headers, unless you run it from the config menu
 * Add other info to the text file... like router model, firmware version...
 * Possibly do a check of old/current firmware version and warn before a restore (like router model)
 * Add a ping test to the network connection tester
