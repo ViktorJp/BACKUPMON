@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.27 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.30 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version=1.27                                                    # Current version
+Version="1.30"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -213,10 +213,11 @@ vconfig () {
       else
         echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target UNC Path          :"${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
       fi
-      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local Backup Drive Mount Path   :"${CGreen}$UNCDRIVE
-      echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
-      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
-      echo -en "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
+      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local EXT USB Drive Mount Path  :"${CGreen}$EXTDRIVE
+      echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path   :"${CGreen}$UNCDRIVE
+      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
+      echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
+      echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
@@ -225,7 +226,7 @@ vconfig () {
       else
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                          :${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
       fi
-      echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?               :"${CGreen}
+      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?               :"${CGreen}
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -250,8 +251,8 @@ vconfig () {
         echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                 :${CDkGray}No"
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):       :${CDkGray}N/A"
       fi
-      echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup/Restore Mode             :"${CGreen}$MODE
-      echo -en "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Secondary Backup Config Options :"${CGreen}$SECONDARY
+      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode             :"${CGreen}$MODE
+      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Secondary Backup Config Options :"${CGreen}$SECONDARY
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
@@ -313,7 +314,16 @@ vconfig () {
 
             4) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}4. What is the Local Backup Drive Mount Path? This is the local path on your"
+              echo -e "${CCyan}4. Please choose the local drive mount name of your attached external USB Drive."
+              echo -e "${CCyan}In most cases, whatever is attached to your sda1 partition should be selected."
+              echo -e "${CYellow}(Recommended = /tmp/mnt/$(nvram get usb_path_sda1_label))${CClear}"
+              _GetMountPoint_ "Select an EXT USB drive partition: "
+              read -rsp $'Press any key to acknowledge...\n' -n1 key
+            ;;
+
+            5) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}5. What is the Local Backup Drive Mount Path? This is the local path on your"
               echo -e "${CCyan}router typically located under /tmp/mnt which creates a physical directory that"
               echo -e "${CCyan}is mounted to the network backup location. Please note: Use proper notation for"
               echo -e "${CCyan}the path by using single forward slashes between directories. Example below:"
@@ -322,9 +332,9 @@ vconfig () {
               if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
             ;;
 
-            5) # -----------------------------------------------------------------------------------------
+            6) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}5. What is the Backup Target Directory Path? This is the path that is created"
+              echo -e "${CCyan}6. What is the Backup Target Directory Path? This is the path that is created"
               echo -e "${CCyan}on your network backup location in order to store and order the backups by day."
               echo -e "${CCyan}Please note: Use proper notation for the path by using single forward slashes"
               echo -e "${CCyan}between directories. Example below:"
@@ -333,9 +343,9 @@ vconfig () {
               if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
             ;;
 
-            6) # -----------------------------------------------------------------------------------------
+            7) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}6. What is the Backup Exclusion File Name? This file contains a list of certain"
+              echo -e "${CCyan}7. What is the Backup Exclusion File Name? This file contains a list of certain"
               echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
               echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
               echo -e "${CCyan}directories. Example below:"
@@ -344,9 +354,9 @@ vconfig () {
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
             ;;
 
-            7) # -----------------------------------------------------------------------------------------
+            8) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}7. Would you like BACKUPMON to automatically run at a scheduled time each day?"
+              echo -e "${CCyan}8. Would you like BACKUPMON to automatically run at a scheduled time each day?"
               echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
               echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
               echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
@@ -399,9 +409,9 @@ vconfig () {
               fi
             ;;
 
-            8) # -----------------------------------------------------------------------------------------
+            9) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}8. What backup frequency would you like BACKUPMON to run daily backup jobs each"
+              echo -e "${CCyan}9. What backup frequency would you like BACKUPMON to run daily backup jobs each"
               echo -e "${CCyan}day? There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual."
               echo -e "${CCyan}Backup folders based on the week, month, year, or perpetual are created under"
               echo -e "${CCyan}your network share. Explained below:"
@@ -477,9 +487,9 @@ vconfig () {
 
             ;;
 
-            9) # -----------------------------------------------------------------------------------------
+            10) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}9. What mode of operation would you like BACKUPMON to run in? You have 2 different"
+              echo -e "${CCyan}10. What mode of operation would you like BACKUPMON to run in? You have 2 different"
               echo -e "${CCyan}choices -- Basic or Advanced. Choose wisely! These are the differences:"
               echo ""
               echo -e "${CYellow}BASIC:"
@@ -512,11 +522,11 @@ vconfig () {
               done
             ;;
 
-            10) # -----------------------------------------------------------------------------------------
+            11) # -----------------------------------------------------------------------------------------
             while true; do
               clear
               echo ""
-              echo -e "${CCyan}10. Would you like to utilize a secondary/redundant backup configuration?"
+              echo -e "${CCyan}11. Would you like to utilize a secondary/redundant backup configuration?"
               echo -e "${CCyan}A secondary/redundant backup would allow you to backup your data to a"
               echo -e "${CCyan}second backup target location, for optimum safety and redundancy. Please"
               echo -e "${CCyan}use the prompts below to configure the necessary information to initiate"
@@ -614,6 +624,8 @@ vconfig () {
                   echo 'PASSWORD="'"$PASSWORD"'"'
                   echo 'UNC="'"$UNC"'"'
                   echo 'UNCDRIVE="'"$UNCDRIVE"'"'
+                  echo 'EXTDRIVE="'"$EXTDRIVE"'"'
+                  echo 'EXTLABEL="'"$EXTLABEL"'"'
                   echo 'BKDIR="'"$BKDIR"'"'
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
                   echo 'SCHEDULE='$SCHEDULE
@@ -664,6 +676,8 @@ vconfig () {
         echo 'PASSWORD="admin"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
+        echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
+        echo 'EXTLABEL="usbdrive"'
         echo 'BKDIR="/router/GT-AX6000-Backup"'
         echo 'EXCLUSION=""'
         echo 'SCHEDULE=0'
@@ -994,6 +1008,185 @@ _DeleteFileDirAfterNumberOfDays_ ()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# Also coming to you from @Martinski! The following functions provide a mount point picker, slightly modified for my purposes
+_GetMountPointSelectionIndex_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ] ; then return 1 ; fi
+
+   local theAllStr="${GRNct}all${NOct}"
+   local numRegExp="([1-9]|[1-9][0-9])"
+   local theExitStr="${GRNct}e${NOct}=Exit"
+   local selectStr  promptStr  indexNum  indexList  multiIndexListOK
+
+   if [ "$1" -eq 1 ]
+   then selectStr="${GRNct}1${NOct}"
+   else selectStr="${GRNct}1${NOct}-${GRNct}${1}${NOct}"
+   fi
+
+   if [ $# -lt 2 ] || [ "$2" != "-MULTIOK" ]
+   then
+       multiIndexListOK=false
+       promptStr="Enter selection:[${selectStr}] [${theExitStr}]?"
+   else
+       multiIndexListOK=true
+       promptStr="Enter selection:[${selectStr} | ${theAllStr}] [${theExitStr}]?"
+   fi
+   selectionIndex=0  multiIndex=false
+
+   while true
+   do
+       printf "${promptStr}  " ; read -r userInput
+
+       if [ -z "$userInput" ] || \
+          echo "$userInput" | grep -qE "^(e|exit|Exit)$"
+       then selectionIndex="NONE" ; break ; fi
+
+       if "$multiIndexListOK" && \
+          echo "$userInput" | grep -qE "^(all|All)$"
+       then selectionIndex="ALL" ; break ; fi
+
+       if echo "$userInput" | grep -qE "^${numRegExp}$" && \
+          [ "$userInput" -gt 0 ] && [ "$userInput" -le "$1" ]
+       then selectionIndex="$userInput" ; break ; fi
+
+       if "$multiIndexListOK" && \
+          echo "$userInput" | grep -qE "^${numRegExp}\-${numRegExp}[ ]*$"
+       then
+           index1st="$(echo "$userInput" | awk -F '-' '{print $1}')"
+           indexMax="$(echo "$userInput" | awk -F '-' '{print $2}')"
+           if [ "$index1st" -lt "$indexMax" ]  && \
+              [ "$index1st" -gt 0 ] && [ "$index1st" -le "$1" ] && \
+              [ "$indexMax" -gt 0 ] && [ "$indexMax" -le "$1" ]
+           then
+               indexNum="$index1st"
+               indexList="$indexNum"
+               while [ "$indexNum" -lt "$indexMax" ]
+               do
+                   indexNum="$((indexNum+1))"
+                   indexList="${indexList},${indexNum}"
+               done
+               userInput="$indexList"
+           fi
+       fi
+
+       if "$multiIndexListOK" && \
+          echo "$userInput" | grep -qE "^${numRegExp}(,[ ]*${numRegExp}[ ]*)+$"
+       then
+           indecesOK=true
+           indexList="$(echo "$userInput" | sed 's/ //g' | sed 's/,/ /g')"
+           for theIndex in $indexList
+           do
+              if [ "$theIndex" -eq 0 ] || [ "$theIndex" -gt "$1" ]
+              then indecesOK=false ; break ; fi
+           done
+           "$indecesOK" && selectionIndex="$indexList" && multiIndex=true && break
+       fi
+
+       printf "${REDct}INVALID selection.${NOct}\n"
+   done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+_GetMountPointSelection_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ]
+   then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
+
+   local mounPointCnt  mounPointVar=""  mounPointTmp=""
+
+   mounPointPath=""
+   mounPointCnt="$(mount | grep -c '/tmp/mnt/.*')"
+   if [ "$mounPointCnt" -eq 0 ]
+   then
+       printf "\n${REDct}**ERROR**${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
+       return 1
+   fi
+   if [ "$mounPointCnt" -eq 1 ]
+   then
+       mounPointPath="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $3}')"
+       return 0
+   fi
+   local retCode=0  indexType  multiIndex=false  selectionIndex=0
+
+   if [ $# -lt 2 ] || [ "$2" != "-MULTIOK" ]
+   then indexType="" ; else indexType="$2" ; fi
+
+   printf "\n$1\n"
+   mounPointCnt=0
+   while IFS="$(printf '\n')" read -r mounPointInfo
+   do
+       mounPointCnt="$((mounPointCnt + 1))"
+       mounPointVar="MP_${mounPointCnt}_INFO"
+       eval "MP_${mounPointCnt}_INFO=$(echo "$mounPointInfo" | sed -e 's/ /\\ /g')"
+       printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
+       eval echo "\$${mounPointVar}"
+   done <<EOT
+$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
+EOT
+
+   echo
+   _GetMountPointSelectionIndex_ "$mounPointCnt" "$indexType"
+
+   if [ "$selectionIndex" = "NONE" ] ; then return 1 ; fi
+
+   while true
+   do
+       if [ "$indexType" = "-MULTIOK" ]
+       then
+           if [ "$selectionIndex" = "ALL" ]
+           then
+               mounPointTmp="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
+               mounPointPath="$(echo "$mounPointTmp" | awk -F ' ' '{print $2}')"
+               break
+           fi
+           if "$multiIndex"
+           then
+               for index in $selectionIndex
+               do
+                   mounPointVar="MP_${index}_INFO"
+                   eval mounPointTmp="\$${mounPointVar}"
+                   mounPointTmp="$(echo "$mounPointTmp" | awk -F ' ' '{print $3}')"
+                   if [ -z "$mounPointPath" ]
+                   then mounPointPath="$mounPointTmp"
+                   else mounPointPath="${mounPointPath}\n${mounPointTmp}"
+                   fi
+               done
+               break
+           fi
+       fi
+       mounPointVar="MP_${selectionIndex}_INFO"
+       eval mounPointTmp="\$${mounPointVar}"
+       mounPointPath="$(echo "$mounPointTmp" | awk -F ' ' '{print $3}')"
+       if [ ! -d "$mounPointPath" ] ; then mounPointPath="" ; fi
+       break
+   done
+
+   if [ -z "$mounPointPath" ] ; then retCode=1 ; fi
+   return "$retCode"
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+_GetMountPoint_()
+{
+   local NOct="\033[0m"  REDct="\033[0;31m\033[1m"  GRNct="\033[1;32m\033[1m"
+   local mounPointPath=""
+
+   _GetMountPointSelection_ "$@"
+   if [ $? -gt 0 ] || [ -z "$mounPointPath" ]
+   then
+       printf "\nNo Mount Points for USB-attached drives were selected.\n\n"
+       return 1
+   fi
+
+   printf "\nMount Point Selected:\n${GRNct}${mounPointPath}${NOct}\n\n"
+
+   ## Do whatever you need to do with value of "$mounPointPath" ##
+   EXTDRIVE=$mounPointPath
+   EXTLABEL=$(echo "${mounPointPath##*/}")
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 
 # purgebackups is a function that allows you to see which backups will be purged before deleting them...
 purgebackups () {
@@ -1136,7 +1329,6 @@ purgebackups () {
 
 # autopurge is a function that allows you to purge backups throught a commandline switch... if you're daring!
 autopurge () {
-  clear
 
   if [ "$FREQUENCY" != "P" ]; then
     echo -e "${CRed}ERROR: Perpetual backups are not configured. Please check your configuration. Exiting.${CClear}\n"
@@ -1148,15 +1340,10 @@ autopurge () {
     return
   fi
 
-  logoNM
   echo ""
-  echo -e "${CYellow}Auto Purge Perpetual Backups Utility${CClear}"
+  echo -e "${CGreen}[Auto Purge Primary Backups Commencing]..."
   echo ""
-  echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible, permanent and"
-  echo -e "${CCyan}fully automatic, so you have zero control! AWESOMESAUCE! BACKUPMON will by"
-  echo -e "${CCyan}default show you which backups older than ${CYellow}$PURGELIMIT days${CCyan} are being deleted, as you"
-  echo -e "${CCyan}rejoice in seeing disk space being freed up."
-  echo -e "\n${CCyan}Messages:"
+  echo -e "${CCyan}Messages:"
 
   # Create the local backup drive mount directory
   if ! [ -d $UNCDRIVE ]; then
@@ -1218,8 +1405,6 @@ autopurge () {
 
         unmountdrv
 
-        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
-        sleep 2
         return
 
       else
@@ -1231,8 +1416,6 @@ autopurge () {
 
         unmountdrv
 
-        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}\n"
-        sleep 2
         return
       fi
 
@@ -1243,8 +1426,6 @@ autopurge () {
 
     unmountdrv
 
-    echo -e "\n${CGreen}Exiting Auto Purge Perpetual Backups Utility...${CClear}"
-    sleep 2
     return
   fi
 
@@ -1397,7 +1578,6 @@ purgesecondaries() {
 
 # autopurgesecondaries is a function that allows you to purge secondary backups throught a commandline switch... if you're daring!
 autopurgesecondaries () {
-  clear
 
   if [ "$SECONDARYFREQUENCY" != "P" ]; then
     echo -e "${CRed}ERROR: Perpetual secondary backups are not configured. Please check your configuration. Exiting.${CClear}\n"
@@ -1413,15 +1593,10 @@ autopurgesecondaries () {
     return
   fi
 
-  logoNM
   echo ""
-  echo -e "${CYellow}Auto Purge Perpetual Secondary Backups Utility${CClear}"
+  echo -e "${CGreen}[Auto Purge Secondary Backups Commencing]..."
   echo ""
-  echo -e "${CCyan}You are about to purge secondary backups! FUN! This action is irreversible, permanent"
-  echo -e "${CCyan}and fully automatic, so you have zero control! AWESOMESAUCE! BACKUPMON will by"
-  echo -e "${CCyan}default show you which backups older than ${CYellow}$SECONDARYPURGELIMIT days${CCyan} are being deleted, as you"
-  echo -e "${CCyan}rejoice in seeing disk space being freed up."
-  echo -e "\n${CCyan}Messages:"
+  echo -e "${CCyan}Messages:"
 
   # Create the local backup drive mount directory
   if ! [ -d $SECONDARYUNCDRIVE ]; then
@@ -1483,8 +1658,6 @@ autopurgesecondaries () {
 
         unmountsecondarydrv
 
-        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}\n"
-        sleep 2
         return
 
       else
@@ -1496,8 +1669,6 @@ autopurgesecondaries () {
 
         unmountsecondarydrv
 
-        echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}\n"
-        sleep 2
         return
       fi
 
@@ -1508,8 +1679,6 @@ autopurgesecondaries () {
 
     unmountsecondarydrv
 
-    echo -e "\n${CGreen}Exiting Auto Purge Perpetual Secondary Backups Utility...${CClear}"
-    sleep 2
     return
   fi
 
@@ -1821,14 +1990,17 @@ backup() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
+        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	timerstart=$(date +%s)
           if [ $FREQUENCY == "W" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $FREQUENCY == "M" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -1836,8 +2008,9 @@ backup() {
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $FREQUENCY == "Y" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -1845,8 +2018,9 @@ backup() {
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $FREQUENCY == "P" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -1854,8 +2028,9 @@ backup() {
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           fi
         else
@@ -1939,14 +2114,17 @@ backup() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
+        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	timerstart=$(date +%s)
           if [ $FREQUENCY == "W" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           elif [ $FREQUENCY == "M" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -1954,8 +2132,9 @@ backup() {
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           elif [ $FREQUENCY == "Y" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -1963,8 +2142,9 @@ backup() {
             else
               tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished backing up EXT Drive to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           fi
         else
@@ -2221,14 +2401,17 @@ secondary() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
+        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+          timerstart=$(date +%s)
           if [ $SECONDARYFREQUENCY == "W" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $SECONDARYFREQUENCY == "M" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2236,8 +2419,9 @@ secondary() {
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2245,8 +2429,9 @@ secondary() {
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           elif [ $SECONDARYFREQUENCY == "P" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2254,8 +2439,9 @@ secondary() {
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             sleep 1
           fi
         else
@@ -2339,14 +2525,17 @@ secondary() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
+        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+          timerstart=$(date +%s)
           if [ $SECONDARYFREQUENCY == "W" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           elif [ $SECONDARYFREQUENCY == "M" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2354,8 +2543,9 @@ secondary() {
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2363,8 +2553,9 @@ secondary() {
             else
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -C $EXTDRIVE . >/dev/null
             fi
-            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
-            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
+            logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             sleep 1
           fi
         else
@@ -3366,6 +3557,7 @@ echo ""
 
 echo -e "${CCyan}Asus Router Model: ${CGreen}${ROUTERMODEL}"
 echo -e "${CCyan}Firmware/Build Number: ${CGreen}${FWBUILD}"
+echo -e "${CCyan}External USB Drive Mount Path: ${CGreen}${EXTDRIVE}"
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
