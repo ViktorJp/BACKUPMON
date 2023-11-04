@@ -1087,15 +1087,19 @@ _GetMountPointSelectionIndex_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2023-Nov-04] ##
+##----------------------------------------##
 _GetMountPointSelection_()
 {
    if [ $# -eq 0 ] || [ -z "$1" ]
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mounPointCnt  mounPointVar=""  mounPointTmp=""
+   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath=""
-   mounPointCnt="$(mount | grep -c '/tmp/mnt/.*')"
+   mounPointCnt="$(mount | grep -c "$mountPointRegExp")"
    if [ "$mounPointCnt" -eq 0 ]
    then
        printf "\n${REDct}**ERROR**${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
@@ -1103,7 +1107,7 @@ _GetMountPointSelection_()
    fi
    if [ "$mounPointCnt" -eq 1 ]
    then
-       mounPointPath="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $3}')"
+       mounPointPath="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $3}')"
        return 0
    fi
    local retCode=0  indexType  multiIndex=false  selectionIndex=0
@@ -1121,7 +1125,7 @@ _GetMountPointSelection_()
        printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
        eval echo "\$${mounPointVar}"
    done <<EOT
-$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
+$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
 EOT
 
    echo
@@ -1135,7 +1139,7 @@ EOT
        then
            if [ "$selectionIndex" = "ALL" ]
            then
-               mounPointTmp="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
+               mounPointTmp="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
                mounPointPath="$(echo "$mounPointTmp" | awk -F ' ' '{print $2}')"
                break
            fi
