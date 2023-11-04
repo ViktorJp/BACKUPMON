@@ -7,6 +7,9 @@ v1.28b1 - (TBA)
           of multiple partitions.
         - ADDED: Included the EXT USB drive mount path on the top of the screen when backups run, which is displayed
           alongside other settings, to give you some quick at-a-glance feedback on what's being backed up, where.
+        - ADDED: Included the amount of time a backup takes, and will now show some on-screen feedback that the main
+          EXT USB backup is starting, and to please stand by... It will calculate and show how many seconds the
+          backup took, and will write this same info to the syslog. Thanks to @monakh for the good suggestion!
         - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
           the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
 
