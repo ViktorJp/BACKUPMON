@@ -1,4 +1,4 @@
-v1.28b1 - (TBA)
+v1.30   - (November 4, 2023)
         - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
           now allows you to pick a drive/partition other than sda1, which was the only supported backup source up
           until now. This selector is available under configuration menu item #4. If an alternate selection is not
@@ -7,9 +7,9 @@ v1.28b1 - (TBA)
           of multiple partitions.
         - ADDED: Included the EXT USB drive mount path on the top of the screen when backups run, which is displayed
           alongside other settings, to give you some quick at-a-glance feedback on what's being backed up, where.
-        - ADDED: Included the amount of time a backup takes, and will now show some on-screen feedback that the main
+        - ADDED: Included the amount of time a backup takes, and will now show an on-screen status that the main
           EXT USB backup is starting, and to please stand by... It will calculate and show how many seconds the
-          backup took, and will write this same info to the syslog. Thanks to @monakh for the good suggestion!
+          backup took, and will also write this same info to the syslog. Thanks to @monakh for the good suggestion!
         - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
           the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
 
