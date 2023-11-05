@@ -1,7 +1,8 @@
 v1.31   - (TBA)
         - FIXED: Gave -purge mode a little more context on-screen, and fixed the exit back to a prompt after running
           since it incorrectly started a backup afterwards.
-        - FIXED: @Martinski added a few fixes to his mount path selector to eliminate UBI drive references.
+        - FIXED: @Martinski added a few fixes to his mount path selector functions to eliminate UBI drive references.
+        - MINOR: Fixed some grammar for a few on-screen messages based on the variable language they were displaying.
 
 v1.30   - (November 4, 2023)
         - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
