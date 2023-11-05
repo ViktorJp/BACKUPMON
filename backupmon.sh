@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.30 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.31 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.30"                                                  # Current version
+Version="1.31"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -316,6 +316,7 @@ vconfig () {
               echo ""
               echo -e "${CCyan}4. Please choose the local drive mount name of your attached external USB Drive."
               echo -e "${CCyan}In most cases, whatever is attached to your sda1 partition should be selected."
+              echo -e "${CCyan}Should there be only one drive available, it will be automatically selected."
               echo -e "${CYellow}(Recommended = /tmp/mnt/$(nvram get usb_path_sda1_label))${CClear}"
               _GetMountPoint_ "Select an EXT USB drive partition: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -1087,15 +1088,19 @@ _GetMountPointSelectionIndex_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2023-Nov-04] ##
+##----------------------------------------##
 _GetMountPointSelection_()
 {
    if [ $# -eq 0 ] || [ -z "$1" ]
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mounPointCnt  mounPointVar=""  mounPointTmp=""
+   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath=""
-   mounPointCnt="$(mount | grep -c '/tmp/mnt/.*')"
+   mounPointCnt="$(mount | grep -c "$mountPointRegExp")"
    if [ "$mounPointCnt" -eq 0 ]
    then
        printf "\n${REDct}**ERROR**${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
@@ -1103,7 +1108,7 @@ _GetMountPointSelection_()
    fi
    if [ "$mounPointCnt" -eq 1 ]
    then
-       mounPointPath="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $3}')"
+       mounPointPath="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $3}')"
        return 0
    fi
    local retCode=0  indexType  multiIndex=false  selectionIndex=0
@@ -1121,7 +1126,7 @@ _GetMountPointSelection_()
        printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
        eval echo "\$${mounPointVar}"
    done <<EOT
-$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
+$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
 EOT
 
    echo
@@ -1135,7 +1140,7 @@ EOT
        then
            if [ "$selectionIndex" = "ALL" ]
            then
-               mounPointTmp="$(mount | grep '/tmp/mnt/.*' | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
+               mounPointTmp="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
                mounPointPath="$(echo "$mounPointTmp" | awk -F ' ' '{print $2}')"
                break
            fi
@@ -1990,7 +1995,7 @@ backup() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
-        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
         	timerstart=$(date +%s)
           if [ $FREQUENCY == "W" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -2114,7 +2119,7 @@ backup() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
-        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
         	timerstart=$(date +%s)
           if [ $FREQUENCY == "W" ]; then
             if ! [ -z $EXCLUSION ]; then
@@ -2401,7 +2406,7 @@ secondary() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
-        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
           timerstart=$(date +%s)
           if [ $SECONDARYFREQUENCY == "W" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -2525,7 +2530,7 @@ secondary() {
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
-        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} at $(date). Please stand by...${CClear}"
+        	echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
           timerstart=$(date +%s)
           if [ $SECONDARYFREQUENCY == "W" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
@@ -3483,7 +3488,12 @@ fi
 # Check to see if the purge option is being called
 if [ "$1" == "-purge" ]
   then
-
+		if [ "$UpdateNotify" == "0" ]; then
+ 		 echo -e "${CGreen}BACKUPMON v$Version"
+		else
+  		echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+		fi
+		
     # Determine if the config is local or under /jffs/addons/backupmon.d
     if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
       source $CFGPATH
@@ -3499,6 +3509,8 @@ if [ "$1" == "-purge" ]
     checkplaintxtpwds
     autopurge
     autopurgesecondaries
+    echo ""
+  exit 0
 fi
 
 # Check to see if the backup option is being called
