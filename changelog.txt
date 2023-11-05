@@ -1,3 +1,11 @@
+v1.32b1 - (TBA)
+        - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
+          Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
+          scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
+          much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
+          "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
+          file without all the messy color escape characters, and make it much more readable.
+
 v1.31   - (November 5, 2023)
         - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
           eliminate some extraneous UBI drive references. Also, if only one external drive is attached, it will
