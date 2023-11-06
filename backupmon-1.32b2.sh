@@ -245,7 +245,7 @@ vconfig () {
       echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local EXT USB Drive Mount Path  :"${CGreen}$EXTDRIVE
       echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path   :"${CGreen}$UNCDRIVE
       echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
-      echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}: Backup Target Media Type        :"${CGreen}$BACKUPMEDIA
+      echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Backup Target Media Type       :"${CGreen}$BACKUPMEDIA
       echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
       echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
       if [ "$SCHEDULE" == "0" ]; then
@@ -602,7 +602,7 @@ vconfig () {
               echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path    : ${CGreen}$SECONDARYUNCDRIVE"
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Dir Path        : ${CGreen}$SECONDARYBKDIR"
-              echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}: Secondary Target Media Type      : ${CGreen}$SECONDARYBACKUPMEDIA"
+              echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Secondary Target Media Type     : ${CGreen}$SECONDARYBACKUPMEDIA"
               echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Exclusion File Name              : ${CGreen}$SECONDARYEXCLUSION"
               echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?                : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
@@ -1884,6 +1884,9 @@ vsetup () {
 # backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 backup() {
 
+	# Check to see if a leftover copy of backupmon.cfg is still sitting in /jffs/scripts and delete it
+	rm -f /jffs/scripts/backupmon.cfg
+
   # Check to see if a local backup drive mount is available, if not, create one.
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
@@ -1925,8 +1928,12 @@ backup() {
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-
+			if [ "$BACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: External Drive (USB) mounted successfully as: $UNCDRIVE ${CClear}"; printf "%s\n"
+			else
+				echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+			fi
+      
       # Create the backup directories and daily directories if they do not exist yet
       if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}"; echo -e "${CGreen}STATUS: Backup Directory successfully created."; fi
 
@@ -2335,7 +2342,11 @@ secondary() {
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: Secondary External Drive (USB) mounted successfully as: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			else
+      	echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			fi
 
       # Create the secondary backup directories and daily directories if they do not exist yet
       if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}"; echo -e "${CGreen}STATUS: Secondary Backup Directory successfully created."; fi
@@ -3340,7 +3351,7 @@ restore () {
 unmountdrv () {
 
 	if [ "$BACKUPMEDIA" == "USB" ]; then
-		 echo -en "${CGreen}STATUS: External USB drive ("; printf "%s" "${UNC}"; echo -e ") continues to stay mounted.${CClear}"
+		 echo -e "${CGreen}STATUS: External USB drive continues to stay mounted.${CClear}"
   else
 	  CNT=0
 	  TRIES=12
@@ -3369,7 +3380,7 @@ unmountdrv () {
 unmountsecondarydrv () {
 
 	if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
-		 echo -en "${CGreen}STATUS: Secondary external USB drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") continues to stay mounted.${CClear}"
+		 echo -e "${CGreen}STATUS: Secondary external USB drive continues to stay mounted.${CClear}"
   else
 	  CNT=0
 	  TRIES=12
@@ -3663,7 +3674,12 @@ if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
-echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+	
+if [ "$BACKUPMEDIA" == "USB" ]; then	
+	echo -en "${CCyan}Backing up to ${CGreen}USB${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+else
+	echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+fi
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${CCyan}Mode: ${CGreen}$MODE"
