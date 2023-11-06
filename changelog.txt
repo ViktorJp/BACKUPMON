@@ -5,6 +5,12 @@ v1.32b1 - (TBA)
           much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
           "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
           file without all the messy color escape characters, and make it much more readable.
+        - ADDED: For the capability to distinguish between directly attached USB backup devices, and network backup
+          devices using a new menu item, available in the config menu. (See item #6). When specifying the path to your
+          Backup Target, you will also need to indicate whether it is a "Network" or "USB" target. In the case of a
+          USB Backup Target (directly attached to your router), the script will no longer unmount the device after a
+          backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh for the helpful
+          suggestion!
 
 v1.31   - (November 5, 2023)
         - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
