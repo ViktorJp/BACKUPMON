@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.31 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.32b2 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,8 +16,8 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.31"                                                  # Current version
-Beta=0                                                          # Beta release Y/N
+Version="1.32b2"                                                # Current version
+Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 WDAY="$(date +%a)"                                              # Current day # of the week
@@ -36,6 +36,7 @@ PASSWORD="YWRtaW4K"
 UNC="\\\\192.168.50.25\\Backups"
 UNCDRIVE="/tmp/mnt/backups"
 BKDIR="/router/GT-AX6000-Backup"
+BACKUPMEDIA="Network"
 EXCLUSION=""
 SCHEDULE=0
 SCHEDULEHRS=2
@@ -50,6 +51,7 @@ SECONDARYPWD="YWRtaW4K"
 SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"
 SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"
 SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"
+SECONDARYBACKUPMEDIA="Network"
 SECONDARYEXCLUSION=""
 SECONDARYFREQUENCY="M"
 SECONDARYMODE="Basic"
@@ -105,6 +107,33 @@ promptyn () {   # No defaults, just y or n
         * ) echo -e "\n Please answer y or n.";;
       esac
   done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# blackwhite is a simple function that removes all color attributes
+blackwhite () {
+# Color variables
+CBlack=""
+InvBlack=""
+CRed=""
+InvRed=""
+CGreen=""
+InvGreen=""
+CDkGray=""
+InvDkGray=""
+InvLtGray=""
+CYellow=""
+InvYellow=""
+CBlue=""
+InvBlue=""
+CMagenta=""
+CCyan=""
+InvCyan=""
+CWhite=""
+InvWhite=""
+CClear=""
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -216,6 +245,7 @@ vconfig () {
       echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local EXT USB Drive Mount Path  :"${CGreen}$EXTDRIVE
       echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path   :"${CGreen}$UNCDRIVE
       echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
+      echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Backup Target Media Type       :"${CGreen}$BACKUPMEDIA
       echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
       echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
       if [ "$SCHEDULE" == "0" ]; then
@@ -342,6 +372,22 @@ vconfig () {
               echo -e "${CYellow}(Default = /router/GT-AX6000-Backup)${CClear}"
               read -p 'Backup Target Directory Path: ' BKDIR1
               if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
+           
+           		echo ""
+              echo -e "${CCyan}6a. What is the Backup Target Media Type? This is the type of device that you"
+              echo -e "${CCyan}just mapped to in the section above. Please indicate whether the media is a"
+              echo -e "${CCyan}network device (not connected to router), or a local USB device (connected to"
+              echo -e "${CCyan}router):"
+              echo -e "${CYellow}(Network=1, USB=2 (Default = 1)${CClear}"
+              while true; do
+                read -p 'Media Type (1/2)?: ' BACKUPMEDIA
+                  case $BACKUPMEDIA in
+                    [1] ) BACKUPMEDIA="Network"; break ;;
+                    [2] ) BACKUPMEDIA="USB"; break ;;
+                    "" ) echo -e "\n Error: Please use either 1 or 2\n";;
+                    * ) echo -e "\n Error: Please use either 1 or 2\n";;
+                  esac
+              done           
             ;;
 
             7) # -----------------------------------------------------------------------------------------
@@ -556,6 +602,7 @@ vconfig () {
               echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path    : ${CGreen}$SECONDARYUNCDRIVE"
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Dir Path        : ${CGreen}$SECONDARYBKDIR"
+              echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Secondary Target Media Type     : ${CGreen}$SECONDARYBACKUPMEDIA"
               echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Exclusion File Name              : ${CGreen}$SECONDARYEXCLUSION"
               echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?                : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
@@ -600,7 +647,7 @@ vconfig () {
                     3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     4 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
                     5 ) echo ""; read -p 'Secondary Local Drv Mount Path (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE;;
-                    6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
+                    6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR; echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; else SECONDARYBACKUPMEDIA="Network"; fi;;
                     7 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions.txt ): ' SECONDARYEXCLUSION;;
                     8 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
                     9 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
@@ -628,6 +675,7 @@ vconfig () {
                   echo 'EXTDRIVE="'"$EXTDRIVE"'"'
                   echo 'EXTLABEL="'"$EXTLABEL"'"'
                   echo 'BKDIR="'"$BKDIR"'"'
+                  echo 'BACKUPMEDIA="'"$BACKUPMEDIA"'"'
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
@@ -642,6 +690,7 @@ vconfig () {
                   echo 'SECONDARYUNC="'"$SECONDARYUNC"'"'
                   echo 'SECONDARYUNCDRIVE="'"$SECONDARYUNCDRIVE"'"'
                   echo 'SECONDARYBKDIR="'"$SECONDARYBKDIR"'"'
+                  echo 'SECONDARYBACKUPMEDIA="'"$SECONDARYBACKUPMEDIA"'"'
                   echo 'SECONDARYEXCLUSION="'"$SECONDARYEXCLUSION"'"'
                   echo 'SECONDARYFREQUENCY="'"$SECONDARYFREQUENCY"'"'
                   echo 'SECONDARYMODE="'"$SECONDARYMODE"'"'
@@ -680,6 +729,7 @@ vconfig () {
         echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
         echo 'EXTLABEL="usbdrive"'
         echo 'BKDIR="/router/GT-AX6000-Backup"'
+        echo 'BACKUPMEDIA="Network"'
         echo 'EXCLUSION=""'
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
@@ -694,6 +744,7 @@ vconfig () {
         echo 'SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"'
         echo 'SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"'
         echo 'SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"'
+        echo 'SECONDARYBACKUPMEDIA="Network"'
         echo 'SECONDARYEXCLUSION=""'
         echo 'SECONDARYFREQUENCY="M"'
         echo 'SECONDARYMODE="Basic"'
@@ -1752,12 +1803,30 @@ vsetup () {
 
           bk)
             clear
-            sh /jffs/scripts/backupmon.sh -backup
+            #sh /jffs/scripts/backupmon.sh -backup
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+						echo -e "${CGreen}[Primary Backup Commencing]..."
+						echo ""
+						echo -e "${CCyan}Messages:"
+            backup
+            secondary
           ;;
 
           rs)
             clear
-            sh /jffs/scripts/backupmon.sh -restore
+            #sh /jffs/scripts/backupmon.sh -restore
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+            restore
           ;;
 
           pg)
@@ -1815,6 +1884,9 @@ vsetup () {
 # backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 backup() {
 
+	# Check to see if a leftover copy of backupmon.cfg is still sitting in /jffs/scripts and delete it
+	rm -f /jffs/scripts/backupmon.cfg
+
   # Check to see if a local backup drive mount is available, if not, create one.
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
@@ -1856,8 +1928,12 @@ backup() {
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-
+			if [ "$BACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: External Drive (USB) mounted successfully as: $UNCDRIVE ${CClear}"; printf "%s\n"
+			else
+				echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+			fi
+      
       # Create the backup directories and daily directories if they do not exist yet
       if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}"; echo -e "${CGreen}STATUS: Backup Directory successfully created."; fi
 
@@ -2266,7 +2342,11 @@ secondary() {
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: Secondary External Drive (USB) mounted successfully as: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			else
+      	echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			fi
 
       # Create the secondary backup directories and daily directories if they do not exist yet
       if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}"; echo -e "${CGreen}STATUS: Secondary Backup Directory successfully created."; fi
@@ -2932,7 +3012,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -2945,7 +3026,8 @@ restore () {
         unmountdrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -2960,7 +3042,8 @@ restore () {
       unmountdrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -3224,7 +3307,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -3237,7 +3321,8 @@ restore () {
         unmountsecondarydrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -3252,7 +3337,8 @@ restore () {
       unmountsecondarydrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -3264,52 +3350,58 @@ restore () {
 # unmountdrv is a function to gracefully unmount the drive, and retry for up to 2 minutes
 unmountdrv () {
 
-  CNT=0
-  TRIES=12
-    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-      umount -l $UNCDRIVE  # unmount the local backup drive from the UNC
-      URC=$?
-      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-        echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -e ") unmounted successfully.${CClear}"
-        break
-      else
-        echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-        sleep 10
-        CNT=$((CNT+1))
-        if [ $CNT -eq $TRIES ];then
-          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-          logger "BACKUPMON ERROR: Unable to unmount from external drive. Please check your configuration!"
-          exit 0
-        fi
-      fi
-    done
-
+	if [ "$BACKUPMEDIA" == "USB" ]; then
+		 echo -e "${CGreen}STATUS: External USB drive continues to stay mounted.${CClear}"
+  else
+	  CNT=0
+	  TRIES=12
+	    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	      umount -l $UNCDRIVE  # unmount the local backup drive from the UNC
+	      URC=$?
+	      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+	        echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -e ") unmounted successfully.${CClear}"
+	        break
+	      else
+	        echo -e "${CYellow}WARNING: Unable to unmount from external network drive. Trying every 10 seconds for 2 minutes."
+	        sleep 10
+	        CNT=$((CNT+1))
+	        if [ $CNT -eq $TRIES ];then
+	          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+	          logger "BACKUPMON ERROR: Unable to unmount from external drive. Please check your configuration!"
+	          exit 0
+	        fi
+	      fi
+	    done
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 # unmountsecondarydrv is a function to gracefully unmount the secondary drive, and retry for up to 2 minutes
 unmountsecondarydrv () {
 
-  CNT=0
-  TRIES=12
-    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-      umount -l $SECONDARYUNCDRIVE  # unmount the local backup drive from the Secondary UNC
-      URC=$?
-      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-        echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") unmounted successfully.${CClear}"
-        break
-      else
-        echo -e "${CYellow}WARNING: Unable to unmount from secondary external drive. Trying every 10 seconds for 2 minutes."
-        sleep 10
-        CNT=$((CNT+1))
-        if [ $CNT -eq $TRIES ];then
-          echo -e "${CRed}ERROR: Unable to unmount from secondary external drive. Please check your configuration. Exiting."
-          logger "BACKUPMON ERROR: Unable to unmount from secondary external drive. Please check your configuration!"
-          exit 0
-        fi
-      fi
-    done
-
+	if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+		 echo -e "${CGreen}STATUS: Secondary external USB drive continues to stay mounted.${CClear}"
+  else
+	  CNT=0
+	  TRIES=12
+	    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	      umount -l $SECONDARYUNCDRIVE  # unmount the local backup drive from the Secondary UNC
+	      URC=$?
+	      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+	        echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") unmounted successfully.${CClear}"
+	        break
+	      else
+	        echo -e "${CYellow}WARNING: Unable to unmount from secondary external network drive. Trying every 10 seconds for 2 minutes."
+	        sleep 10
+	        CNT=$((CNT+1))
+	        if [ $CNT -eq $TRIES ];then
+	          echo -e "${CRed}ERROR: Unable to unmount from secondary external drive. Please check your configuration. Exiting."
+	          logger "BACKUPMON ERROR: Unable to unmount from secondary external drive. Please check your configuration!"
+	          exit 0
+	        fi
+	      fi
+	    done
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3354,7 +3446,8 @@ checkplaintxtpwds () {
     echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
+    #sh /jffs/scripts/backupmon.sh -setup
+    vsetup
     exit 0
   fi
 
@@ -3364,7 +3457,8 @@ checkplaintxtpwds () {
     echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
+    #sh /jffs/scripts/backupmon.sh -setup
+    vsetup
     exit 0
   fi
 
@@ -3455,6 +3549,12 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo ""
   echo -e "${CClear}"
   exit 0
+fi
+
+# Check to see if a second command is being passed to remove color
+if [ "$2" == "-bw" ]
+  then
+		blackwhite
 fi
 
 # Check to see if the restore option is being called
@@ -3574,7 +3674,12 @@ if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
-echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+	
+if [ "$BACKUPMEDIA" == "USB" ]; then	
+	echo -en "${CCyan}Backing up to ${CGreen}USB${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+else
+	echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+fi
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${CCyan}Mode: ${CGreen}$MODE"

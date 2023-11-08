@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.31 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.32b1 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,8 +16,8 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.31"                                                  # Current version
-Beta=0                                                          # Beta release Y/N
+Version="1.32b1"                                                # Current version
+Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 WDAY="$(date +%a)"                                              # Current day # of the week
@@ -105,6 +105,33 @@ promptyn () {   # No defaults, just y or n
         * ) echo -e "\n Please answer y or n.";;
       esac
   done
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# blackwhite is a simple function that removes all color attributes
+blackwhite () {
+# Color variables
+CBlack=""
+InvBlack=""
+CRed=""
+InvRed=""
+CGreen=""
+InvGreen=""
+CDkGray=""
+InvDkGray=""
+InvLtGray=""
+CYellow=""
+InvYellow=""
+CBlue=""
+InvBlue=""
+CMagenta=""
+CCyan=""
+InvCyan=""
+CWhite=""
+InvWhite=""
+CClear=""
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1752,12 +1779,30 @@ vsetup () {
 
           bk)
             clear
-            sh /jffs/scripts/backupmon.sh -backup
+            #sh /jffs/scripts/backupmon.sh -backup
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+						echo -e "${CGreen}[Primary Backup Commencing]..."
+						echo ""
+						echo -e "${CCyan}Messages:"
+            backup
+            secondary
           ;;
 
           rs)
             clear
-            sh /jffs/scripts/backupmon.sh -restore
+            #sh /jffs/scripts/backupmon.sh -restore
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+            restore
           ;;
 
           pg)
@@ -2932,7 +2977,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -2945,7 +2991,8 @@ restore () {
         unmountdrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -2960,7 +3007,8 @@ restore () {
       unmountdrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -3224,7 +3272,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -3237,7 +3286,8 @@ restore () {
         unmountsecondarydrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -3252,7 +3302,8 @@ restore () {
       unmountsecondarydrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -3354,7 +3405,8 @@ checkplaintxtpwds () {
     echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
+    #sh /jffs/scripts/backupmon.sh -setup
+    vsetup
     exit 0
   fi
 
@@ -3364,7 +3416,8 @@ checkplaintxtpwds () {
     echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
     echo ""
     read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
+    #sh /jffs/scripts/backupmon.sh -setup
+    vsetup
     exit 0
   fi
 
@@ -3455,6 +3508,12 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo ""
   echo -e "${CClear}"
   exit 0
+fi
+
+# Check to see if a second command is being passed to remove color
+if [ "$2" == "-bw" ]
+  then
+		blackwhite
 fi
 
 # Check to see if the restore option is being called

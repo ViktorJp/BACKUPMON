@@ -1,3 +1,30 @@
+v1.32b4 - (TBA)
+        - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
+          Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
+          scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
+          much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
+          "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
+          file without all the messy color escape characters, and make it much more readable.
+        - ADDED: For the capability to distinguish between directly attached USB backup devices, and network backup
+          devices using a new menu item, available in the config menu. (See item #2). When specifying the path to your
+          Backup Target, you will also need to indicate whether it is a "Network" or "USB" target. In the case of a
+          USB Backup Target (directly attached to your router), the script will no longer mount or unmount the device
+          before or after a backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh
+          for the helpful suggestion, and for the extensive testing done by @visortgw!
+        - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
+          optimized. It now starts with determining what type of media the target device is, and using this info, will
+          determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
+          force the use of @Martinski's excellent mount point selector!
+        - FIXED: Many verbiage changes in the config menu to help standardize terms.
+
+v1.31   - (November 5, 2023)
+        - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
+          eliminate some extraneous UBI drive references. Also, if only one external drive is attached, it will
+          automatically select that without needing to display a selection menu.
+        - FIXED: Gave -purge mode a little more context on-screen, and fixed the exit back to a prompt after running
+          since it incorrectly started a backup afterwards.
+        - MINOR: Fixed some grammar for a few on-screen messages based on the variable language they were displaying.
+
 v1.30   - (November 4, 2023)
         - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
           now allows you to pick a drive/partition other than sda1, which was the only supported backup source up
