@@ -15,7 +15,7 @@ v1.32b4 - (TBA)
           optimized. It now starts with determining what type of media the target device is, and using this info, will
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
           force the use of @Martinski's excellent mount point selector!
-        - FIXED: Many verbiage changes in the config menu to help stardardize terms.
+        - FIXED: Many verbiage changes in the config menu to help standardize terms.
 
 v1.31   - (November 5, 2023)
         - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
