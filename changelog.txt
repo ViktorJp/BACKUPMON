@@ -10,7 +10,7 @@ v1.32b4 - (TBA)
           Backup Target, you will also need to indicate whether it is a "Network" or "USB" target. In the case of a
           USB Backup Target (directly attached to your router), the script will no longer mount or unmount the device
           before or after a backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh
-          for the helpful suggestion!
+          for the helpful suggestion, and for the extensive testing done by @visortgw!
         - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
           optimized. It now starts with determining what type of media the target device is, and using this info, will
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
