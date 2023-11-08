@@ -1,4 +1,4 @@
-v1.32b2 - (TBA)
+v1.32b4 - (TBA)
         - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
           Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
           scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
@@ -6,11 +6,15 @@ v1.32b2 - (TBA)
           "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
           file without all the messy color escape characters, and make it much more readable.
         - ADDED: For the capability to distinguish between directly attached USB backup devices, and network backup
-          devices using a new menu item, available in the config menu. (See item #6). When specifying the path to your
+          devices using a new menu item, available in the config menu. (See item #2). When specifying the path to your
           Backup Target, you will also need to indicate whether it is a "Network" or "USB" target. In the case of a
-          USB Backup Target (directly attached to your router), the script will no longer unmount the device after a
-          backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh for the helpful
-          suggestion!
+          USB Backup Target (directly attached to your router), the script will no longer mount or unmount the device
+          before or after a backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh
+          for the helpful suggestion!
+        - FIXED: The order of the config menu items. It now starts with determining what type of media the target
+          device is, and using this info, will determine if menu items need to get grayed out. In the case of
+          selecting the USB option, it will also now force the use of @Martinski's excellent mount point selector!
+        - FIXED: Many verbiage changes in the config menu to help stardardize terms.
 
 v1.31   - (November 5, 2023)
         - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
