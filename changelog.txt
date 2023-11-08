@@ -5,12 +5,14 @@ v1.32b4 - (TBA)
           much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
           "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
           file without all the messy color escape characters, and make it much more readable.
-        - ADDED: For the capability to distinguish between directly attached USB backup devices, and network backup
-          devices using a new menu item, available in the config menu. (See item #2). When specifying the path to your
-          Backup Target, you will also need to indicate whether it is a "Network" or "USB" target. In the case of a
-          USB Backup Target (directly attached to your router), the script will no longer mount or unmount the device
-          before or after a backup has been completed. By default, "Network" is selected. Thanks much to @Quoc Huynh
-          for the helpful suggestion, and for the extensive testing done by @visortgw!
+        - ADDED: For the capability to distinguish between directly attached USB backup devices, and network
+          backup devices using a new menu item, available in the config menu. (See item #2). You will also need to
+          indicate whether your backup target is a "Network" or "USB" device. In the case of a USB Backup Target 
+          (directly attached to your router), the script will no longer mount or unmount the device before or after
+          a backup has been completed. It will also use the mount point selector to let you chose an already mounted
+          USB device. By default, "Network" is selected, which in this case requires you to fill in a mount point
+          name of your choice that the script will create for you. Thanks much to @Quoc Huynh for the helpful
+          suggestion, and for the extensive testing done by @visortgw!
         - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
           optimized. It now starts with determining what type of media the target device is, and using this info, will
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
