@@ -1225,7 +1225,7 @@ _GetMountPointSelectionIndex_()
 
 # -------------------------------------------------------------------------------------------------------------------------
 ##----------------------------------------##
-## Modified by Martinski W. [2023-Nov-08] ##
+## Modified by Martinski W. [2023-Nov-07] ##
 ##----------------------------------------##
 _GetMountPointSelection_()
 {
@@ -1258,7 +1258,7 @@ _GetMountPointSelection_()
    do
        mounPointCnt="$((mounPointCnt + 1))"
        mounPointVar="MP_${mounPointCnt}_INFO"
-       eval "MP_${mounPointCnt}_INFO=$(echo "$mounPointInfo" | sed 's/[(< >)]/\\&/g')"
+       eval "MP_${mounPointCnt}_INFO=$(echo "$mounPointInfo" | sed 's/[( )]/\\&/g')"
        printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
        eval echo "\$${mounPointVar}"
    done <<EOT
