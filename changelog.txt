@@ -4,7 +4,8 @@ v1.32b4 - (TBA)
           scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
           much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
           "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
-          file without all the messy color escape characters, and make it much more readable.
+          file without all the messy color escape characters, and make it much more readable. It's not perfect,
+          but in lieu of creating a separate log file (on to-do list), this will make do.
         - ADDED: For the capability to distinguish between directly attached USB backup devices, and network
           backup devices using a new menu item, available in the config menu. (See item #2). You will also need to
           indicate whether your backup target is a "Network" or "USB" device. In the case of a USB Backup Target 
