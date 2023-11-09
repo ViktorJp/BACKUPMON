@@ -24,6 +24,8 @@ v1.32b4 - (TBA)
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
           force the use of @Martinski's excellent mount point selector!
         - FIXED: Many verbiage changes in the config menu to help standardize terms.
+        - FIXED: @Martinski has worked some magic on his mount point selector functions to catch unexpected characters
+          in your drive labels. PRO TIP: Please try to keep your drive labels as plain as possible. Ex: SAMSUNG-SSD
         - FIXED: The annoying bug that @visortgw identified when choosing USB, the script would still complain if one
           of the passwords was plaintext, eventhough it would not even get used in this scenario. When USB is selected
           as a target backup device, checking for plaintext passwords will no longer come under scrutiny.
