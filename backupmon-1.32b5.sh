@@ -33,6 +33,7 @@ USBSOURCE="FALSE"																								# Tracking switch
 USBTARGET="FALSE"																								# Tracking switch
 SECONDARYUSBTARGET="FALSE"																			# Tracking switch
 TESTUSBTARGET="FALSE"																						# Tracking switch
+BACKUPTYPE="BackupOnly"																					# Backups only vs. Backups+Autopurge
 
 # Config variables
 USERNAME="admin"
