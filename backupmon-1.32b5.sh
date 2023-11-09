@@ -29,11 +29,11 @@ UNCUPDATED="False"                                              # Tracking if th
 SECONDARYUNCUPDATED="False"                                     # Tracking if the Secondary UNC was updated or not
 UpdateNotify=0                                                  # Tracking whether a new update is available
 BSWITCH="False"                                                 # Tracking -backup switch to eliminate timer
-USBSOURCE="FALSE"																								# Tracking switch
-USBTARGET="FALSE"																								# Tracking switch
-SECONDARYUSBTARGET="FALSE"																			# Tracking switch
-TESTUSBTARGET="FALSE"																						# Tracking switch
-BACKUPTYPE="BackupOnly"																					# Backups only vs. Backups+Autopurge
+USBSOURCE="FALSE"                                               # Tracking switch
+USBTARGET="FALSE"                                               # Tracking switch
+SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
+TESTUSBTARGET="FALSE"                                           # Tracking switch
+BACKUPTYPE="BackupOnly"                                         # Backups only vs. Backups+Autopurge
 
 # Config variables
 USERNAME="admin"
