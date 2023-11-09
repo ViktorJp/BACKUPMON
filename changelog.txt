@@ -13,11 +13,20 @@ v1.32b4 - (TBA)
           USB device. By default, "Network" is selected, which in this case requires you to fill in a mount point
           name of your choice that the script will create for you. Thanks much to @Quoc Huynh for the helpful
           suggestion, and for the extensive testing done by @visortgw!
+        - ADDED: New functionality to the scheduler menu item, asking if you want the script to simply run a backup,
+          or if you want it to run a backup + autopurge. If you chose the latter, it will add the "-backup" switch
+          to the cron job. Please note: when running "backupmon.sh" standalone, you will only run a backup job. If
+          you run "backupmon.sh -backup", it will run a backup followed by an autopurge for those who are running
+          in "perptual backup frequency" mode. This is just an automated way to keep your backups trimmed per the
+          age that you have specified.
         - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
           optimized. It now starts with determining what type of media the target device is, and using this info, will
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
           force the use of @Martinski's excellent mount point selector!
         - FIXED: Many verbiage changes in the config menu to help standardize terms.
+        - FIXED: The annoying bug that @visortgw identified when choosing USB, the script would still complain if one
+          of the passwords was plaintext, eventhough it would not even get used in this scenario. When USB is selected
+          as a target backup device, checking for plaintext passwords will no longer come under scrutiny.
 
 v1.31   - (November 5, 2023)
         - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
