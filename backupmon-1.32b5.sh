@@ -33,7 +33,7 @@ USBSOURCE="FALSE"                                               # Tracking switc
 USBTARGET="FALSE"                                               # Tracking switch
 SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
 TESTUSBTARGET="FALSE"                                           # Tracking switch
-BACKUPTYPE="BackupOnly"                                         # Backups only vs. Backups+Autopurge
+SCHEDULEMODE="BackupOnly"                                       # Backups only vs. Backups+Autopurge
 
 # Config variables
 USERNAME="admin"
@@ -304,6 +304,11 @@ vconfig () {
       else
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                             : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
       fi
+      echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : "${CGreen}
+      if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
+        printf "Backup Only"; printf "%s\n";
+      elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
+        printf "Backup + Autopurge"; printf "%s\n"; fi
       echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
@@ -610,17 +615,17 @@ vconfig () {
 	                echo -e "${CYellow}(Backups Only=1, Backups+Autopurge=2) (Default = 1)"
 	                echo -e "${CClear}"
 		              while true; do
-		                read -p 'Backup/Purge Functionality (1/2)?: ' BACKUPTYPE
-		                  case $BACKUPTYPE in
-		                    [1] ) BACKUPTYPE="BackupOnly"; break ;;
-		                    [2] ) BACKUPTYPE="BackupAutoPurge"; break ;;
+		                read -p 'Backup/Purge Functionality (1/2)?: ' SCHEDULEMODE
+		                  case $SCHEDULEMODE in
+		                    [1] ) SCHEDULEMODE="BackupOnly"; break ;;
+		                    [2] ) SCHEDULEMODE="BackupAutoPurge"; break ;;
 		                    "" ) echo -e "\n Error: Please use either 1 or 2\n";;
 		                    * ) echo -e "\n Error: Please use either 1 or 2\n";;
 		                  esac
 		              done
 		            fi
 
-								if [ "$BACKUPTYPE" == "BackupOnly" ]; then
+								if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
 	                if [ -f /jffs/scripts/services-start ]; then
 
 	                  if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
@@ -645,7 +650,7 @@ vconfig () {
 	              echo -e "[Modifying CRON jobs]..."
 	              sleep 2
 	              
-	              elif [ "$BACKUPTYPE" == "BackupAutoPurge" ]; then
+	              elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
 	                if [ -f /jffs/scripts/services-start ]; then
 
 	                  if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
@@ -803,6 +808,7 @@ vconfig () {
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
+                  echo 'SCHEDULEMODE="'"$SCHEDULEMODE"'"'
                   echo 'FREQUENCY="'"$FREQUENCY"'"'
                   echo 'MODE="'"$MODE"'"'
                   echo 'PURGE='$PURGE
@@ -857,6 +863,7 @@ vconfig () {
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
         echo 'SCHEDULEMIN=30'
+        echo 'SCHEDULEMODE="BackupOnly"'
         echo 'FREQUENCY="M"'
         echo 'MODE="Basic"'
         echo 'PURGE=0'
