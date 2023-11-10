@@ -19,7 +19,8 @@ v1.32b5 - (TBA)
           to the cron job. Please note: when running "backupmon.sh" standalone, you will only run a backup job. If
           you run "backupmon.sh -backup", it will run a backup followed by an autopurge for those who are running
           in "perptual backup frequency" mode. This is just an automated way to keep your backups trimmed per the
-          age that you have specified.
+          age that you have specified. This item is now also featured under the config menu (under item #11) for easy
+          reference. Please make sure you save your config!
         - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
           optimized. It now starts with determining what type of media the target device is, and using this info, will
           determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
