@@ -33,7 +33,7 @@ USBSOURCE="FALSE"                                               # Tracking switc
 USBTARGET="FALSE"                                               # Tracking switch
 SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
 TESTUSBTARGET="FALSE"                                           # Tracking switch
-SCHEDULEMODE="BackupOnly"                                       # Backups only vs. Backups+Autopurge
+SCHEDULEMODE="BackupOnly"                                       # Tracking Backups only vs. Backups+Autopurge
 
 # Config variables
 USERNAME="admin"
