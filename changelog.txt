@@ -1,4 +1,4 @@
-v1.32b5 - (TBA)
+v1.32b5 - (November 10, 2023)
         - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
           Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
           scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
