@@ -1,4 +1,9 @@
-v1.36b1 - (TBA)
+v1.36b2 - (TBA)
+        - ADDED: By popular demand, BACKUPMON now features a dedicated log file, located under
+          /jffs/addons/backupmon.d/backupmon.log. You can access this log by hitting "vl" from the setup and
+          operations menu, and will use the NANO text editor to open the log. Exit NANO using CTRL-X. All major
+          events that you would see on-screen are displayed in the log. Certain major items continue to be
+          displayed in the main SYSLOG just incase. I will continue pruming and correcting as needed.
         - FIXED: Thanks to @Ripshod, found an invalid reference where the secondary backups were referring to the
           primary exclusion list file for weekly backups. Corrected the issue.
 
