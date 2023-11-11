@@ -7,15 +7,11 @@
 
 Here are a couple of different network/USB backup scenarios that it is able to handle (as of v1.35):
 
-**Router USB Drive -> External network device/share** (on your local network)
-
-**Router USB Drive -> Local network share** (could be mounted to a secondary partition on your USB Drive, or secondary USB Drive)
-
-**Router USB Drive -> Secondary Router USB Drive** (plugged into the secondary USB port)
-
-**Router USB Drive -> Router USB Drive** (backing up to itself into a separate folder... of course, not recommended, but possible)
-
-**Router USB Drive Partition 1 -> Router USB Drive Partition 2** (kinda like the one above, but gives it a little more separation)
+* **Router USB Drive -> External network device/share** (on your local network)
+* **Router USB Drive -> Local network share** (could be mounted to a secondary partition on your USB Drive, or secondary USB Drive)
+* **Router USB Drive -> Secondary Router USB Drive** (plugged into the secondary USB port)
+* **Router USB Drive -> Router USB Drive** (backing up to itself into a separate folder... of course, not recommended, but possible)
+* **Router USB Drive Partition 1 -> Router USB Drive Partition 2** (kinda like the one above, but gives it a little more separation)
 
 If you do go down the path of backing your USB drive to your USB drive, it's possible, not recommended. The safest way still is to store backups is far away from the device being backed up... so use at your own risk.
 
