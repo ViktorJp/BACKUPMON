@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.31 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.35 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.31"                                                  # Current version
+Version="1.35"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -29,6 +29,10 @@ UNCUPDATED="False"                                              # Tracking if th
 SECONDARYUNCUPDATED="False"                                     # Tracking if the Secondary UNC was updated or not
 UpdateNotify=0                                                  # Tracking whether a new update is available
 BSWITCH="False"                                                 # Tracking -backup switch to eliminate timer
+USBSOURCE="FALSE"                                               # Tracking switch
+USBTARGET="FALSE"                                               # Tracking switch
+SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
+TESTUSBTARGET="FALSE"                                           # Tracking switch
 
 # Config variables
 USERNAME="admin"
@@ -36,10 +40,12 @@ PASSWORD="YWRtaW4K"
 UNC="\\\\192.168.50.25\\Backups"
 UNCDRIVE="/tmp/mnt/backups"
 BKDIR="/router/GT-AX6000-Backup"
+BACKUPMEDIA="Network"
 EXCLUSION=""
 SCHEDULE=0
 SCHEDULEHRS=2
 SCHEDULEMIN=30
+SCHEDULEMODE="BackupOnly"
 FREQUENCY="M"
 MODE="Basic"
 PURGE=0
@@ -50,6 +56,7 @@ SECONDARYPWD="YWRtaW4K"
 SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"
 SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"
 SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"
+SECONDARYBACKUPMEDIA="Network"
 SECONDARYEXCLUSION=""
 SECONDARYFREQUENCY="M"
 SECONDARYMODE="Basic"
@@ -109,6 +116,33 @@ promptyn () {   # No defaults, just y or n
 
 # -------------------------------------------------------------------------------------------------------------------------
 
+# blackwhite is a simple function that removes all color attributes
+blackwhite () {
+# Color variables
+CBlack=""
+InvBlack=""
+CRed=""
+InvRed=""
+CGreen=""
+InvGreen=""
+CDkGray=""
+InvDkGray=""
+InvLtGray=""
+CYellow=""
+InvYellow=""
+CBlue=""
+InvBlue=""
+CMagenta=""
+CCyan=""
+InvCyan=""
+CWhite=""
+InvWhite=""
+CClear=""
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
 # Preparebar and Progressbaroverride is a script that provides a nice progressbar to show script activity
 preparebar() {
   # $1 - bar length
@@ -132,7 +166,7 @@ progressbaroverride() {
 
     if [ ! -z $6 ]; then AltNum=$6; else AltNum=$1; fi
 
-      printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} ${CGreen}[Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+      printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} ${CGreen}[ e=Exit / Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
 
     # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
     key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
@@ -142,7 +176,7 @@ progressbaroverride() {
             [Xx]) echo ""; echo ""; sleep 1; restore;;
             [Ss]) (vsetup); source $CFGPATH; echo ""; sleep 1; exit 0;;
             [Ee])  # Exit gracefully
-                  clear
+                  echo ""
                   echo -e "${CClear}"
                   exit 0
                   ;;
@@ -199,34 +233,43 @@ vconfig () {
 
     while true; do
       clear
-      logoNM
+      logoNM     
       echo ""
       echo -e "${CGreen}----------------------------------------------------------------"
       echo -e "${CGreen}Primary Backup Configuration Options"
       echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Model             :"${CGreen}$ROUTERMODEL
-      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Firmware/Build    :"${CGreen}$FWBUILD
-      echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Backup Target Username          :"${CGreen}$USERNAME
-      echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Backup Target Password (ENC)    :"${CGreen}$PASSWORD
-      if [ "$UNCUPDATED" == "True" ]; then
-        echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target UNC Path          :"${CGreen};printf '%s' $UNC; printf "%s\n"
-      else
-        echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target UNC Path          :"${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
-      fi
-      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Local EXT USB Drive Mount Path  :"${CGreen}$EXTDRIVE
-      echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path   :"${CGreen}$UNCDRIVE
-      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Directory Path    :"${CGreen}$BKDIR
-      echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Exclusion File Name      :"${CGreen}$EXCLUSION
-      echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Schedule Backups?               :"${CGreen}
-      if [ "$SCHEDULE" == "0" ]; then
-        printf "No"; printf "%s\n";
-      else printf "Yes"; printf "%s\n"; fi
-      if [ "$SCHEDULE" == "1" ]; then
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Time:                          :${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
-      else
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                          :${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
-      fi
-      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?               :"${CGreen}
+      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Model                : "${CGreen}$ROUTERMODEL
+      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Firmware/Build       : "${CGreen}$FWBUILD
+      echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Source EXT USB Drive Mount Point   : "${CGreen}$EXTDRIVE
+      echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Backup Target Media Type           : "${CGreen}$BACKUPMEDIA
+      
+      if [ "$BACKUPMEDIA" == "USB" ]; then
+      
+	      echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Backup Target Username             : "${CDkGray}$USERNAME
+	      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Backup Target Password (ENC)       : "${CDkGray}$PASSWORD
+	      if [ "$UNCUPDATED" == "True" ]; then
+	        echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target UNC Path             : "${CDkGray};printf '%s' $UNC; printf "%s\n"
+	      else
+	        echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target UNC Path             : "${CDkGray}; echo $UNC | sed -e 's,\\,\\\\,g'
+	      fi
+	      
+	    else  
+	      
+	      echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target Username             : "${CGreen}$USERNAME
+	      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Backup Target Password (ENC)       : "${CGreen}$PASSWORD
+	      if [ "$UNCUPDATED" == "True" ]; then
+	        echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target UNC Path             : "${CGreen};printf '%s' $UNC; printf "%s\n"
+	      else
+	        echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target UNC Path             : "${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
+	      fi
+	      
+    	fi
+      
+      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : "${CGreen}$UNCDRIVE
+      echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Target Directory Path       : "${CGreen}$BKDIR
+      
+      echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Exclusion File Name         : "${CGreen}$EXCLUSION
+      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?                  : "${CGreen}
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -236,23 +279,37 @@ vconfig () {
       elif [ "$FREQUENCY" == "P" ]; then
         printf "Perpetual"; printf "%s\n"; fi
       if [ "$FREQUENCY" == "P" ]; then
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Backups?                 :${CGreen}"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Backups?                    : ${CGreen}"
         if [ "$PURGE" == "0" ]; then
           printf "No"; printf "%s\n";
         elif [ "$PURGE" == "1" ]; then
           printf "Yes"; printf "%s\n";fi
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge older than (days):       :${CGreen}"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge older than (days):          : ${CGreen}"
         if [ "$PURGELIMIT" == "0" ]; then
           printf "N/A"; printf "%s\n";
         else
           printf $PURGELIMIT; printf "%s\n";
         fi
       else
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                 :${CDkGray}No"
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):       :${CDkGray}N/A"
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                    : ${CDkGray}No"
+        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):          : ${CDkGray}N/A"
       fi
-      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode             :"${CGreen}$MODE
-      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Secondary Backup Config Options :"${CGreen}$SECONDARY
+      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
+      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Schedule Backups?                  : "${CGreen}
+      if [ "$SCHEDULE" == "0" ]; then
+        printf "No"; printf "%s\n";
+      else printf "Yes"; printf "%s\n"; fi
+      if [ "$SCHEDULE" == "1" ]; then
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Time:                             : ${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
+      else
+        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                             : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
+      fi
+      echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : "${CGreen}
+      if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
+        printf "Backup Only"; printf "%s\n";
+      elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
+        printf "Backup + Autopurge"; printf "%s\n"; fi
+      echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
@@ -275,139 +332,127 @@ vconfig () {
 
             1) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}1. What is the Primary Backup Target Username?"
-              echo -e "${CYellow}(Default = Admin)${CClear}"
-              read -p 'Username: ' USERNAME1
-              if [ "$USERNAME1" == "" ] || [ -z "$USERNAME1" ]; then USERNAME="Admin"; else USERNAME="$USERNAME1"; fi # Using default value on enter keypress
+              echo -e "${CCyan}1. Please choose the SOURCE Mount Point of your attached external USB Drive that"
+              echo -e "${CCyan}contains data that you want to have backed up. In most cases, whatever is"
+              echo -e "${CCyan}attached to your sda1 partition should be selected. Should there be only one"
+              echo -e "${CCyan}mount point available, it will be automatically selected."
+              echo -e "${CYellow}(Recommended drive on sda1 = /tmp/mnt/$(nvram get usb_path_sda1_label))${CClear}"
+              USBSOURCE="TRUE"
+              _GetMountPoint_ "Select an EXT USB Drive Mount Point: "
+              read -rsp $'Press any key to acknowledge...\n' -n1 key
             ;;
 
-            2) # -----------------------------------------------------------------------------------------
+           	2) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}2. What is the Primary Backup Target Password?"
-              echo -e "${CYellow}(Default = admin)${CClear}"
+              echo -e "${CCyan}2. What is the TARGET Backup Media Type? This is the type of device that you"
+              echo -e "${CCyan}want your backups copied to. Please indicate whether the media is a network"
+              echo -e "${CCyan}device (accessible via UNC path), or a local USB device (connected to router)."
+              echo -e "${CCyan}PLEASE NOTE: If the USB option is chosen, there will be no need to complete"
+              echo -e "${CCyan}further information for the Target UNC, username or password, and will be"
+              echo -e "${CCyan}grayed out."	
+              echo -e "${CYellow}(Network=1, USB=2) (Default = 1)"
+              echo -e "${CClear}"
+              while true; do
+                read -p 'Media Type (1/2)?: ' BACKUPMEDIA
+                  case $BACKUPMEDIA in
+                    [1] ) BACKUPMEDIA="Network"; break ;;
+                    [2] ) BACKUPMEDIA="USB"; break ;;
+                    "" ) echo -e "\nError: Please use either 1 or 2\n";;
+                    * ) echo -e "\nError: Please use either 1 or 2\n";;
+                  esac
+              done
+            ;;      
+
+            3) # -----------------------------------------------------------------------------------------
               echo ""
+              echo -e "${CCyan}3. What is the TARGET Network Backup Username?"
+              echo -e "${CYellow}(Default = admin)"
+              echo -e "${CClear}"
+              read -p 'Username: ' USERNAME1
+              if [ "$USERNAME1" == "" ] || [ -z "$USERNAME1" ]; then USERNAME="admin"; else USERNAME="$USERNAME1"; fi # Using default value on enter keypress
+            ;;
+
+            4) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}4. What is the TARGET Network Backup Password?"
+              echo -e "${CYellow}(Default = admin)"
+              echo -e "${CClear}"
               if [ $PASSWORD == "admin" ]; then
                 echo -e "${CGreen}Old Password (Unencoded): admin"
               else
-                #echo -en "${CGreen}Old Password (Unencoded): "; echo $PASSWORD | base64 -d
                 echo -en "${CGreen}Old Password (Unencoded): "; echo "$PASSWORD" | openssl enc -d -base64 -A
               fi
               echo ""
               read -rp 'New Password: ' PASSWORD1
-              #if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD=`echo "admin" | base64`; else PASSWORD=`echo $PASSWORD1 | base64`; fi # Using default value on enter keypress
               if [ "$PASSWORD1" == "" ] || [ -z "$PASSWORD1" ]; then PASSWORD=`echo "admin" | openssl enc -base64 -A`; else PASSWORD=`echo $PASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
             ;;
 
-            3) # -----------------------------------------------------------------------------------------
+            5) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}3. What is the Backup Target UNC Path? This is the path of a local network"
-              echo -e "${CCyan}backup device that has a share made available for backup to be pushed to."
+              echo -e "${CCyan}5. What is the TARGET Backup UNC Path? This is the path of a local network"
+              echo -e "${CCyan}backup device that has a share made available for backups to be pushed to."
               echo -e "${CCyan}Please note: Use proper notation for the network path by starting with"
               echo -en "${CCyan}4 backslashes "; printf "%s" "(\\\\\\\\)"; echo -en " and using 2 backslashes "; printf "%s" "(\\\\)"; echo -e " between any additional"
               echo -e "${CCyan}folders. Example below:"
               echo -en "${CYellow}"; printf "%s" "(Default = \\\\\\\\192.168.50.25\\\\Backups)"
               echo -e "${CClear}"
-              read -rp 'Backup Target UNC Path: ' UNC1
+              read -rp 'Target Backup UNC Path: ' UNC1
               if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="\\\\\\\\192.168.50.25\\\\Backups"; else UNC="$UNC1"; fi # Using default value on enter keypress
               UNCUPDATED="True"
             ;;
 
-            4) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}4. Please choose the local drive mount name of your attached external USB Drive."
-              echo -e "${CCyan}In most cases, whatever is attached to your sda1 partition should be selected."
-              echo -e "${CCyan}Should there be only one drive available, it will be automatically selected."
-              echo -e "${CYellow}(Recommended = /tmp/mnt/$(nvram get usb_path_sda1_label))${CClear}"
-              _GetMountPoint_ "Select an EXT USB drive partition: "
-              read -rsp $'Press any key to acknowledge...\n' -n1 key
-            ;;
-
-            5) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}5. What is the Local Backup Drive Mount Path? This is the local path on your"
-              echo -e "${CCyan}router typically located under /tmp/mnt which creates a physical directory that"
-              echo -e "${CCyan}is mounted to the network backup location. Please note: Use proper notation for"
-              echo -e "${CCyan}the path by using single forward slashes between directories. Example below:"
-              echo -e "${CYellow}(Default = /tmp/mnt/backups)${CClear}"
-              read -p 'Local Backup Drive Mount Path: ' UNCDRIVE1
-              if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
-            ;;
-
             6) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}6. What is the Backup Target Directory Path? This is the path that is created"
-              echo -e "${CCyan}on your network backup location in order to store and order the backups by day."
-              echo -e "${CCyan}Please note: Use proper notation for the path by using single forward slashes"
-              echo -e "${CCyan}between directories. Example below:"
-              echo -e "${CYellow}(Default = /router/GT-AX6000-Backup)${CClear}"
-              read -p 'Backup Target Directory Path: ' BKDIR1
-              if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
+              
+              if [ "$BACKUPMEDIA" == "Network" ]; then
+	              echo ""
+	              echo -e "${CCyan}6. What would you like to name the TARGET Network Backup Drive Mount Point? This"
+	              echo -e "${CCyan}mount path will be created for you, and is the local path on your router"
+	              echo -e "${CCyan}typically located under /tmp/mnt which provides a physical directory that is"
+	              echo -e "${CCyan}mounted to the network backup location. Please note: Use proper notation for the"
+	              echo -e "${CCyan}path by using single forward slashes between directories. Example below:"
+	              echo -e "${CYellow}(Default = /tmp/mnt/backups)"
+	              echo -e "${CClear}"
+	              read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
+	              if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
+	            
+	           	elif [ "$BACKUPMEDIA" == "USB" ]; then
+                echo ""
+	              echo -e "${CCyan}6. Please choose the TARGET USB Backup Drive Mount Point assigned to your secondary"
+	              echo -e "${CCyan}external USB Drive where you want backups to be stored. Should there be only one"
+	              echo -e "${CCyan}drive available, it will be automatically selected. PLEASE NOTE: It is highly"
+	              echo -e "${CCyan}recommended not to use the same USB drive to both be a SOURCE and TARGET for"
+	              echo -e "${CCyan}backups.${CClear}"
+	              USBTARGET="TRUE"
+	              _GetMountPoint_ "Select a Target USB Backup Drive Mount Point: "
+	              read -rsp $'Press any key to acknowledge...\n' -n1 key
+	            fi
+            	
             ;;
 
             7) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}7. What is the Backup Exclusion File Name? This file contains a list of certain"
-              echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
-              echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
-              echo -e "${CCyan}directories. Example below:"
-              echo -e "${CYellow}(Default = /jffs/addons/backupmon.d/exclusions.txt)${CClear}"
-              read -p 'Backup Exclusion File Name + Path: ' EXCLUSION1
-              if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
+              echo -e "${CCyan}7. What is the TARGET Backup Directory Path? This is the path that is created"
+              echo -e "${CCyan}on your network backup location in order to store and order the backups by day."
+              echo -e "${CCyan}Please note: Use proper notation for the path by using single forward slashes"
+              echo -e "${CCyan}between directories. Example below:"
+              echo -e "${CYellow}(Default = /router/GT-AX6000-Backup)"
+              echo -e "${CClear}"
+              read -p 'Target Backup Directory Path: ' BKDIR1
+              if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
+           
+     
             ;;
 
             8) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}8. Would you like BACKUPMON to automatically run at a scheduled time each day?"
-              echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
-              echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
-              echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
-              read -p 'Schedule BACKUPMON?: ' SCHEDULE1
-              if [ "$SCHEDULE1" == "" ] || [ -z "$SCHEDULE1" ]; then SCHEDULE=0; else SCHEDULE="$SCHEDULE1"; fi # Using default value on enter keypress
-
-              if [ "$SCHEDULE" == "0" ]; then
-
-                if [ -f /jffs/scripts/services-start ]; then
-                  sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
-                  cru d RunBackupMon
-                fi
-
-              elif [ "$SCHEDULE" == "1" ]; then
-
-                echo ""
-                echo -e "${CCyan}7a. What time would you like BACKUPMON to automatically run each day? Please"
-                echo -e "${CCyan}note: You will be asked for the hours and minutes in separate prompts. Use 24hr"
-                echo -e "${CCyan}format for the hours. (Ex: 17 hrs / 15 min = 17:15 or 5:15pm)"
-                echo -e "${CYellow}(Default = 2 hrs / 30 min = 02:30 or 2:30am)${CClear}"
-                read -p 'Schedule HOURS?: ' SCHEDULEHRS1
-                if [ "$SCHEDULEHRS1" == "" ] || [ -z "$SCHEDULEHRS1" ]; then SCHEDULEHRS=2; else SCHEDULEHRS="$SCHEDULEHRS1"; fi # Using default value on enter keypress
-                read -p 'Schedule MINUTES?: ' SCHEDULEMIN1
-                if [ "$SCHEDULEMIN1" == "" ] || [ -z "$SCHEDULEMIN1" ]; then SCHEDULEMIN=30; else SCHEDULEMIN="$SCHEDULEMIN1"; fi # Using default value on enter keypress
-
-                if [ -f /jffs/scripts/services-start ]; then
-
-                  if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
-                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
-                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
-                  else
-                    #delete and re-add if it already exists in case there's a time change
-                    sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
-                    cru d RunBackupMon
-                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
-                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
-                  fi
-
-                else
-                  echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
-                  chmod 755 /jffs/scripts/services-start
-                  cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
-                fi
-
-              else
-                SCHEDULE=0
-                SCHEDULEHRS=2
-                SCHEDULEMIN=30
-              fi
+              echo -e "${CCyan}8. What is the Backup Exclusion File Name? This file contains a list of certain"
+              echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
+              echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
+              echo -e "${CCyan}directories. Example below:"
+              echo -e "${CYellow}(Default = /jffs/addons/backupmon.d/exclusions.txt)"
+              echo -e "${CClear}"
+              read -p 'Backup Exclusion File Name + Path: ' EXCLUSION1
+              if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
             ;;
 
             9) # -----------------------------------------------------------------------------------------
@@ -431,7 +476,8 @@ vconfig () {
               echo -e "${CGreen}(ex: 20230909-084322). NOTE: When using the Perpetual backup frequency option,"
               echo -e "${CGreen}you may only use BASIC mode."
               echo ""
-              echo -e "${CYellow}(Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)${CClear}"
+              echo -e "${CYellow}(Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)"
+              echo -e "${CClear}"
               while true; do
                 read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
@@ -439,14 +485,14 @@ vconfig () {
                     [Mm] ) FREQUENCY="M"; PURGE=0; PURGELIMIT=0; break ;;
                     [Yy] ) FREQUENCY="Y"; PURGE=0; PURGELIMIT=0; break ;;
                     [Pp] ) FREQUENCY="P"; MODE="Basic" break ;;
-                    "" ) echo -e "\n Error: Please use either M, W, Y or P\n";;
-                    * ) echo -e "\n Error: Please use either M, W, Y or P\n";;
+                    "" ) echo -e "\nError: Please use either M, W, Y or P\n";;
+                    * ) echo -e "\nError: Please use either M, W, Y or P\n";;
                   esac
               done
 
               if [ $FREQUENCY == "P" ]; then
                 echo ""
-                echo -e "${CCyan}8a. Would you like to purge perpetual backups after a certain age? This can help"
+                echo -e "${CCyan}9a. Would you like to purge perpetual backups after a certain age? This can help"
                 echo -e "${CCyan}trim your backups and reclaim disk space, but also gives you more flexibility on"
                 echo -e "${CCyan}the length of time you can keep your backups. Purging backups can be run manually"
                 echo -e "${CCyan}from the setup menu, and gives you the ability to see which backups will be purged"
@@ -459,7 +505,8 @@ vconfig () {
                 echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
                 echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
                 echo ""
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)${CClear}"
+                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
+                echo -e "${CClear}"
                 read -p 'Purge Backups? (0/1): ' PURGE1
                 if [ "$PURGE1" == "" ] || [ -z "$PURGE1" ]; then PURGE=0; else PURGE="$PURGE1"; fi # Using default value on enter keypress
 
@@ -470,13 +517,14 @@ vconfig () {
                 elif [ "$PURGE" == "1" ]; then
 
                   echo ""
-                  echo -e "${CCyan}8b. How many days would you like to keep your perpetual backups? Example: 90"
+                  echo -e "${CCyan}9b. How many days would you like to keep your perpetual backups? Example: 90"
                   echo -e "${CCyan}Note that all perpetual backups older than 90 days would be permanently deleted."
                   echo ""
                   echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
                   echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
                   echo ""
-                  echo -e "${CYellow}(Default = 90)${CClear}"
+                  echo -e "${CYellow}(Default = 90)"
+                  echo -e "${CClear}"
                   read -p 'Backup Age? (in days): ' PURGELIMIT1
                   if [ "$PURGELIMIT1" == "" ] || [ -z "$PURGELIMIT1" ]; then PURGELIMIT=0; else PURGELIMIT="$PURGELIMIT1"; fi # Using default value on enter keypress
 
@@ -511,53 +559,174 @@ vconfig () {
               echo -e "${CYellow}folders will not self-prune or overwrite, even if multiple backups are made on the"
               echo -e "${CYellow}same day."
               echo ""
-              echo -e "${CYellow}(0=Basic, 1=Advanced) (Default = 0)${CClear}"
+              echo -e "${CYellow}(Basic-0, Advanced=1) (Default = 0)"
+              echo -e "${CClear}"
               while true; do
                 read -p 'Mode (0/1)?: ' MODE1
                   case $MODE1 in
                     [0] ) MODE="Basic"; break ;;
                     [1] ) if [ $FREQUENCY == "P" ]; then MODE="Basic"; else MODE="Advanced"; fi; break ;;
-                    "" ) echo -e "\n Error: Please use either 0 or 1\n";;
-                    * ) echo -e "\n Error: Please use either 0 or 1\n";;
+                    "" ) echo -e "\nError: Please use either 0 or 1\n";;
+                    * ) echo -e "\nError: Please use either 0 or 1\n";;
                   esac
               done
             ;;
 
             11) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}11. Would you like BACKUPMON to automatically run at a scheduled time each day?"
+              echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
+              echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
+              echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
+              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
+              echo -e "${CClear}"
+              read -p 'Schedule BACKUPMON?: ' SCHEDULE1
+              if [ "$SCHEDULE1" == "" ] || [ -z "$SCHEDULE1" ]; then SCHEDULE=0; else SCHEDULE="$SCHEDULE1"; fi # Using default value on enter keypress
+
+              if [ "$SCHEDULE" == "0" ]; then
+
+                if [ -f /jffs/scripts/services-start ]; then
+                  sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
+                  cru d RunBackupMon
+                fi
+
+              elif [ "$SCHEDULE" == "1" ]; then
+
+                echo ""
+                echo -e "${CCyan}11a. What time would you like BACKUPMON to automatically run each day? Please"
+                echo -e "${CCyan}note: You will be asked for the hours and minutes in separate prompts. Use 24hr"
+                echo -e "${CCyan}format for the hours. (Ex: 17 hrs / 15 min = 17:15 or 5:15pm)"
+                echo -e "${CYellow}(Default = 2 hrs / 30 min = 02:30 or 2:30am)"
+                echo -e "${CClear}"
+                read -p 'Schedule HOURS?: ' SCHEDULEHRS1
+                if [ "$SCHEDULEHRS1" == "" ] || [ -z "$SCHEDULEHRS1" ]; then SCHEDULEHRS=2; else SCHEDULEHRS="$SCHEDULEHRS1"; fi # Using default value on enter keypress
+                read -p 'Schedule MINUTES?: ' SCHEDULEMIN1
+                if [ "$SCHEDULEMIN1" == "" ] || [ -z "$SCHEDULEMIN1" ]; then SCHEDULEMIN=30; else SCHEDULEMIN="$SCHEDULEMIN1"; fi # Using default value on enter keypress
+								
+								if [ "$FREQUENCY" == "P" ]; then
+									echo ""
+	                echo -e "${CCyan}11b. When running a scheduled job each day, would you like BACKUPMON to only run"
+	                echo -e "${CCyan}backups, or would you like it to run backups and have it automatically purge"
+	                echo -e "${CCyan}old backups outside your specified age range immediately following? If you don't"
+	                echo -e "${CCyan}want to run backups with autopurge, you will be responsible for manually running"
+	                echo -e "${CCyan}backup purges using the config menu, or manually from the file system itself."
+	                echo -e "${CCyan}Please note: This option is only available when having the Perpetual Backup"
+	                echo -e "${CCyan}Frequency selected."
+	                echo -e "${CYellow}(Backups Only=1, Backups+Autopurge=2) (Default = 1)"
+	                echo -e "${CClear}"
+		              while true; do
+		                read -p 'Backup/Purge Functionality (1/2)?: ' SCHEDULEMODE
+		                  case $SCHEDULEMODE in
+		                    [1] ) SCHEDULEMODE="BackupOnly"; break ;;
+		                    [2] ) SCHEDULEMODE="BackupAutoPurge"; break ;;
+		                    "" ) echo -e "\nError: Please use either 1 or 2\n";;
+		                    * ) echo -e "\nError: Please use either 1 or 2\n";;
+		                  esac
+		              done
+		            fi
+
+								if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
+	                if [ -f /jffs/scripts/services-start ]; then
+
+	                  if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
+	                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+	                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
+	                  else
+	                    #delete and re-add if it already exists in case there's a time change
+	                    sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
+	                    cru d RunBackupMon
+	                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+	                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
+	                  fi
+
+	                else
+	                  echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"'"' >> /jffs/scripts/services-start
+	                  chmod 755 /jffs/scripts/services-start
+	                  cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
+	                fi
+	                
+	              echo ""
+	              echo -e "${CGreen}[Modifiying SERVICES-START file]..."
+	              echo -e "[Modifying CRON jobs]..."
+	              sleep 2
+	              
+	              elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
+	                if [ -f /jffs/scripts/services-start ]; then
+
+	                  if ! grep -q -F "sh /jffs/scripts/backupmon.sh" /jffs/scripts/services-start; then
+	                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"'"' >> /jffs/scripts/services-start
+	                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"
+	                  else
+	                    #delete and re-add if it already exists in case there's a time change
+	                    sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
+	                    cru d RunBackupMon
+	                    echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"'"' >> /jffs/scripts/services-start
+	                    cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"
+	                  fi
+
+	                else
+	                  echo 'cru a RunBackupMon "'"$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"'"' >> /jffs/scripts/services-start
+	                  chmod 755 /jffs/scripts/services-start
+	                  cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"
+	                fi
+	              
+	              echo ""
+	              echo -e "${CGreen}[Modifiying SERVICES-START file]..."
+	              echo -e "[Modifying CRON jobs]..."
+	              sleep 2
+	              
+	              fi	
+
+              else
+                SCHEDULE=0
+                SCHEDULEHRS=2
+                SCHEDULEMIN=30
+              fi
+            ;;
+            
+            12) # -----------------------------------------------------------------------------------------
             while true; do
               clear
-              echo ""
-              echo -e "${CCyan}11. Would you like to utilize a secondary/redundant backup configuration?"
-              echo -e "${CCyan}A secondary/redundant backup would allow you to backup your data to a"
-              echo -e "${CCyan}second backup target location, for optimum safety and redundancy. Please"
-              echo -e "${CCyan}use the prompts below to configure the necessary information to initiate"
-              echo -e "${CCyan}and schedule secondary backups. Ensure that the format of the prompts"
-              echo -e "${CCyan}are followed exactly based on their example default values:"
+      				logoNM     
               echo ""
               echo -e "${CGreen}----------------------------------------------------------------"
               echo -e "${CGreen}Secondary Backup Configuration Options"
               echo -e "${CGreen}----------------------------------------------------------------"
-              echo -en "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Enabled/Disabled                 : ${CGreen}"
+              echo -en "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Enabled/Disabled                   : ${CGreen}"
               if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
               if [ "$SECONDARYSTATUS" == "0" ]; then
                 printf "Disabled"; printf "%s\n";
               else printf "Enabled"; printf "%s\n"; fi
-              if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
-              echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Secondary Target Username        : ${CGreen}$SECONDARYUSER"
-              if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
-              echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Secondary Target Password (ENC)  : ${CGreen}$SECONDARYPWD"
-              if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
-              if [ "$SECONDARYUNCUPDATED" == "True" ]; then
-                echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target UNC Path        : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
-              else
-                echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target UNC Path        : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
-              fi
+              echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Secondary Target Media Type        : ${CGreen}$SECONDARYBACKUPMEDIA"             
+              if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+	              if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
+	              echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Secondary Target Username          : ${CDkGray}$SECONDARYUSER"
+	              if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
+	              echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Secondary Target Password (ENC)    : ${CDkGray}$SECONDARYPWD"
+	              if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
+	              if [ "$SECONDARYUNCUPDATED" == "True" ]; then
+	                echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target UNC Path          : ${CDkGray}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+	              else
+	                echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target UNC Path          : ${CDkGray}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+	              fi
+	            else
+	            	if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
+	              echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Secondary Target Username          : ${CGreen}$SECONDARYUSER"
+	              if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
+	              echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target Password (ENC)    : ${CGreen}$SECONDARYPWD"
+	              if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
+	              if [ "$SECONDARYUNCUPDATED" == "True" ]; then
+	                echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+	              else
+	                echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+	              fi
+	            fi
               if [ -z "$SECONDARYUNCDRIVE" ]; then SECONDARYUNCDRIVE="/tmp/mnt/backups"; fi
-              echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Local Backup Drive Mount Path    : ${CGreen}$SECONDARYUNCDRIVE"
+              echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
-              echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Dir Path        : ${CGreen}$SECONDARYBKDIR"
-              echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Exclusion File Name              : ${CGreen}$SECONDARYEXCLUSION"
-              echo -en "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Frequency?                : ${CGreen}"
+              echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Secondary Target Directory Path    : ${CGreen}$SECONDARYBKDIR"
+              echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Exclusion File Name                : ${CGreen}$SECONDARYEXCLUSION"
+              echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?                  : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
                 printf "Weekly"; printf "%s\n";
               elif [ "$SECONDARYFREQUENCY" == "M" ]; then
@@ -569,24 +738,24 @@ vconfig () {
               else SECONDARYFREQUENCY="M";
                 printf "Monthly"; printf "%s\n"; fi
               if [ "$SECONDARYFREQUENCY" == "P" ]; then
-                echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Secondary Backups?        : ${CGreen}"
+                echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Secondary Backups?          : ${CGreen}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
               else
-                echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Secondary Backups?        : ${CDkGray}"
+                echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Secondary Backups?          : ${CDkGray}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
               fi
               if [ -z $SECONDARYPURGELIMIT ]; then SECONDARYPURGELIMIT=0; fi
               if [ "$SECONDARYFREQUENCY" == "P" ] && [ "$SECONDARYPURGE" == "1" ]; then
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Older Than (days)         : ${CGreen}$SECONDARYPURGELIMIT"
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Older Than (days)           : ${CGreen}$SECONDARYPURGELIMIT"
               else
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Older Than (days)         : ${CDkGray}$SECONDARYPURGELIMIT"
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Older Than (days)           : ${CDkGray}$SECONDARYPURGELIMIT"
               fi
               if [ -z "$SECONDARYMODE" ]; then SECONDARYMODE="Basic"; fi
-              echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup/Restore Mode              : ${CGreen}$SECONDARYMODE"
+              echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode                : ${CGreen}$SECONDARYMODE"
               echo -e "${InvDkGray}${CWhite} |  ${CClear}"
               echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit Back to Primary Backup Config"
               echo -e "${CGreen}----------------------------------------------------------------"
@@ -595,18 +764,18 @@ vconfig () {
               read -r SECONDARYINPUT
                   case $SECONDARYINPUT in
                     1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
-                    2 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
-                    #3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | base64 -d; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | base64`; else SECONDARYPWD=`echo $SECONDARYPWD1 | base64`; fi;;
-                    3 ) echo ""; if [ $SECONDARYPWD == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
-                    4 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
-                    5 ) echo ""; read -p 'Secondary Local Drv Mount Path (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE;;
-                    6 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
-                    7 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions.txt ): ' SECONDARYEXCLUSION;;
-                    8 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
-                    9 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
+                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; else SECONDARYBACKUPMEDIA="Network"; fi;;
+                    3 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
+                    4 ) echo ""; if [ "$SECONDARYPWD" == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
+                    5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
+                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
+                    7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
+                    8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions.txt ): ' SECONDARYEXCLUSION;;
+                    9 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
+                    10 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
                     [Ee] ) break ;;
-                    "" ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
-                    * ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+                    "" ) echo -e "\nError: Please use 1 - 10 or Exit = e\n";;
+                    * ) echo -e "\nError: Please use 1 - 10 or Exit = e\n";;
                   esac
               done
             ;;
@@ -628,10 +797,12 @@ vconfig () {
                   echo 'EXTDRIVE="'"$EXTDRIVE"'"'
                   echo 'EXTLABEL="'"$EXTLABEL"'"'
                   echo 'BKDIR="'"$BKDIR"'"'
+                  echo 'BACKUPMEDIA="'"$BACKUPMEDIA"'"'
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
+                  echo 'SCHEDULEMODE="'"$SCHEDULEMODE"'"'
                   echo 'FREQUENCY="'"$FREQUENCY"'"'
                   echo 'MODE="'"$MODE"'"'
                   echo 'PURGE='$PURGE
@@ -642,6 +813,7 @@ vconfig () {
                   echo 'SECONDARYUNC="'"$SECONDARYUNC"'"'
                   echo 'SECONDARYUNCDRIVE="'"$SECONDARYUNCDRIVE"'"'
                   echo 'SECONDARYBKDIR="'"$SECONDARYBKDIR"'"'
+                  echo 'SECONDARYBACKUPMEDIA="'"$SECONDARYBACKUPMEDIA"'"'
                   echo 'SECONDARYEXCLUSION="'"$SECONDARYEXCLUSION"'"'
                   echo 'SECONDARYFREQUENCY="'"$SECONDARYFREQUENCY"'"'
                   echo 'SECONDARYMODE="'"$SECONDARYMODE"'"'
@@ -680,10 +852,12 @@ vconfig () {
         echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
         echo 'EXTLABEL="usbdrive"'
         echo 'BKDIR="/router/GT-AX6000-Backup"'
+        echo 'BACKUPMEDIA="Network"'
         echo 'EXCLUSION=""'
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
         echo 'SCHEDULEMIN=30'
+        echo 'SCHEDULEMODE="BackupOnly"'
         echo 'FREQUENCY="M"'
         echo 'MODE="Basic"'
         echo 'PURGE=0'
@@ -694,6 +868,7 @@ vconfig () {
         echo 'SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"'
         echo 'SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"'
         echo 'SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"'
+        echo 'SECONDARYBACKUPMEDIA="Network"'
         echo 'SECONDARYEXCLUSION=""'
         echo 'SECONDARYFREQUENCY="M"'
         echo 'SECONDARYMODE="Basic"'
@@ -717,6 +892,7 @@ TESTPWD="admin"
 TESTUNC="\\\\192.168.50.25\\Backups"
 TESTUNCDRIVE="/tmp/mnt/testbackups"
 TESTBKDIR="/router/test-backup"
+TESTBACKUPMEDIA="Network"
 TESTUNCUPDATED="False"
 
 while true; do
@@ -733,15 +909,27 @@ while true; do
   echo -e "${CGreen}----------------------------------------------------------------"
   echo -e "${CGreen}Backup Target Network Connection Tester"
   echo -e "${CGreen}----------------------------------------------------------------"
-  echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Test Target Username                : ${CGreen}$TESTUSER"
-  echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Test Target Password                : ${CGreen}$TESTPWD"
-  if [ "$TESTUNCUPDATED" == "True" ]; then
-    echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
-  else
-    echo -en "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
-  fi
-  echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Local Backup Drive Mount Path  : ${CGreen}$TESTUNCDRIVE"
-  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Dir Path                : ${CGreen}$TESTBKDIR"
+  echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Test Target Media Type              : ${CGreen}$TESTBACKUPMEDIA"
+  if [ "$TESTBACKUPMEDIA" == "Network" ]; then
+	  echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Test Target Username                : ${CGreen}$TESTUSER"
+	  echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target Password                : ${CGreen}$TESTPWD"
+	  if [ "$TESTUNCUPDATED" == "True" ]; then
+	    echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
+	  else
+	    echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+	  fi
+	elif [ "$TESTBACKUPMEDIA" == "USB" ]; then
+		echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CDkGray}: Test Target Username                : ${CDkGray}$TESTUSER"
+	  echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Test Target Password                : ${CDkGray}$TESTPWD"
+	  if [ "$TESTUNCUPDATED" == "True" ]; then
+	    echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}"; printf '%s' $TESTUNC; printf "%s\n"
+	  else
+	    echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+	  fi
+	fi
+  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Backup Mount Point      : ${CGreen}$TESTUNCDRIVE"
+  echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Test Target Dir Path                : ${CGreen}$TESTBKDIR"
+
   echo -e "${InvDkGray}${CWhite} |  ${CClear}"
   echo -e "${InvDkGray}${CWhite} t  ${CClear}${CCyan}: Test your Network Backup Connection"
   echo -e "${InvDkGray}${CWhite} p  ${CClear}${CCyan}: Import your Primary Backup Settings"
@@ -752,14 +940,15 @@ while true; do
   printf "Selection: ${CClear}"
   read -r TESTINPUT
       case $TESTINPUT in
-        1 ) echo ""; read -p 'Test Username: ' TESTUSER;;
-        2 ) echo ""; read -rp 'Test Password: ' TESTPWD;;
-        3 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
-        4 ) echo ""; read -p 'Test Local Drv Mount Path (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE;;
-        5 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
+        1 ) echo ""; read -p 'Test Target Media Type (ex: Network=1 / USB=2) (Choose 1 or 2): ' TESTBACKUPMEDIA; if [ "$TESTBACKUPMEDIA" == "1" ]; then TESTBACKUPMEDIA="Network"; elif [ "$TESTBACKUPMEDIA" == "2" ]; then TESTBACKUPMEDIA="USB"; else TESTBACKUPMEDIA="Network"; fi;;
+        2 ) echo ""; read -p 'Test Username: ' TESTUSER;;
+        3 ) echo ""; read -rp 'Test Password: ' TESTPWD;;
+        4 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
+        5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
+        6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
         [Ee] ) break ;;
-        [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR;;
-        [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR;;
+        [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA;;
+        [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA;;
         [Tt] )  # Connection test script
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
@@ -806,24 +995,28 @@ while true; do
                       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
                     fi
 
-                    CNT=0
-                    TRIES=2
-                      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-                        mount -t cifs $TESTUNC $TESTUNCDRIVE -o "vers=2.1,username=${TESTUSER},password=${TESTPWD}"  # Connect the UNC to the local backup drive mount
-                        MRC=$?
-                        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-                          break
-                        else
-                          echo -e "${CYellow}WARNING: Unable to mount to external drive. Retrying...${CClear}"
-                          sleep 5
-                          CNT=$((CNT+1))
-                          if [ $CNT -eq $TRIES ];then
-                            echo -e "${CRed}ERROR: Unable to mount to external drive ($TESTUNCDRIVE). Please check your configuration. Exiting.${CClear}"
-                            FAILURE="TRUE"
-                            break
-                          fi
-                        fi
-                      done
+										if [ "$TESTBACKUPMEDIA" == "USB" ]; then
+      								echo -en "${CGreen}STATUS: External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      							else
+	                    CNT=0
+	                    TRIES=2
+	                      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	                        mount -t cifs $TESTUNC $TESTUNCDRIVE -o "vers=2.1,username=${TESTUSER},password=${TESTPWD}"  # Connect the UNC to the local backup drive mount
+	                        MRC=$?
+	                        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	                          break
+	                        else
+	                          echo -e "${CYellow}WARNING: Unable to mount to external drive. Retrying...${CClear}"
+	                          sleep 5
+	                          CNT=$((CNT+1))
+	                          if [ $CNT -eq $TRIES ];then
+	                            echo -e "${CRed}ERROR: Unable to mount to external drive ($TESTUNCDRIVE). Please check your configuration. Exiting.${CClear}"
+	                            FAILURE="TRUE"
+	                            break
+	                          fi
+	                        fi
+	                      done
+	                  fi
                 fi
 
                 if [ "$FAILURE" == "TRUE" ]; then
@@ -864,8 +1057,8 @@ while true; do
                 TESTUNCUPDATED="False"
 
         ;;
-        "" ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
-        * ) echo -e "\n Error: Please use 1 - 9 or Exit = e\n";;
+        "" ) echo -e "\nError: Please use 1 - 9 or Exit = e\n";;
+        * ) echo -e "\nError: Please use 1 - 9 or Exit = e\n";;
 
       esac
   done
@@ -1089,7 +1282,7 @@ _GetMountPointSelectionIndex_()
 
 # -------------------------------------------------------------------------------------------------------------------------
 ##----------------------------------------##
-## Modified by Martinski W. [2023-Nov-04] ##
+## Modified by Martinski W. [2023-Nov-08] ##
 ##----------------------------------------##
 _GetMountPointSelection_()
 {
@@ -1122,7 +1315,7 @@ _GetMountPointSelection_()
    do
        mounPointCnt="$((mounPointCnt + 1))"
        mounPointVar="MP_${mounPointCnt}_INFO"
-       eval "MP_${mounPointCnt}_INFO=$(echo "$mounPointInfo" | sed -e 's/ /\\ /g')"
+       eval "MP_${mounPointCnt}_INFO=$(echo "$mounPointInfo" | sed 's/[(<; >)]/\\&/g')"
        printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
        eval echo "\$${mounPointVar}"
    done <<EOT
@@ -1186,9 +1379,21 @@ _GetMountPoint_()
    printf "\nMount Point Selected:\n${GRNct}${mounPointPath}${NOct}\n\n"
 
    ## Do whatever you need to do with value of "$mounPointPath" ##
-   EXTDRIVE=$mounPointPath
-   EXTLABEL=$(echo "${mounPointPath##*/}")
-
+   if [ "$USBSOURCE" == "TRUE" ]; then
+   	EXTDRIVE=$mounPointPath
+   	EXTLABEL=$(echo "${mounPointPath##*/}")
+   elif [ "$USBTARGET" == "TRUE" ]; then
+    UNCDRIVE=$mounPointPath
+   elif [ "$SECONDARYUSBTARGET" == "TRUE" ]; then
+    SECONDARYUNCDRIVE=$mounPointPath
+   elif [ "$TESTUSBTARGET" == "TRUE" ]; then
+    TESTUNCDRIVE=$mounPointPath
+ 	 fi
+ 	 
+ 	 USBSOURCE="FALSE"
+ 	 USBTARGET="FALSE"
+ 	 SECONDARYUSBTARGET="FALSE"
+ 	 TESTUSBTARGET="FALSE"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1207,7 +1412,7 @@ purgebackups () {
   echo ""
   echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible and permanent."
   echo -e "${CCyan}But no worries! BACKUPMON will first show you which backups are affected by the"
-  echo -e "${CYellow}$PURGELIMIT days${CCyan} limit you have configured."
+  echo -e "${CYellow}$PURGELIMIT day${CCyan} limit you have configured."
   echo ""
   echo -e "${CCyan}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
@@ -1232,27 +1437,30 @@ purgebackups () {
       fi
 
       # Mount the local backup drive directory to the UNC
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCPWD=$(echo $PASSWORD | base64 -d)
-          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+      if [ "$BACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+      fi
       sleep 2
     fi
 
@@ -1367,27 +1575,30 @@ autopurge () {
     fi
 
     # Mount the local backup drive directory to the UNC
-    CNT=0
-    TRIES=12
-      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-        #UNENCPWD=$(echo $PASSWORD | base64 -d)
-        UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-        MRC=$?
-        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-          echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-          break
-        else
-          echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
-          sleep 10
-          CNT=$((CNT+1))
-          if [ $CNT -eq $TRIES ];then
-            echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting.${CClear}\n"
-            logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
-            exit 0
-          fi
-        fi
-      done
+    if [ "$BACKUPMEDIA" == "USB" ]; then
+     	echo -en "${CGreen}STATUS: External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+    else
+	    CNT=0
+	    TRIES=12
+	      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	        UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
+	        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	        MRC=$?
+	        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	          echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+	          break
+	        else
+	          echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+	          sleep 10
+	          CNT=$((CNT+1))
+	          if [ $CNT -eq $TRIES ];then
+	            echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting.${CClear}\n"
+	            logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+	            exit 0
+	          fi
+	        fi
+	      done
+    fi
     sleep 2
   fi
 
@@ -1456,7 +1667,7 @@ purgesecondaries() {
   echo ""
   echo -e "${CCyan}You are about to purge secondary backups! FUN! This action is irreversible and"
   echo -e "${CCyan}permanent. But no worries! BACKUPMON will first show you which backups are affected"
-  echo -e "${CCyan}by the ${CYellow}$SECONDARYPURGELIMIT days${CCyan} limit you have configured."
+  echo -e "${CCyan}by the ${CYellow}$SECONDARYPURGELIMIT day${CCyan} limit you have configured."
   echo ""
   echo -e "${CCyan}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
@@ -1481,27 +1692,30 @@ purgesecondaries() {
       fi
 
       # Mount the local backup drive directory to the UNC
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
-          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: Secondary External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+	    fi
       sleep 2
     fi
 
@@ -1620,27 +1834,30 @@ autopurgesecondaries () {
     fi
 
     # Mount the local backup drive directory to the UNC
-    CNT=0
-    TRIES=12
-      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-        #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
-        UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-        mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-        MRC=$?
-        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-          echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
-          break
-        else
-          echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
-          sleep 10
-          CNT=$((CNT+1))
-          if [ $CNT -eq $TRIES ];then
-            echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting.${CClear}\n"
-            logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
-            exit 0
-          fi
-        fi
-      done
+    if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+    	echo -en "${CGreen}STATUS: Secondary External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+    else  
+	    CNT=0
+	    TRIES=12
+	      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	        UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+	        mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	        MRC=$?
+	        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	          echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+	          break
+	        else
+	          echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+	          sleep 10
+	          CNT=$((CNT+1))
+	          if [ $CNT -eq $TRIES ];then
+	            echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting.${CClear}\n"
+	            logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+	            exit 0
+	          fi
+	        fi
+	      done
+	  fi
     sleep 2
   fi
 
@@ -1712,12 +1929,17 @@ vsetup () {
     vconfig
   fi
 
+	updatecheck
+
   while true; do
     clear
     logoNM
+    # Check for updates
+		if [ "$UpdateNotify" != "0" ]; then
+		  echo -e "${CRed} $UpdateNotify"
+		fi
     echo ""
-    echo -e "${CYellow}Setup + Operations Menu${CClear}" # Provide main setup menu
-    echo ""
+    echo -e "${InvDkGray}${CWhite}                    Setup + Operations Menu                     ${CClear}"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${CGreen}Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
@@ -1752,12 +1974,30 @@ vsetup () {
 
           bk)
             clear
-            sh /jffs/scripts/backupmon.sh -backup
+            #sh /jffs/scripts/backupmon.sh -backup
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+						echo -e "${CGreen}[Primary Backup Commencing]..."
+						echo ""
+						echo -e "${CCyan}Messages:"
+            backup
+            secondary
           ;;
 
           rs)
             clear
-            sh /jffs/scripts/backupmon.sh -restore
+            #sh /jffs/scripts/backupmon.sh -restore
+            if [ "$UpdateNotify" == "0" ]; then
+  						echo -e "${CGreen}BACKUPMON v$Version"
+						else
+  						echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+						fi
+						echo ""
+            restore
           ;;
 
           pg)
@@ -1815,6 +2055,9 @@ vsetup () {
 # backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 backup() {
 
+	# Check to see if a leftover copy of backupmon.cfg is still sitting in /jffs/scripts and delete it
+	rm -f /jffs/scripts/backupmon.cfg
+
   # Check to see if a local backup drive mount is available, if not, create one.
   if ! [ -d $UNCDRIVE ]; then
       mkdir -p $UNCDRIVE
@@ -1831,33 +2074,40 @@ backup() {
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCPWD=$(echo $PASSWORD | base64 -d)
-          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+			if [ "$BACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+	    fi
   fi
 
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-
+			if [ "$BACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: External Drive (USB) mounted successfully as: $UNCDRIVE ${CClear}"; printf "%s\n"
+			else
+				echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
+			fi
+      
       # Create the backup directories and daily directories if they do not exist yet
       if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then mkdir -p "${UNCDRIVE}${BKDIR}"; echo -e "${CGreen}STATUS: Backup Directory successfully created."; fi
 
@@ -2241,32 +2491,39 @@ secondary() {
         modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
       fi
 
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
-          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+			if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: Secondary External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+	    fi
   fi
 
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
 
-      echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+				echo -en "${CGreen}STATUS: Secondary External Drive (USB) mounted successfully as: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			else
+      	echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
+			fi
 
       # Create the secondary backup directories and daily directories if they do not exist yet
       if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}"; echo -e "${CGreen}STATUS: Secondary Backup Directory successfully created."; fi
@@ -2660,8 +2917,8 @@ restore () {
         case $RESTOREFROM in
           [Pp] ) SOURCE="Primary"; echo ""; echo -e "${CGreen}[Primary Backup Source Selected]"; echo ""; break ;;
           [Ss] ) SOURCE="Secondary"; echo ""; echo -e "${CGreen}[Secondary Backup Source Selected]"; echo ""; break ;;
-          "" ) echo -e "\n Error: Please use either P or S.\n";;
-          * ) echo -e "\n Error: Please use either P or S.\n";;
+          "" ) echo -e "\nError: Please use either P or S.\n";;
+          * ) echo -e "\nError: Please use either P or S.\n";;
         esac
     done
   else
@@ -2689,27 +2946,30 @@ restore () {
       fi
 
       # Mount the local backup drive directory to the UNC
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCPWD=$(echo $PASSWORD | base64 -d)
-          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+      if [ "$BACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            echo -e "${CGreen}STATUS: External Drive ($UNC) mounted successfully under: $UNCDRIVE ${CClear}"
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+	    fi
       sleep 2
     fi
 
@@ -2733,7 +2993,7 @@ restore () {
               if [ $FREQUENCY == "W" ]; then
                 echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -2743,7 +3003,7 @@ restore () {
               elif [ $FREQUENCY == "M" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
@@ -2753,7 +3013,7 @@ restore () {
               elif [ $FREQUENCY == "Y" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -2763,7 +3023,7 @@ restore () {
               elif [ $FREQUENCY == "P" ]; then
                 echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
@@ -2932,7 +3192,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -2945,7 +3206,8 @@ restore () {
         unmountdrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -2960,7 +3222,8 @@ restore () {
       unmountdrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -2983,27 +3246,30 @@ restore () {
       fi
 
       # Mount the local backup drive directory to the Secondary UNC
-      CNT=0
-      TRIES=12
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          #UNENCSECPWD=$(echo $SECONDARYPWD | base64 -d)
-          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -e "${CGreen}STATUS: Secondary External Drive ($SECONDARYUNC) mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
-              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
-              exit 0
-            fi
-          fi
-        done
+      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+      	echo -en "${CGreen}STATUS: Secondary External Drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+      else
+	      CNT=0
+	      TRIES=12
+	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          MRC=$?
+	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+	            echo -e "${CGreen}STATUS: Secondary External Drive ($SECONDARYUNC) mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"
+	            break
+	          else
+	            echo -e "${CYellow}WARNING: Unable to mount to secondary external drive. Trying every 10 seconds for 2 minutes."
+	            sleep 10
+	            CNT=$((CNT+1))
+	            if [ $CNT -eq $TRIES ];then
+	              echo -e "${CRed}ERROR: Unable to mount to secondary external drive. Please check your configuration. Exiting."
+	              logger "BACKUPMON ERROR: Unable to mount to secondary external drive. Please check your configuration!"
+	              exit 0
+	            fi
+	          fi
+	        done
+	    fi
       sleep 2
     fi
 
@@ -3027,7 +3293,7 @@ restore () {
               if [ $SECONDARYFREQUENCY == "W" ]; then
                 echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -3037,7 +3303,7 @@ restore () {
               elif [ $FREQUENCY == "M" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 2 characters for the day format"; echo ""
@@ -3047,7 +3313,7 @@ restore () {
               elif [ $FREQUENCY == "Y" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 3 characters for the day format"; echo ""
@@ -3057,7 +3323,7 @@ restore () {
               elif [ $FREQUENCY == "P" ]; then
                 echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
-                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; exit 0; fi
+                if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
                 then
                   echo -e "${CRed}ERROR: Invalid entry. Please use 15 characters for the folder name format"; echo ""
@@ -3224,7 +3490,8 @@ restore () {
 
         echo ""
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       else
 
@@ -3237,7 +3504,8 @@ restore () {
         unmountsecondarydrv
 
         echo -e "${CClear}"
-        exit 0
+        #exit 0
+      	return
 
       fi
 
@@ -3252,7 +3520,8 @@ restore () {
       unmountsecondarydrv
 
       echo -e "${CClear}"
-      exit 0
+      #exit 0
+    	return
 
     fi
 
@@ -3264,77 +3533,87 @@ restore () {
 # unmountdrv is a function to gracefully unmount the drive, and retry for up to 2 minutes
 unmountdrv () {
 
-  CNT=0
-  TRIES=12
-    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-      umount -l $UNCDRIVE  # unmount the local backup drive from the UNC
-      URC=$?
-      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-        echo -en "${CGreen}STATUS: External Drive ("; printf "%s" "${UNC}"; echo -e ") unmounted successfully.${CClear}"
-        break
-      else
-        echo -e "${CYellow}WARNING: Unable to unmount from external drive. Trying every 10 seconds for 2 minutes."
-        sleep 10
-        CNT=$((CNT+1))
-        if [ $CNT -eq $TRIES ];then
-          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
-          logger "BACKUPMON ERROR: Unable to unmount from external drive. Please check your configuration!"
-          exit 0
-        fi
-      fi
-    done
-
+	if [ "$BACKUPMEDIA" == "USB" ]; then
+		 echo -e "${CGreen}STATUS: External USB drive continues to stay mounted.${CClear}"
+  else
+	  CNT=0
+	  TRIES=12
+	    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	      umount -l $UNCDRIVE  # unmount the local backup drive from the UNC
+	      URC=$?
+	      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+	        echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -e ") unmounted successfully.${CClear}"
+	        break
+	      else
+	        echo -e "${CYellow}WARNING: Unable to unmount from external network drive. Trying every 10 seconds for 2 minutes."
+	        sleep 10
+	        CNT=$((CNT+1))
+	        if [ $CNT -eq $TRIES ];then
+	          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting."
+	          logger "BACKUPMON ERROR: Unable to unmount from external drive. Please check your configuration!"
+	          exit 0
+	        fi
+	      fi
+	    done
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 # unmountsecondarydrv is a function to gracefully unmount the secondary drive, and retry for up to 2 minutes
 unmountsecondarydrv () {
 
-  CNT=0
-  TRIES=12
-    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-      umount -l $SECONDARYUNCDRIVE  # unmount the local backup drive from the Secondary UNC
-      URC=$?
-      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-        echo -en "${CGreen}STATUS: Secondary External Drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") unmounted successfully.${CClear}"
-        break
-      else
-        echo -e "${CYellow}WARNING: Unable to unmount from secondary external drive. Trying every 10 seconds for 2 minutes."
-        sleep 10
-        CNT=$((CNT+1))
-        if [ $CNT -eq $TRIES ];then
-          echo -e "${CRed}ERROR: Unable to unmount from secondary external drive. Please check your configuration. Exiting."
-          logger "BACKUPMON ERROR: Unable to unmount from secondary external drive. Please check your configuration!"
-          exit 0
-        fi
-      fi
-    done
-
+	if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+		 echo -e "${CGreen}STATUS: Secondary external USB drive continues to stay mounted.${CClear}"
+  else
+	  CNT=0
+	  TRIES=12
+	    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	      umount -l $SECONDARYUNCDRIVE  # unmount the local backup drive from the Secondary UNC
+	      URC=$?
+	      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+	        echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -e ") unmounted successfully.${CClear}"
+	        break
+	      else
+	        echo -e "${CYellow}WARNING: Unable to unmount from secondary external network drive. Trying every 10 seconds for 2 minutes."
+	        sleep 10
+	        CNT=$((CNT+1))
+	        if [ $CNT -eq $TRIES ];then
+	          echo -e "${CRed}ERROR: Unable to unmount from secondary external drive. Please check your configuration. Exiting."
+	          logger "BACKUPMON ERROR: Unable to unmount from secondary external drive. Please check your configuration!"
+	          exit 0
+	        fi
+	      fi
+	    done
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
 # unmountdrv is a function to gracefully unmount the drive, and retry for up to 2 minutes
 unmounttestdrv () {
 
-  CNT=0
-  TRIES=3
-    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-      umount -l $TESTUNCDRIVE  # unmount the local backup drive from the UNC
-      URC=$?
-      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
-        echo -en "${CGreen}STATUS: External Test Drive ("; printf "%s" "${TESTUNC}"; echo -e ") unmounted successfully.${CClear}"
-        break
-      else
-        echo -e "${CYellow}WARNING: Unable to unmount from external test drive. Retrying...${CClear}"
-        sleep 5
-        CNT=$((CNT+1))
-        if [ $CNT -eq $TRIES ];then
-          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting.${CClear}"
-          read -rsp $'Press any key to acknowledge...\n' -n1 key
-          break
-        fi
-      fi
-    done
+	if [ "$TESTBACKUPMEDIA" == "USB" ]; then
+		 echo -e "${CGreen}STATUS: Test external USB drive continues to stay mounted.${CClear}"
+  else
+	  CNT=0
+	  TRIES=3
+	    while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+	      umount -l $TESTUNCDRIVE  # unmount the local backup drive from the UNC
+	      URC=$?
+	      if [ $URC -eq 0 ]; then  # If umount come back successful, then proceed
+	        echo -en "${CGreen}STATUS: External Test Drive ("; printf "%s" "${TESTUNC}"; echo -e ") unmounted successfully.${CClear}"
+	        break
+	      else
+	        echo -e "${CYellow}WARNING: Unable to unmount from external test drive. Retrying...${CClear}"
+	        sleep 5
+	        CNT=$((CNT+1))
+	        if [ $CNT -eq $TRIES ];then
+	          echo -e "${CRed}ERROR: Unable to unmount from external drive. Please check your configuration. Exiting.${CClear}"
+	          read -rsp $'Press any key to acknowledge...\n' -n1 key
+	          break
+	        fi
+	      fi
+	    done
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3348,26 +3627,30 @@ checkplaintxtpwds () {
   echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
   SEC="$?"
 
-  if [ "$PRI" == "1" ]; then
-    echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-    echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-    echo ""
-    read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
-    exit 0
-  fi
+	if [ "$BACKUPMEDIA" == "Network" ]; then
+	  if [ "$PRI" == "1" ]; then
+	    echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+	    echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+	    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+	    echo ""
+	    read -rsp $'Press any key to enter setup menu...\n' -n1 key
+	    vsetup
+	    exit 0
+	  fi
+	fi
 
-  if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
-    echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-    echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-    echo ""
-    read -rsp $'Press any key to enter setup menu...\n' -n1 key
-    sh /jffs/scripts/backupmon.sh -setup
-    exit 0
-  fi
-
+	if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+	  if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
+	    echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+	    echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+	    echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+	    echo ""
+	    read -rsp $'Press any key to enter setup menu...\n' -n1 key
+	    vsetup
+	    exit 0
+	  fi
+	fi
+	
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -3405,7 +3688,7 @@ if [ -z "$EXTLABEL" ] && [ -z "$USBPRODUCT" ]; then
 elif [ $LABELSIZE -le 1 ]; then
   clear
   echo -e "${CRed}ERROR: External USB Drive Label Name is not sufficient. Please give it a value, other than blank. Omit any spaces."
-  echo -e "Example: EXTUSB, or SAMSUNGSSD... etc.${CClear}"
+  echo -e "Example: EXTUSB, or SAMSUNG-SSD... etc.${CClear}"
   echo ""
   exit 0
 fi
@@ -3457,6 +3740,12 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   exit 0
 fi
 
+# Check to see if a second command is being passed to remove color
+if [ "$2" == "-bw" ]
+  then
+		blackwhite
+fi
+
 # Check to see if the restore option is being called
 if [ "$1" == "-restore" ]
   then
@@ -3469,7 +3758,7 @@ if [ "$1" == "-restore" ]
       cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
     else
       clear
-      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
     fi
@@ -3502,7 +3791,7 @@ if [ "$1" == "-purge" ]
       cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
     else
       clear
-      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
     fi
@@ -3525,7 +3814,7 @@ if [ "$1" == "-backup" ]
       cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
     else
       clear
-      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
     fi
@@ -3545,7 +3834,7 @@ if [ "$1" == "-noswitch" ]
       cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
     else
       clear
-      echo -e "${CRed} ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
     fi
@@ -3574,7 +3863,12 @@ if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
-echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+	
+if [ "$BACKUPMEDIA" == "USB" ]; then	
+	echo -en "${CCyan}Backing up to ${CGreen}USB${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+else
+	echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+fi
 echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
 echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${CCyan}Mode: ${CGreen}$MODE"
