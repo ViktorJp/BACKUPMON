@@ -4,7 +4,8 @@ v1.36b2 - (TBA)
           operations menu, and will use the NANO text editor to open the log. Exit NANO using CTRL-X. All major
           events that you would see on-screen are displayed in the log. Certain major items continue to be
           displayed in the main SYSLOG just incase people are utilizing these someway. I will continue pruning,
-          adding and correcting items as needed.
+          adding and correcting items as needed. The logfile won't exceed 5000 lines, and will keep itself
+          trimmed automatically, so there won't be any space concerns in /jffs.
         - FIXED: Thanks to @Ripshod, found an invalid reference where the secondary backups were referring to the
           primary exclusion list file for weekly backups. Corrected the issue.
 
