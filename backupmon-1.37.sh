@@ -2327,7 +2327,7 @@ backup () {
             echo 'RESTOREBUILD="'"$FWBUILD"'"'
           } > ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt
           echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished copying routerfw.txt$ to ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt" >> $LOGFILE
+          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished copying routerfw.txt to ${UNCDRIVE}${BKDIR}/${PDAY}/routerfw.txt" >> $LOGFILE
           sleep 1
         fi
 
