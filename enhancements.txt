@@ -1,13 +1,13 @@
 Future Enhancements (Planned)
 -----------------------------
 * Possiblity of supporting NFS in addition to CIFS/SMB
-* Redirect screen output to a logfile
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Redirect screen output to a logfile
 * Option to add the -backup switch to the cron job
 * Not defining color variables and display in B/W (per @PeterT)
 * Capture network target type (network or USB) to determine if an unmount needs to be run
