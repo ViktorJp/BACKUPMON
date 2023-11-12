@@ -1,4 +1,4 @@
-v1.36b2 - (TBA)
+v1.37   - (November 12, 2023)
         - ADDED: By popular demand, BACKUPMON now features a dedicated log file, located under
           /jffs/addons/backupmon.d/backupmon.log. You can access this log by hitting "vl" from the setup and
           operations menu, and will use the NANO text editor to open the log. Exit NANO using CTRL-X. All major
