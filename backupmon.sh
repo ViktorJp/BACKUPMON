@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.37 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.38 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.37"                                                  # Current version
+Version="1.38"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -475,7 +475,7 @@ vconfig () {
               echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
               echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
               echo -e "${CCyan}directories. Example below:"
-              echo -e "${CYellow}(Default = /jffs/addons/backupmon.d/exclusions.txt)"
+              echo -e "${CYellow}(Example = /jffs/addons/backupmon.d/exclusions.txt) (Default = Leave Blank)"
               echo -e "${CClear}"
               read -p 'Backup Exclusion File Name + Path: ' EXCLUSION1
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
@@ -3916,7 +3916,9 @@ fi
 #Get FW Version for inclusion in instructions.txt and to check before a restore
 FWVER=$(nvram get firmver | tr -d '.')
 BUILDNO=$(nvram get buildno)
-FWBUILD="$FWVER.$BUILDNO"
+EXTENDNO=$(nvram get extendno)
+if [ -z $EXTENDNO ]; then EXTENDNO=0; fi
+FWBUILD=$FWVER"."$BUILDNO"_"$EXTENDNO
 
 # Check to see if EXT drive exists
 USBPRODUCT="$(nvram get usb_path1_product)"
