@@ -1,6 +1,6 @@
 v1.38   - (November 13, 2023)
-        - FIXED: On the heels of RMerlin's 386.12_2 release, I realized that the nvram values I was pulling did
-          not include the minor version "_2", and continued to pull just "386.12" when querying the build/version.
+        - FIXED: On the heels of RMerlin's 386.12_2 release, I realized that the FW build values I was pulling did
+          not include the minor version "_2", and continued to pull just "386.12" when querying this information.
           RMerlin explained that the minor version is captured under the EXTENDNO variable under nvram. Made a
           slight tweak to the way this is now being captured and documented, as it's used when comparing what was
           backed up vs. what is being restored, and issuing the proper warning should these values not match, and
