@@ -3929,7 +3929,7 @@ elif [ $LABELSIZE -le 1 ]; then
   echo ""
   echo -e "${CYellow}Should your drive be without a label, please give it a value, other than blank. Omit any spaces."
   echo -e "Example: EXTUSB, or SAMSUNG-SSD... etc.${CClear}"
-  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient, or default sda1 drive is not available. Please investigate." >> $LOGFILE
+  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $LOGFILE
   echo ""
   echo -e "${CGreen}[Continuing in 10 seconds]..."
   sleep 10
