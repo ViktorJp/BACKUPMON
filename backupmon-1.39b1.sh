@@ -1155,7 +1155,7 @@ vupdate () {
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
         read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
-        exec /jffs/scripts/backupmon.sh
+        exec /jffs/scripts/backupmon.sh -setup
       else
         echo ""
         echo ""
@@ -1174,7 +1174,7 @@ vupdate () {
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
         read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
-        exec /jffs/scripts/backupmon.sh
+        exec /jffs/scripts/backupmon.sh -setup
       else
         echo ""
         echo ""
