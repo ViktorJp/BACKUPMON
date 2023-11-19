@@ -499,8 +499,8 @@ vconfig () {
                     [1] ) SMBVER="2.1"; break ;;
                     [2] ) SMBVER="2.0"; break ;;
                     [3] ) SMBVER="1.0"; break ;;
-                    "" ) echo -e "\nError: Please use either 1 or 2\n";;
-                    * ) echo -e "\nError: Please use either 1 or 2\n";;
+                    "" ) echo -e "\nError: Please use either 1, 2 or 3\n";;
+                    * ) echo -e "\nError: Please use either 1, 2 or 3\n";;
                   esac
               done
             ;;      
