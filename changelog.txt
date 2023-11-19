@@ -1,8 +1,13 @@
 v1.39b1 - (TBA)
+        - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
+          to @vaboro, you can choose between using v1.0, v2.0 and v2.1 (default). This is especially useful when
+          connecting to older hardware that may not be able to support the later versions, as it is apparent that
+          older NAS or routers are still in use that need this for backwards compatibility.
         - FIXED: Changed some of the logic around detecting the primary EXT USB drive in order to determine its
           label name. This is used to present a warning if the label is blank. Before, it would not let the user
           proceed, but now it just gives a 10sec warning before continuing, and gives some suggestions on what
           to label the drive, and that in its current state, may have consequences on the operation of BACKUPMON.
+          Thanks to @_m4t3u_ and @TheMorpN for bringing this to light.
         - FIXED: Thanks to a suggestion from @thelonlycoder, after the script downloads an update, it will no
           longer ask the user to exit and restart. Now using the exec command, the script restarts by itself, and
           goes back to the -setup menu.
