@@ -488,19 +488,21 @@ vconfig () {
               echo -e "${CCyan}9. What version of the CIFS/SMB protocol would you like to use? This protocol"
               echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
               echo -e "${CCyan}files and backups from source to target. By default, BACKUPMON supports the"
-              echo -e "${CCyan}latest version available (v2.1), but can choose older versions for backwards"
+              echo -e "${CCyan}latest version available (v3.02), but can choose older versions for backwards"
               echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
               echo -e "${CCyan}support a more recent version."
-               echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3) (Default = 1)"
+               echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
               echo -e "${CClear}"
               while true; do
-                read -p 'CIFS/SMB Version (1/2/3)?: ' SMBVER
+                read -p 'CIFS/SMB Version (1/2/3/4/5)?: ' SMBVER
                   case $SMBVER in
                     [1] ) SMBVER="2.1"; break ;;
                     [2] ) SMBVER="2.0"; break ;;
                     [3] ) SMBVER="1.0"; break ;;
-                    "" ) echo -e "\nError: Please use either 1, 2 or 3\n";;
-                    * ) echo -e "\nError: Please use either 1, 2 or 3\n";;
+                    [4] ) SMBVER="3.0"; break ;;
+                    [5] ) SMBVER="3.02"; break ;;
+                    "" ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
+                    * ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
                   esac
               done
             ;;      
@@ -1001,7 +1003,7 @@ while true; do
         4 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
         5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
         6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
-        7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3) (Choose 1, 2 or 3): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; else TESTSMBVER="2.1"; fi;;
+        7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; elif [ "$TESTSMBVER" == "4" ]; then TESTSMBVER="3.0"; elif [ "$TESTSMBVER" == "5" ]; then TESTSMBVER="3.02"; else TESTSMBVER="2.1"; fi;;
         [Ee] ) break ;;
         [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA;;
         [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA;;
