@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.38 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.40 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.38"                                                  # Current version
+Version="1.40"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -24,8 +24,8 @@ LOGFILE="/jffs/addons/backupmon.d/backupmon.log"                # Path to the lo
 WDAY="$(date +%a)"                                              # Current day # of the week
 MDAY="$(date +%d)"                                              # Current day # of the month
 YDAY="$(date +%j)"                                              # Current day # of the year
-EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"            # Grabbing the External USB Drive path
-EXTLABEL="$(nvram get usb_path_sda1_label)"                     # Grabbing the External USB Label name
+EXTDRIVE="/tmp/mnt/$(nvram get usb_path_sda1_label)"            # Grabbing the default External USB Drive path
+EXTLABEL="$(nvram get usb_path_sda1_label)"                     # Grabbing the default External USB Label name
 UNCUPDATED="False"                                              # Tracking if the UNC was updated or not
 SECONDARYUNCUPDATED="False"                                     # Tracking if the Secondary UNC was updated or not
 UpdateNotify=0                                                  # Tracking whether a new update is available
@@ -43,6 +43,7 @@ UNCDRIVE="/tmp/mnt/backups"
 BKDIR="/router/GT-AX6000-Backup"
 BACKUPMEDIA="Network"
 EXCLUSION=""
+SMBVER="2.1"
 SCHEDULE=0
 SCHEDULEHRS=2
 SCHEDULEMIN=30
@@ -295,7 +296,8 @@ vconfig () {
       echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Target Directory Path       : "${CGreen}$BKDIR
       
       echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Exclusion File Name         : "${CGreen}$EXCLUSION
-      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?                  : "${CGreen}
+      echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
+      echo -en "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup Frequency?                  : "${CGreen}
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -320,8 +322,8 @@ vconfig () {
         echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                    : ${CDkGray}No"
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):          : ${CDkGray}N/A"
       fi
-      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
-      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Schedule Backups?                  : "${CGreen}
+      echo -e "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
+      echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Schedule Backups?                  : "${CGreen}
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
@@ -335,7 +337,7 @@ vconfig () {
         printf "Backup Only"; printf "%s\n";
       elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
         printf "Backup + Autopurge"; printf "%s\n"; fi
-      echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
+      echo -en "${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
@@ -481,9 +483,34 @@ vconfig () {
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
             ;;
 
-            9) # -----------------------------------------------------------------------------------------
+						9) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}9. What backup frequency would you like BACKUPMON to run daily backup jobs each"
+              echo -e "${CCyan}9. What version of the CIFS/SMB protocol would you like to use? This protocol"
+              echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
+              echo -e "${CCyan}files and backups from source to target. By default, BACKUPMON supports the"
+              echo -e "${CCyan}latest version available (v3.02), but can choose older versions for backwards"
+              echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
+              echo -e "${CCyan}support a more recent version."
+               echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
+              echo -e "${CClear}"
+              while true; do
+                read -p 'CIFS/SMB Version (1/2/3/4/5)?: ' SMBVER
+                  case $SMBVER in
+                    [1] ) SMBVER="2.1"; break ;;
+                    [2] ) SMBVER="2.0"; break ;;
+                    [3] ) SMBVER="1.0"; break ;;
+                    [4] ) SMBVER="3.0"; break ;;
+                    [5] ) SMBVER="3.02"; break ;;
+                    "" ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
+                    * ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
+                  esac
+              done
+            ;;      
+
+
+            10) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}10. What backup frequency would you like BACKUPMON to run daily backup jobs each"
               echo -e "${CCyan}day? There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual."
               echo -e "${CCyan}Backup folders based on the week, month, year, or perpetual are created under"
               echo -e "${CCyan}your network share. Explained below:"
@@ -518,7 +545,7 @@ vconfig () {
 
               if [ $FREQUENCY == "P" ]; then
                 echo ""
-                echo -e "${CCyan}9a. Would you like to purge perpetual backups after a certain age? This can help"
+                echo -e "${CCyan}10a. Would you like to purge perpetual backups after a certain age? This can help"
                 echo -e "${CCyan}trim your backups and reclaim disk space, but also gives you more flexibility on"
                 echo -e "${CCyan}the length of time you can keep your backups. Purging backups can be run manually"
                 echo -e "${CCyan}from the setup menu, and gives you the ability to see which backups will be purged"
@@ -543,7 +570,7 @@ vconfig () {
                 elif [ "$PURGE" == "1" ]; then
 
                   echo ""
-                  echo -e "${CCyan}9b. How many days would you like to keep your perpetual backups? Example: 90"
+                  echo -e "${CCyan}10b. How many days would you like to keep your perpetual backups? Example: 90"
                   echo -e "${CCyan}Note that all perpetual backups older than 90 days would be permanently deleted."
                   echo ""
                   echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
@@ -562,9 +589,9 @@ vconfig () {
 
             ;;
 
-            10) # -----------------------------------------------------------------------------------------
+            11) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}10. What mode of operation would you like BACKUPMON to run in? You have 2 different"
+              echo -e "${CCyan}11. What mode of operation would you like BACKUPMON to run in? You have 2 different"
               echo -e "${CCyan}choices -- Basic or Advanced. Choose wisely! These are the differences:"
               echo ""
               echo -e "${CYellow}BASIC:"
@@ -598,9 +625,9 @@ vconfig () {
               done
             ;;
 
-            11) # -----------------------------------------------------------------------------------------
+            12) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}11. Would you like BACKUPMON to automatically run at a scheduled time each day?"
+              echo -e "${CCyan}12. Would you like BACKUPMON to automatically run at a scheduled time each day?"
               echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
               echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
               echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
@@ -619,7 +646,7 @@ vconfig () {
               elif [ "$SCHEDULE" == "1" ]; then
 
                 echo ""
-                echo -e "${CCyan}11a. What time would you like BACKUPMON to automatically run each day? Please"
+                echo -e "${CCyan}12a. What time would you like BACKUPMON to automatically run each day? Please"
                 echo -e "${CCyan}note: You will be asked for the hours and minutes in separate prompts. Use 24hr"
                 echo -e "${CCyan}format for the hours. (Ex: 17 hrs / 15 min = 17:15 or 5:15pm)"
                 echo -e "${CYellow}(Default = 2 hrs / 30 min = 02:30 or 2:30am)"
@@ -631,7 +658,7 @@ vconfig () {
 								
 								if [ "$FREQUENCY" == "P" ]; then
 									echo ""
-	                echo -e "${CCyan}11b. When running a scheduled job each day, would you like BACKUPMON to only run"
+	                echo -e "${CCyan}12b. When running a scheduled job each day, would you like BACKUPMON to only run"
 	                echo -e "${CCyan}backups, or would you like it to run backups and have it automatically purge"
 	                echo -e "${CCyan}old backups outside your specified age range immediately following? If you don't"
 	                echo -e "${CCyan}want to run backups with autopurge, you will be responsible for manually running"
@@ -710,7 +737,7 @@ vconfig () {
               fi
             ;;
             
-            12) # -----------------------------------------------------------------------------------------
+            13) # -----------------------------------------------------------------------------------------
             while true; do
               clear
       				logoNM     
@@ -825,6 +852,7 @@ vconfig () {
                   echo 'BKDIR="'"$BKDIR"'"'
                   echo 'BACKUPMEDIA="'"$BACKUPMEDIA"'"'
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
+                  echo 'SMBVER="'"$SMBVER"'"'
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
@@ -880,6 +908,7 @@ vconfig () {
         echo 'BKDIR="/router/GT-AX6000-Backup"'
         echo 'BACKUPMEDIA="Network"'
         echo 'EXCLUSION=""'
+        echo 'SMBVER="2.1"'
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
         echo 'SCHEDULEMIN=30'
@@ -921,6 +950,7 @@ TESTUNCDRIVE="/tmp/mnt/testbackups"
 TESTBKDIR="/router/test-backup"
 TESTBACKUPMEDIA="Network"
 TESTUNCUPDATED="False"
+TESTSMBVER="2.1"
 
 while true; do
   clear
@@ -956,7 +986,7 @@ while true; do
 	fi
   echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Backup Mount Point      : ${CGreen}$TESTUNCDRIVE"
   echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Test Target Dir Path                : ${CGreen}$TESTBKDIR"
-
+  echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Test CIFS/SMB Version               : ${CGreen}$TESTSMBVER"
   echo -e "${InvDkGray}${CWhite} |  ${CClear}"
   echo -e "${InvDkGray}${CWhite} t  ${CClear}${CCyan}: Test your Network Backup Connection"
   echo -e "${InvDkGray}${CWhite} p  ${CClear}${CCyan}: Import your Primary Backup Settings"
@@ -973,6 +1003,7 @@ while true; do
         4 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
         5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
         6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
+        7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; elif [ "$TESTSMBVER" == "4" ]; then TESTSMBVER="3.0"; elif [ "$TESTSMBVER" == "5" ]; then TESTSMBVER="3.02"; else TESTSMBVER="2.1"; fi;;
         [Ee] ) break ;;
         [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA;;
         [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA;;
@@ -1028,7 +1059,7 @@ while true; do
 	                    CNT=0
 	                    TRIES=2
 	                      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-	                        mount -t cifs $TESTUNC $TESTUNCDRIVE -o "vers=2.1,username=${TESTUSER},password=${TESTPWD}"  # Connect the UNC to the local backup drive mount
+	                        mount -t cifs $TESTUNC $TESTUNCDRIVE -o "vers=${TESTSMBVER},username=${TESTUSER},password=${TESTPWD}"  # Connect the UNC to the local backup drive mount
 	                        MRC=$?
 	                        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	                          break
@@ -1154,12 +1185,8 @@ vupdate () {
         echo -e "${CCyan}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
-        echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -setup'.${CClear}"
-        echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow}advantage of its full functionality. Please save your configuration!${CClear}"
-        echo ""
-        read -rsp $'Press any key to continue...\n' -n1 key
-        return
+        read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
+        exec /jffs/scripts/backupmon.sh -setup
       else
         echo ""
         echo ""
@@ -1177,12 +1204,8 @@ vupdate () {
         echo -e "${CCyan}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
-        echo -e "${CYellow}Please exit, restart and configure new options using: 'backupmon.sh -setup'.${CClear}"
-        echo -e "${CYellow}NOTE: New features may have been added that require your input to take${CClear}"
-        echo -e "${CYellow}advantage of its full functionality.${CClear}"
-        echo ""
-        read -rsp $'Press any key to continue...\n' -n1 key
-        return
+        read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
+        exec /jffs/scripts/backupmon.sh -setup
       else
         echo ""
         echo ""
@@ -1478,7 +1501,7 @@ purgebackups () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
@@ -1619,7 +1642,7 @@ autopurge () {
 	    TRIES=12
 	      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	        UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-	        mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	        mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
 	        MRC=$?
 	        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	          echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
@@ -1739,7 +1762,7 @@ purgesecondaries () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
@@ -1884,7 +1907,7 @@ autopurgesecondaries () {
 	    TRIES=12
 	      while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	        UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-	        mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	        mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
 	        MRC=$?
 	        if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	          echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
@@ -1968,7 +1991,7 @@ vsetup () {
     cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
   else
     clear
-    echo -e "${CRed} WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
+    echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
     sleep 3
     vconfig
@@ -2134,7 +2157,7 @@ backup () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            break
@@ -2617,7 +2640,7 @@ secondary () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            break
@@ -3135,7 +3158,7 @@ restore () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCPWD=$(echo $PASSWORD | openssl enc -d -base64 -A)
-	          mount -t cifs $UNC $UNCDRIVE -o "vers=2.1,username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${USERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
@@ -3459,7 +3482,7 @@ restore () {
 	      TRIES=12
 	        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
 	          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=2.1,username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+	          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
 	          MRC=$?
 	          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
 	            echo -en "${CGreen}STATUS: External secondary network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
@@ -3922,18 +3945,26 @@ FWBUILD=$FWVER"."$BUILDNO"_"$EXTENDNO
 
 # Check to see if EXT drive exists
 USBPRODUCT="$(nvram get usb_path1_product)"
+USBPATH="$(nvram get usb_path1_fs_path0)"
+EXTLABEL="$(nvram get usb_path_"$USBPATH"_label)"
 LABELNOSPACES=$(echo $EXTLABEL | sed 's/ //g')
 LABELSIZE=$(echo $LABELNOSPACES | wc -m)
 
+# If there's no label or product, there's no EXT USB Drive, else the label might be blank
 if [ -z "$EXTLABEL" ] && [ -z "$USBPRODUCT" ]; then
   EXTLABEL="NOTFOUND"
 elif [ $LABELSIZE -le 1 ]; then
   clear
-  echo -e "${CRed}ERROR: External USB Drive Label Name is not sufficient. Please give it a value, other than blank. Omit any spaces."
-  echo -e "Example: EXTUSB, or SAMSUNG-SSD... etc.${CClear}"
-  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient. Please give it a value, other than blank!" >> $LOGFILE
+  echo -e "${CYellow}WARNING: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label."
   echo ""
-  exit 0
+  echo -e "${CRed}BACKUPMON MAY NOT FUNCTION CORRECTLY IN THIS SCENARIO${CClear}"
+  echo ""
+  echo -e "${CYellow}Should your drive be without a label, please give it a value, other than blank. Omit any spaces."
+  echo -e "Example: EXTUSB, or SAMSUNG-SSD... etc.${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $LOGFILE
+  echo ""
+  echo -e "${CGreen}[Continuing in 10 seconds]..."
+  sleep 10
 fi
 
 # Check and see if any commandline option is being used
