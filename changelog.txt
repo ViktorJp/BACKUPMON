@@ -1,3 +1,14 @@
+v1.41   - (TBA)
+        - FIXED: BACKUPMON is now excluding *.swp files from being restored when going through the restore process.
+          This issue was brought up by @ScottW who documented an issue when restoring a backup TAR that included a
+          *.swp file, and was trying to restore it ontop of a newly created swap file as specified in the restore
+          instructions. It would seem extremely rare to me that someone might want to restore a swap file, since
+          they are typically transitory, and need to be recreated anyways. But we'll face that scenario when it
+          rears its ugly head at some point in the future! :)
+        - FIXED: Included some more language around the need for a exclusions.txt file, and if not used, that the
+          user might face larger-than-normal backups which also will take much longer, because the swap file will
+          be included in that backup.
+
 v1.40   - (November 20, 2023)
         - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
           to @vaboro, you can choose between using v1.0, v2.0, v2.1 (default), v3.0 and v3.02. This is especially
