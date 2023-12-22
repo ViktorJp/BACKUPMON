@@ -8,6 +8,12 @@ v1.41   - (TBA)
         - FIXED: Included some more language around the need for an exclusions.txt file, and if not used, that the
           user might face larger-than-normal backups which also will take much longer, because the swap file will
           be included in that backup.
+        - ADDED: More logic around the restore process to catch any errors during the TAR file restore back to the
+          External USB drive. If the process encounters any errors, you will be prompted to enter either a Y or N
+          to proceed or stop the restore process. This was added in response to the experience that @ScottW had
+          described, where the TAR restore encountered errors restoring the swap file, and proceeded to restore
+          the router config, and rebooted immediately after. This will give that needed pause to determine whether
+          or not to proceed.
 
 v1.40   - (November 20, 2023)
         - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
