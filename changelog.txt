@@ -5,7 +5,7 @@ v1.41   - (TBA)
           instructions. It would seem extremely rare to me that someone might want to restore a swap file, since
           they are typically transitory, and need to be recreated anyways. But we'll face that scenario when it
           rears its ugly head at some point in the future! :)
-        - FIXED: Included some more language around the need for a exclusions.txt file, and if not used, that the
+        - FIXED: Included some more language around the need for an exclusions.txt file, and if not used, that the
           user might face larger-than-normal backups which also will take much longer, because the swap file will
           be included in that backup.
 
