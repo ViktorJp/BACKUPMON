@@ -17,7 +17,7 @@ v1.42   - (TBA)
           or not to proceed.
         - FIXED: Included some more language around the need for an exclusions.txt file, and if not used, that the
           user might face larger-than-normal backups which also will take much longer, because the swap file will
-          be included in that backup.
+          be included in that backup. Thanks to @bibikalka for the suggestion!
 
 v1.40   - (November 20, 2023)
         - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
