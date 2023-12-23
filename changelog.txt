@@ -1,4 +1,4 @@
-v1.41   - (TBA)
+v1.42   - (TBA)
         - ADDED: Added a new option under the config menu based on feedback from @ScottW. This option allows you
           to specify if you want to back up the swap file. By default, the swap file will now be excluded from
           backups as we have now seen that restoring a backup with a swap file contained within will have problems
