@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.40 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.42 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,11 +16,12 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.40"                                                  # Current version
+Version="1.42"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 LOGFILE="/jffs/addons/backupmon.d/backupmon.log"                # Path to the local logfile
+PFEXCLUSION="/jffs/addons/backupmon.d/pfexclusion.txt"          # Path to pagefile exclusion file
 WDAY="$(date +%a)"                                              # Current day # of the week
 MDAY="$(date +%d)"                                              # Current day # of the month
 YDAY="$(date +%j)"                                              # Current day # of the year
@@ -43,6 +44,7 @@ UNCDRIVE="/tmp/mnt/backups"
 BKDIR="/router/GT-AX6000-Backup"
 BACKUPMEDIA="Network"
 EXCLUSION=""
+BACKUPSWAP=0
 SMBVER="2.1"
 SCHEDULE=0
 SCHEDULEHRS=2
@@ -255,6 +257,11 @@ vconfig () {
     if [ -z "$ROUTERMODEL" ]; then
       [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
     fi
+  
+    # Check for the Swap File Exclusion
+    if [ "$BACKUPSWAP" == "0" ]; then
+	    excludeswap
+    fi
 
     CHANGES=0 #track notification to save your changes
 
@@ -296,8 +303,13 @@ vconfig () {
       echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Target Directory Path       : "${CGreen}$BKDIR
       
       echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Exclusion File Name         : "${CGreen}$EXCLUSION
-      echo -e "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
-      echo -en "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup Frequency?                  : "${CGreen}
+      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Swap File                   : ${CGreen}"
+        if [ "$BACKUPSWAP" == "0" ]; then
+          printf "No"; printf "%s\n";
+        elif [ "$BACKUPSWAP" == "1" ]; then
+          printf "Yes"; printf "%s\n";fi
+      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
+      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Backup Frequency?                  : ${CGreen}"
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -322,8 +334,8 @@ vconfig () {
         echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                    : ${CDkGray}No"
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):          : ${CDkGray}N/A"
       fi
-      echo -e "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
-      echo -en "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Schedule Backups?                  : "${CGreen}
+      echo -e "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
+      echo -en "${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Schedule Backups?                  : ${CGreen}"
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
@@ -332,12 +344,12 @@ vconfig () {
       else
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                             : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
       fi
-      echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : "${CGreen}
+      echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : ${CGreen}"
       if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
         printf "Backup Only"; printf "%s\n";
       elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
         printf "Backup + Autopurge"; printf "%s\n"; fi
-      echo -en "${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
+      echo -en "${InvDkGray}${CWhite} 14 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
@@ -473,22 +485,54 @@ vconfig () {
 
             8) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}8. What is the Backup Exclusion File Name? This file contains a list of certain"
-              echo -e "${CCyan}files that you want to exclude from the backup, such as your swap file.  Please"
-              echo -e "${CCyan}note: Use proper notation for the path by using single forward slashes between"
-              echo -e "${CCyan}directories. Example below:"
+              echo -e "${CCyan}8. Would you like to use a Backup Exclusion File Name? This file contains a"
+              echo -e "${CCyan}list of certain files that you want to exclude from the backup, such as your"
+              echo -e "${CCyan}swap file."
+              echo ""
+              echo -e "${CYellow}WARNING: If you do not use an Exclusion file with the necessary entries to"
+              echo -e "${CYellow}exlude your swap file (or others), your backup size and time it takes to"
+              echo -e "${CYellow}complete the backup will increase greatly. Examples of what to include in"
+              echo -e "${CYellow}the exlusions.txt file below entered in a simple list format:"
+              echo ""
+              echo -e "${CYellow}myswap.swp"
+              echo -e "${CYellow}entware/var/log/*"
+              echo -e "${CYellow}skynet/skynet.log"
+              echo ""
+              echo -e "${CCyan}Please note: Use proper notation for the path to this file by using single"
+              echo -e "${CCyan}forward slashes between directories. Example below:"
               echo -e "${CYellow}(Example = /jffs/addons/backupmon.d/exclusions.txt) (Default = Leave Blank)"
               echo -e "${CClear}"
-              read -p 'Backup Exclusion File Name + Path: ' EXCLUSION1
+              read -p 'Backup Exclusion Path + File Name: ' EXCLUSION1
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
+              if [ "$BACKUPSWAP" == "0" ] && [ "$EXCLUSION" == "" ]; then EXCLUSION="$PFEXCLUSION"; fi
             ;;
 
-						9) # -----------------------------------------------------------------------------------------
+            9) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}9. What version of the CIFS/SMB protocol would you like to use? This protocol"
+              echo -e "${CCyan}9. Would you like to back up your Swap File? This file usually ranges in the"
+              echo -e "${CCyan}1GB, 2GB or 4GB range. It is not a file that is required to be backed up, and"
+              echo -e "${CCyan}may cause issues when restoring backups. Due to the size, it will also"
+              echo -e "${CCyan}substantially increase backup target size and time it takes to run backups."
+              echo -e "${CYellow}NOTE: It is highly recommended to leave this disabled."
+              echo ""
+              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
+              echo -e "${CClear}"
+              read -p 'Backup Swap? (0/1): ' SWAP1
+              if [ "$SWAP1" == "" ] || [ -z "$SWAP1" ]; then BACKUPSWAP=0; else BACKUPSWAP="$SWAP1"; fi # Using default value on enter keypress
+            
+              if [ "$BACKUPSWAP" == "1" ]; then
+              	swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1 
+                sed -i -e '/'$swapname'/d' $EXCLUSION >/dev/null 2>&1
+                sed -i -e '/'$swapname'/d' $SECONDARYEXCLUSION >/dev/null 2>&1
+              fi
+            ;;
+
+						10) # -----------------------------------------------------------------------------------------
+              echo ""
+              echo -e "${CCyan}10. What version of the CIFS/SMB protocol would you like to use? This protocol"
               echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
-              echo -e "${CCyan}files and backups from source to target. By default, BACKUPMON supports the"
-              echo -e "${CCyan}latest version available (v3.02), but can choose older versions for backwards"
+              echo -e "${CCyan}files and backups from source to target. While BACKUPMON supports the latest"
+              echo -e "${CCyan}SMB protocol available (v3.02), you can choose older versions for backwards"
               echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
               echo -e "${CCyan}support a more recent version."
                echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
@@ -508,9 +552,9 @@ vconfig () {
             ;;      
 
 
-            10) # -----------------------------------------------------------------------------------------
+            11) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}10. What backup frequency would you like BACKUPMON to run daily backup jobs each"
+              echo -e "${CCyan}11. What backup frequency would you like BACKUPMON to run daily backup jobs each"
               echo -e "${CCyan}day? There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual."
               echo -e "${CCyan}Backup folders based on the week, month, year, or perpetual are created under"
               echo -e "${CCyan}your network share. Explained below:"
@@ -545,7 +589,7 @@ vconfig () {
 
               if [ $FREQUENCY == "P" ]; then
                 echo ""
-                echo -e "${CCyan}10a. Would you like to purge perpetual backups after a certain age? This can help"
+                echo -e "${CCyan}11a. Would you like to purge perpetual backups after a certain age? This can help"
                 echo -e "${CCyan}trim your backups and reclaim disk space, but also gives you more flexibility on"
                 echo -e "${CCyan}the length of time you can keep your backups. Purging backups can be run manually"
                 echo -e "${CCyan}from the setup menu, and gives you the ability to see which backups will be purged"
@@ -570,7 +614,7 @@ vconfig () {
                 elif [ "$PURGE" == "1" ]; then
 
                   echo ""
-                  echo -e "${CCyan}10b. How many days would you like to keep your perpetual backups? Example: 90"
+                  echo -e "${CCyan}11b. How many days would you like to keep your perpetual backups? Example: 90"
                   echo -e "${CCyan}Note that all perpetual backups older than 90 days would be permanently deleted."
                   echo ""
                   echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
@@ -589,9 +633,9 @@ vconfig () {
 
             ;;
 
-            11) # -----------------------------------------------------------------------------------------
+            12) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}11. What mode of operation would you like BACKUPMON to run in? You have 2 different"
+              echo -e "${CCyan}12. What mode of operation would you like BACKUPMON to run in? You have 2 different"
               echo -e "${CCyan}choices -- Basic or Advanced. Choose wisely! These are the differences:"
               echo ""
               echo -e "${CYellow}BASIC:"
@@ -625,9 +669,9 @@ vconfig () {
               done
             ;;
 
-            12) # -----------------------------------------------------------------------------------------
+            13) # -----------------------------------------------------------------------------------------
               echo ""
-              echo -e "${CCyan}12. Would you like BACKUPMON to automatically run at a scheduled time each day?"
+              echo -e "${CCyan}13. Would you like BACKUPMON to automatically run at a scheduled time each day?"
               echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
               echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
               echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
@@ -700,6 +744,7 @@ vconfig () {
 	                
 	              echo ""
 	              echo -e "${CGreen}[Modifiying SERVICES-START file]..."
+	              sleep 2
 	              echo -e "[Modifying CRON jobs]..."
 	              sleep 2
 	              
@@ -725,6 +770,7 @@ vconfig () {
 	              
 	              echo ""
 	              echo -e "${CGreen}[Modifiying SERVICES-START file]..."
+	              sleep 2
 	              echo -e "[Modifying CRON jobs]..."
 	              sleep 2
 	              
@@ -737,7 +783,7 @@ vconfig () {
               fi
             ;;
             
-            13) # -----------------------------------------------------------------------------------------
+            14) # -----------------------------------------------------------------------------------------
             while true; do
               clear
       				logoNM     
@@ -823,12 +869,12 @@ vconfig () {
                     5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
                     6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
                     7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
-                    8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION;;
+                    8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION; if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then SECONDARYEXCLUSION="$PFEXCLUSION"; fi;;
                     9 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
                     10 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
                     [Ee] ) break ;;
-                    "" ) echo -e "\nError: Please use 1 - 10 or Exit = e\n";;
-                    * ) echo -e "\nError: Please use 1 - 10 or Exit = e\n";;
+                    "" ) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
+                    * ) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
                   esac
               done
             ;;
@@ -852,6 +898,7 @@ vconfig () {
                   echo 'BKDIR="'"$BKDIR"'"'
                   echo 'BACKUPMEDIA="'"$BACKUPMEDIA"'"'
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
+                  echo 'BACKUPSWAP='$BACKUPSWAP
                   echo 'SMBVER="'"$SMBVER"'"'
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
@@ -908,6 +955,7 @@ vconfig () {
         echo 'BKDIR="/router/GT-AX6000-Backup"'
         echo 'BACKUPMEDIA="Network"'
         echo 'EXCLUSION=""'
+        echo 'BACKUPSWAP=0'
         echo 'SMBVER="2.1"'
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
@@ -2141,6 +2189,11 @@ backup () {
       sleep 3
   fi
 
+  # Check for the Swap File Exclusion
+  if [ "$BACKUPSWAP" == "0" ]; then
+    excludeswap
+  fi
+
   # If everything successfully was created, proceed
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
@@ -2622,6 +2675,11 @@ secondary () {
       echo -e "${CYellow}WARNING: Secondary external mount point not set. Newly created under: $SECONDARYUNCDRIVE ${CClear}"
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: Secondary external mount point not set. Newly created under: $SECONDARYUNCDRIVE" >> $LOGFILE
       sleep 3
+  fi
+
+  # Check for the Swap File Exclusion
+  if [ "$BACKUPSWAP" == "0" ]; then
+    excludeswap
   fi
 
   # If everything successfully was created, proceed
@@ -3353,6 +3411,23 @@ restore () {
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
               tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              TE=$?
+              if [ $TE -eq 0 ]; then
+              	echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+              else
+                echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                echo ""
+                if promptyn "(y/n): "; then
+                	echo ""
+                	echo -e "\n${CGreen}Proceeding...${CClear}\n"
+                else
+                  echo ""
+                  echo -e "${CRed}Exiting...${CClear}\n"
+                  echo ""
+                  exit 0
+                fi
+              fi
             else
               echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
               logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
@@ -3392,6 +3467,23 @@ restore () {
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              TE=$?
+              if [ $TE -eq 0 ]; then
+              	echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+              else
+                echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                echo ""
+                if promptyn "(y/n): "; then
+                	echo ""
+                	echo -e "\n${CGreen}Proceeding...${CClear}\n"
+                else
+                  echo ""
+                  echo -e "${CRed}Exiting...${CClear}\n"
+                  echo ""
+                  exit 0
+                fi
+              fi
             else
               echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
               logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
@@ -3677,6 +3769,23 @@ restore () {
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
               tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz -C $EXTDRIVE >/dev/null
+              TE=$?
+              if [ $TE -eq 0 ]; then
+              	echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+              else
+                echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                echo ""
+                if promptyn "(y/n): "; then
+                	echo ""
+                	echo -e "\n${CGreen}Proceeding...${CClear}\n"
+                else
+                  echo ""
+                  echo -e "${CRed}Exiting...${CClear}\n"
+                  echo ""
+                  exit 0
+                fi
+              fi
             else
               echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
               logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
@@ -3689,6 +3798,7 @@ restore () {
             echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
             echo ""
+            rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
 
@@ -3715,6 +3825,23 @@ restore () {
               echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               tar -xzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} -C $EXTDRIVE >/dev/null
+              TE=$?
+              if [ $TE -eq 0 ]; then
+              	echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+              else
+                echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                echo ""
+                if promptyn "(y/n): "; then
+                	echo ""
+                	echo -e "\n${CGreen}Proceeding...${CClear}\n"
+                else
+                  echo ""
+                  echo -e "${CRed}Exiting...${CClear}\n"
+                  echo ""
+                  exit 0
+                fi
+              fi
             else
               echo -e "${CYellow}WARNING: External USB drive not found. Skipping restore."
               logger "BACKUPMON WARNING: External USB drive not found. Skipping restore."
@@ -3727,6 +3854,7 @@ restore () {
             echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
             echo ""
+            rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
         fi
@@ -3914,6 +4042,54 @@ checkplaintxtpwds () {
 	  fi
 	fi
 	
+}
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+# excludeswap is a function to write a swap file exlusion file, or to add to an existing exlusions file
+excludeswap () {
+
+# First check to see if the swap file exlusion file exists, if not, create it. Thanks to @ScottW for the ideas!
+
+swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1 
+
+if [ ! -f $PFEXCLUSION ]; then
+	
+	if [ ! -z $swapname ] || [ $swapname != "" ]; then
+		{ echo $swapname
+    } > $PFEXCLUSION
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Page File Backup Exclusion File created" >> $LOGFILE
+  else
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Page File does not exist" >> $LOGFILE
+	fi
+
+fi
+	
+# Check to see if the exclusion file/path has been defined, if not, use the pagefile exclusion file in its place
+
+if [ "$BACKUPSWAP" == "0" ]; then
+	
+  if [ -z "$EXCLUSION" ] || [ "$EXCLUSION" == "" ]; then
+	  EXCLUSION="$PFEXCLUSION"
+  fi
+  
+    if [ -z "$SECONDARYEXCLUSION" ] || [ "$SECONDARYEXCLUSION" == "" ]; then
+	  SECONDARYEXCLUSION="$PFEXCLUSION"
+  fi
+
+  # Check to see if an exlusion file is in place, and make sure the swap has been added to it.
+
+  if ! grep -q -F "$swapname" $EXCLUSION; then
+    echo "$swapname" >> $EXCLUSION
+  fi
+  
+  if ! grep -q -F "$swapname" $SECONDARYEXCLUSION; then
+    echo "$swapname" >> $SECONDARYEXCLUSION
+  fi
+  
+fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -4116,6 +4292,11 @@ if [ "$1" == "-noswitch" ]
     fi
     checkplaintxtpwds
     BSWITCH="False"
+fi
+
+# Check for the Swap File Exclusion
+if [ "$BACKUPSWAP" == "0" ]; then
+	excludeswap
 fi
 
 updatecheck
