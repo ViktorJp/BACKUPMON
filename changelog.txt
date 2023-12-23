@@ -1,4 +1,14 @@
 v1.41   - (TBA)
+        - ADDED: Added a new option under the config menu based on feedback from @ScottW. This option allows you
+          to specify if you want to back up the swap file. By default, the swap file will now be excluded from
+          backups as we have now seen that restoring a backup with a swap file contained within will have problems
+          restoring to a system that already has an existing swap file. If the user does not choose an exclusion
+          file, BACKUPMON will create an exclusion file, and specify the name of the swap file to be excluded from
+          backup. You still have the ability to maintain your own exclusion file with your own custom entries. If
+          a custom exclusion file is in place without the swap file name included, BACKUPMON will add the swap
+          file name to your custom exclusion file before the next backup. If you really want to back up your swap
+          file, simply set this configuration setting to "Yes", and the script will remove any references to the
+          swap file name from your exclusions files.
         - ADDED: More logic around the restore process to catch any errors during the TAR file restore back to the
           External USB drive. If the process encounters any errors, you will be prompted to enter either a Y or N
           to proceed or stop the restore process. This was added in response to the experience that @ScottW had
