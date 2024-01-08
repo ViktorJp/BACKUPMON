@@ -1,3 +1,8 @@
+v1.43   - (TBA)
+        - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
+          not bring over the SMB version, and continue to give you the default. This has been fixed to now bring
+          over your custom SMB setting. Thanks much to @Tallion_o7 for the heads-up!
+
 v1.42   - (December 23, 2023)
         - ADDED: Added a new option #9 under the config menu based on feedback from @ScottW. This option allows
           you to specify if you want to back up the swap file. By default, the swap file will now be excluded from
