@@ -1,4 +1,4 @@
-v1.43   - (TBA)
+v1.4x   - (TBA)
         - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
           not bring over the SMB version, and continue to give you the default. This has been fixed to now bring
           over your custom SMB setting. Thanks much to @Tallion_o7 for the heads-up!
