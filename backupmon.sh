@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.42 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.43 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.42"                                                  # Current version
+Version="1.43"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1053,8 +1053,8 @@ while true; do
         6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
         7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; elif [ "$TESTSMBVER" == "4" ]; then TESTSMBVER="3.0"; elif [ "$TESTSMBVER" == "5" ]; then TESTSMBVER="3.02"; else TESTSMBVER="2.1"; fi;;
         [Ee] ) break ;;
-        [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA;;
-        [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA;;
+        [Pp] ) TESTUSER=$USERNAME; TESTPWD=$(echo $PASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA; TESTSMBVER=$SMBVER;;
+        [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA; TESTSMBVER=$SMBVER;;
         [Tt] )  # Connection test script
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
