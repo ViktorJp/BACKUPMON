@@ -1,4 +1,4 @@
-1.44    - (TBA)
+v1.44   - (TBA)
         - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
           due to some colossal disk or network issue when writing TAR files. Changed many other error exit codes
           to produce something usable when looking for script success or failure when running a backup from
