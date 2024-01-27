@@ -299,7 +299,11 @@ vconfig () {
         
       fi
       
-      echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : "${CGreen}$UNCDRIVE
+      if [ "$UNCDRIVE" == "" ] || [ -z "$UNCDRIVE" ]; then
+        echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+      else
+        echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : "${CGreen}$UNCDRIVE
+      fi
       echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Target Directory Path       : "${CGreen}$BKDIR
       
       echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Exclusion File Name         : "${CGreen}$EXCLUSION
@@ -376,7 +380,8 @@ vconfig () {
               echo -e "${CCyan}contains data that you want to have backed up. In most cases, whatever is"
               echo -e "${CCyan}attached to your sda1 partition should be selected. Should there be only one"
               echo -e "${CCyan}mount point available, it will be automatically selected."
-              echo -e "${CYellow}(Recommended drive on sda1 = /tmp/mnt/$(nvram get usb_path_sda1_label))${CClear}"
+              printf "${CYellow}Recommended Mount Point = ${CClear}"
+              _GetDefaultUSBMountPoint_
               USBSOURCE="TRUE"
               _GetMountPoint_ "Select an EXT USB Drive Mount Point: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -399,8 +404,17 @@ vconfig () {
                     [2] ) BACKUPMEDIA="USB"; break ;;
                     "" ) echo -e "\nError: Please use either 1 or 2\n";;
                     * ) echo -e "\nError: Please use either 1 or 2\n";;
-                  esac
+                  esac                  
               done
+              
+              if [ "$BACKUPMEDIA" == "Network" ] && [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
+                UNCDRIVE=""
+              fi
+              
+              if [ "$BACKUPMEDIA" == "USB" ] && [ "$EXTDRIVE" != "$UNCDRIVE" ]; then
+                UNCDRIVE=""
+              fi
+              
             ;;      
 
             3) # -----------------------------------------------------------------------------------------
@@ -457,11 +471,10 @@ vconfig () {
               
               elif [ "$BACKUPMEDIA" == "USB" ]; then
                 echo ""
-                echo -e "${CCyan}6. Please choose the TARGET USB Backup Drive Mount Point assigned to your secondary"
-                echo -e "${CCyan}external USB Drive where you want backups to be stored. Should there be only one"
-                echo -e "${CCyan}drive available, it will be automatically selected. PLEASE NOTE: It is highly"
-                echo -e "${CCyan}recommended not to use the same USB drive to both be a SOURCE and TARGET for"
-                echo -e "${CCyan}backups.${CClear}"
+                echo -e "${CCyan}6. Please choose the TARGET USB Backup Drive Mount Point assigned to your external"
+                echo -e "${CCyan}USB Drive where you want backups to be stored. Should there be only one drive"
+                echo -e "${CCyan}available, it will be automatically selected. PLEASE NOTE: It is highly recommended"
+                echo -e "${CCyan}not to use the same USB drive to both be a SOURCE and TARGET for backups.${CClear}"
                 USBTARGET="TRUE"
                 _GetMountPoint_ "Select a Target USB Backup Drive Mount Point: "
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -1497,6 +1510,18 @@ _GetMountPoint_()
    USBTARGET="FALSE"
    SECONDARYUSBTARGET="FALSE"
    TESTUSBTARGET="FALSE"
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+_GetDefaultUSBMountPoint_()
+{
+   local mounPointPath  retCode=0
+   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
+
+   mounPointPath="$(grep -m1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
+   [ -z "$mounPointPath" ] && retCode=1
+   echo "$mounPointPath" ; return "$retCode"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
