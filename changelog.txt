@@ -5,6 +5,12 @@ v1.44   - (TBA)
           commandline (ie. the -backup switch). Happy to collaborate with @ExtremeFiretop and @Martinski with 
           their MerlinAU script, so it may run and check for a successful backup prior to running an automated FW
           update.
+        - FIXED: When choosing option #2, USB or Network as your target media type, it will blank out option #6, 
+          and give you a visual indication that "ACTION IS NEEDED" for this item, your backup target mount point.
+          In certain situations, the source and target mount points could be the same name, and if the media type
+          had "network" as the default media type, while the mount points were pointing to an External USB drive,
+          then the USB drive would get unmounted after a backup. Many thanks to @ExtremeFiretop for finding that
+          doozy! :)         
 
 v1.43   - (January 13, 2024)
         - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
