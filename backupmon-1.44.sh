@@ -468,7 +468,15 @@ vconfig () {
                 echo -e "${CClear}"
                 read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
                 if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
-              
+                if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
+                  UNCDRIVE=""
+                  echo ""
+                  echo -e "${CYellow} WARNING: Your TARGET Network Backup Drive Mount Point cannot be named the"
+                  echo -e "${CYellow} same as your SOURCE External USB Drive Mount. Please choose a mount point"
+                  echo -e "${CYellow} name that is unique for this network target.${CClear}\n"
+                  read -rsp $'Press any key to acknowledge...\n' -n1 key
+                fi
+                
               elif [ "$BACKUPMEDIA" == "USB" ]; then
                 echo ""
                 echo -e "${CCyan}6. Please choose the TARGET USB Backup Drive Mount Point assigned to your external"
