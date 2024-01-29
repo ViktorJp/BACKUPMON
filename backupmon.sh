@@ -1413,7 +1413,7 @@ _GetMountPointSelection_()
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mounPointCnt  mounPointVar=""  mounPointTmp=""
-   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath=""
    mounPointCnt="$(mount | grep -c "$mountPointRegExp")"
@@ -1525,7 +1525,7 @@ _GetMountPoint_()
 _GetDefaultUSBMountPoint_()
 {
    local mounPointPath  retCode=0
-   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath="$(grep -m1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
    [ -z "$mounPointPath" ] && retCode=1
@@ -4315,10 +4315,43 @@ EXTENDNO=$(nvram get extendno)
 if [ -z $EXTENDNO ]; then EXTENDNO=0; fi
 FWBUILD=$FWVER"."$BUILDNO"_"$EXTENDNO
 
+##-------------------------------------##
+## Added by Martinski W. [2024-Jan-29] ##
+##-------------------------------------##
+#---------------------------------------------------------#
+# The USB-attached drives may have multiple partitions
+# with different file systems (NTFS, ext3, ext4, etc.),
+# which means that multiple mount points can be found.
+# Here we check if a mounted USB-attached drive exists;
+# if not, we return a null string. If it exists, then
+# we get one of the Volume labels, if found; otherwise
+# we return a null string.
+#---------------------------------------------------------#
+_CheckForMountPointAndVolumeLabel_()
+{
+   local mounPointPaths  mounPointLabels  foundLabelOK=false
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
+
+   mounPointPaths="$(grep -E "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
+   [ -z "$mounPointPaths" ] && echo "" && return 1
+
+   mounPointLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
+   [ -z "$mounPointLabels" ] && echo "" && return 1
+
+   for theLabel in $mounPointLabels
+   do
+      if echo "${mounPointPaths}" | grep -qE "/${theLabel}$"
+      then foundLabelOK=true ; break ; fi
+   done
+   ! "$foundLabelOK" && echo "" && return 1
+   echo "$theLabel" && return 0
+}
+
 # Check to see if EXT drive exists
 USBPRODUCT="$(nvram get usb_path1_product)"
-USBPATH="$(nvram get usb_path1_fs_path0)"
-EXTLABEL="$(nvram get usb_path_"$USBPATH"_label)"
+##OFF## USBPATH="$(nvram get usb_path1_fs_path0)"
+##OFF## EXTLABEL="$(nvram get usb_path_"$USBPATH"_label)"
+EXTLABEL="$(_CheckForMountPointAndVolumeLabel_)"
 LABELNOSPACES=$(echo $EXTLABEL | sed 's/ //g')
 LABELSIZE=$(echo $LABELNOSPACES | wc -m)
 
