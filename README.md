@@ -20,8 +20,9 @@ If you do go down the path of backing your USB drive to your USB drive, it's pos
 
 **What it should NOT be used for**: It is not meant to restore backups from one particular model of router (ex: RT-AC86U), to a different shiny new model (ex: GT-AX6000) that you just picked up. In this case, it's still best to set your new router up from scratch, and selectively import any critical files manually from your .TAR backups to your new router if needed. Also, please do not restore your settings/backups from an older firmware to a newer firmware. Your CFG (settings) file is meant for the current firmware you're on, so if you do restore, make sure it's still on the same firmware as before.
 
-**Requirements**:
-This script will allow you to back up the one partition of your choice. You are no longer limited to sda1.
-Your Network Backup Target must be able to speak the CIFS/SMB protocol, as that is the method currently used to back up your files across the network. CIFS (Common Internet File System) is a dialect of the SMB (Server Message Block) protocol, and is a very broad standard supported by Windows, Linux and Apple devices. I am looking into supporting NFS as well in the very near future.
-You now have the option to backup from USB1 to USB2, or USB to itself... though not recommended.
+**Requirements:**
+* **This script will allow you to back up one partition of your choice. You are no longer limited to sda1.
+* **Your Network Backup Target must be able to speak the CIFS/SMB protocol, as that is the method currently used to back up your files across the network. CIFS (Common Internet File System) is a dialect of the SMB (Server Message Block) protocol, and is a very broad standard supported by Windows, Linux and Apple devices. I am looking into supporting NFS as well in the very near future.
+* **You now have the option to backup from USB1 to USB2, or USB to itself... though not recommended.
+* **Your External USB should have a valid drive label. Having a blank label may create issues backing up or restoring.
 
