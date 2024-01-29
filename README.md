@@ -1,4 +1,4 @@
-# BACKUPMON v1.43
+# BACKUPMON v1.44
 
 ![image](https://github.com/ViktorJp/BACKUPMON/assets/97465574/d485fea4-9a99-46ff-a4ae-9ef634b5054c)
 
