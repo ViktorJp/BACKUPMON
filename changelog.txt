@@ -1,16 +1,16 @@
-v1.44   - (TBA)
+v1.44   - (January 28, 2024)
         - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
           due to some colossal disk or network issue when writing TAR files. Changed many other error exit codes
           to produce something usable when looking for script success or failure when running a backup from
           commandline (ie. the -backup switch). Honored to collaborate with @ExtremeFiretop and @Martinski with 
-          their MerlinAU script, so it may run and check for a successful backup prior to running an automated FW
-          update.
-        - FIXED: When choosing option #2, USB or Network as your target media type, it will blank out option #6, 
-          and give you a visual indication that "ACTION IS NEEDED" for this item, your backup target mount point.
-          In certain situations, the source and target mount points could be the same name, and if the media type
-          had "network" as the default media type, while the mount points were pointing to an External USB drive,
-          then the USB drive would get unmounted after a backup. Many thanks to @ExtremeFiretop for finding that
-          doozy! :)         
+          their MerlinAU script, so BACKUPMON may run and check for a successful backup prior to running an
+          automated FW update.
+        - FIXED: In the setup/config, when choosing USB or Network as your target media type (option #2), it will
+          blank out your backup target mount point (option #6), and give you a visual indication that "ACTION IS
+          NEEDED" for this item. In certain situations, the source and target mount points could be the same name,
+          and if the media type had "network" as the default media type, while the mount points were pointing to
+          an External USB drive, then the USB drive would get unmounted after a backup. Many thanks to
+          @ExtremeFiretop for finding that doozy! :)
 
 v1.43   - (January 13, 2024)
         - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
