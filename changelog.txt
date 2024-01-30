@@ -5,6 +5,10 @@ v1.4x   - (TBA)
           message/code. While it would probably be pretty rare that tar.gz files actually fail to get created,
           and if created, fail an integrity check, it could definitely happen if there are network, hardware or
           disk issues. Keep an eye on those logs!
+        - FIXED: Many thanks to @Martinski for adding a great function that will help determine the EXT USB Drive
+          label, and will return null if one isn't set. It's actually been quite a hurdle to determine what's
+          plugged into the back of your router with the different variations things can take within the OS. Your
+          help and expertise is truly appreciated! :)
 
 v1.44   - (January 28, 2024)
         - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
