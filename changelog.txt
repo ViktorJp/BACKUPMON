@@ -1,8 +1,8 @@
 v1.4x   - (TBA)
-        - ADDED: Integrity checks for the tar.gz files created containing jffs and Ext USB Drive data. After
-          creation of these files, an integrity check happens to ensure that the file is intact before moving
-          on to the next step. If it returns an integrity error, the script will force exit with an error
-          message/code.
+        - ADDED: File integrity checks for the tar.gz files created containing jffs and Ext USB Drive data. After
+          creation of these files, an integrity check executes to ensure that the file is intact before moving
+          on to the next step. If it returns an integrity error, the script will force an exit with an error
+          message/code. Keep an eye on those logs!
 
 v1.44   - (January 28, 2024)
         - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
