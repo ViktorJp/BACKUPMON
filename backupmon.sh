@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.44 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.46 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.44"                                                  # Current version
+Version="1.46"                                                  # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1413,7 +1413,7 @@ _GetMountPointSelection_()
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mounPointCnt  mounPointVar=""  mounPointTmp=""
-   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath=""
    mounPointCnt="$(mount | grep -c "$mountPointRegExp")"
@@ -1525,11 +1525,45 @@ _GetMountPoint_()
 _GetDefaultUSBMountPoint_()
 {
    local mounPointPath  retCode=0
-   local mountPointRegExp="/dev/sd.* /tmp/mnt/.*"
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointPath="$(grep -m1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
    [ -z "$mounPointPath" ] && retCode=1
    echo "$mounPointPath" ; return "$retCode"
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Jan-29] ##
+##-------------------------------------##
+#---------------------------------------------------------#
+# The USB-attached drives may have multiple partitions
+# with different file systems (NTFS, ext3, ext4, etc.),
+# which means that multiple mount points can be found.
+# Here we check if a mounted USB-attached drive exists;
+# if not, we return a null string. If it exists, then
+# we get one of the Volume labels, if found; otherwise
+# we return a null string.
+#---------------------------------------------------------#
+_CheckForMountPointAndVolumeLabel_()
+{
+   local mounPointPaths  mounPointLabels  foundLabelOK=false
+   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
+
+   mounPointPaths="$(grep -E "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
+   [ -z "$mounPointPaths" ] && echo "" && return 1
+
+   mounPointLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
+   [ -z "$mounPointLabels" ] && echo "" && return 1
+
+   for theLabel in $mounPointLabels
+   do
+      if echo "${mounPointPaths}" | grep -qE "/${theLabel}$"
+      then foundLabelOK=true ; break ; fi
+   done
+   ! "$foundLabelOK" && echo "" && return 1
+   echo "$theLabel" && return 0
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2344,13 +2378,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
@@ -2376,13 +2423,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
@@ -2408,13 +2468,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
@@ -2440,13 +2513,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+                    
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
@@ -2478,14 +2564,28 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $FREQUENCY == "M" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -2495,14 +2595,28 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $FREQUENCY == "Y" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -2512,14 +2626,28 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $FREQUENCY == "P" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -2529,14 +2657,27 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
           fi
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
@@ -2557,13 +2698,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -2589,13 +2743,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -2621,13 +2788,26 @@ backup () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -2659,14 +2839,28 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $FREQUENCY == "M" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -2676,14 +2870,28 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $FREQUENCY == "Y" ]; then
             if ! [ -z $EXCLUSION ]; then
               tar -zcf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . >/dev/null
@@ -2693,20 +2901,32 @@ backup () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
           fi
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
           logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: External USB drive not found. Skipping backup." >> $LOGFILE
-
         fi
       fi
 
@@ -2916,13 +3136,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
@@ -2948,13 +3181,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
@@ -2980,13 +3226,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
@@ -3012,13 +3271,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
@@ -3051,14 +3323,28 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $SECONDARYFREQUENCY == "M" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
@@ -3068,14 +3354,28 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
@@ -3085,14 +3385,28 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $SECONDARYFREQUENCY == "P" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
@@ -3102,14 +3416,27 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
+            fi
           fi
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
@@ -3130,13 +3457,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -3162,13 +3502,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -3194,13 +3547,26 @@ secondary () {
           TE=$?
           if [ $TE -ne 0 ]; then
             echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
             exit 1
           fi
+          
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           sleep 1
+
+          #Verify file integrity
+          tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz >/dev/null
+          TI=$?
+          if [ $TI -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+            exit 1
+          elif [ $TI -eq 0 ]; then
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
+          fi
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
@@ -3232,14 +3598,28 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $SECONDARYFREQUENCY == "M" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
@@ -3249,14 +3629,28 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
+
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
             if ! [ -z $SECONDARYEXCLUSION ]; then
               tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . >/dev/null
@@ -3266,14 +3660,27 @@ secondary () {
             TE=$?
             if [ $TE -ne 0 ]; then
               echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
               exit 1
             fi
+            
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
+            
+            #Verify file integrity
+            tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
+            TI=$?
+            if [ $TI -ne 0 ]; then
+              echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+              exit 1
+            elif [ $TI -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
+            fi
           fi
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
@@ -4317,10 +4724,8 @@ FWBUILD=$FWVER"."$BUILDNO"_"$EXTENDNO
 
 # Check to see if EXT drive exists
 USBPRODUCT="$(nvram get usb_path1_product)"
-USBPATH="$(nvram get usb_path1_fs_path0)"
-EXTLABEL="$(nvram get usb_path_"$USBPATH"_label)"
-LABELNOSPACES=$(echo $EXTLABEL | sed 's/ //g')
-LABELSIZE=$(echo $LABELNOSPACES | wc -m)
+EXTLABEL="$(_CheckForMountPointAndVolumeLabel_)"
+LABELSIZE=$(echo $EXTLABEL | sed 's/ //g' | wc -m)
 
 # If there's no label or product, there's no EXT USB Drive, else the label might be blank
 if [ -z "$EXTLABEL" ] && [ -z "$USBPRODUCT" ]; then
