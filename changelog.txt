@@ -1,11 +1,11 @@
-v1.4x   - (TBA)
+v1.46   - (January 31, 2024)
         - ADDED: File integrity checks for the tar.gz files created containing jffs and Ext USB Drive data. After
           creation of these files, an integrity check executes to ensure that the file is intact before moving
           on to the next step. If it returns an integrity error, the script will force an exit with an error
           message/code. While it would probably be pretty rare that tar.gz files actually fail to get created,
           and if created, fail an integrity check, it could definitely happen if there are network, hardware or
           disk issues. Keep an eye on those logs!
-        - FIXED: Many thanks to @Martinski for adding a great function that will help determine the EXT USB Drive
+        - ADDED: Many thanks to @Martinski for adding a great function that will help determine the EXT USB Drive
           label, and will return null if one isn't set. It's actually been quite a hurdle to determine what's
           plugged into the back of your router with the different variations things can take within the OS. Your
           help and expertise is truly appreciated! :)
