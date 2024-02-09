@@ -1,3 +1,18 @@
+v1.5.1b1- (TBA)
+        - MINOR: Added new functionality to BACKUPMON to give you the ability to receive SUCCESS and FAILURE
+          email notifications. This capability is provided through the AMTM Email functionality (AMTM->em) and 
+          made possible through a wonderful common library graciously made available by @Martinski! When you 
+          enable the AMTM email notification functionality in the config menu (option #14), the script will
+          download a library file into /jffs/addons/shared-libs. Libraries and functions like these can be shared 
+          between many other scripts from one common location. In BACKUPMON, you can enable notifcations for either
+          SUCCESS or FAILURE events, or both. If using primary and secondary backups, you will get notifications
+          for both, whether they succeed or fail. PLEASE NOTE: AMTM Email (AMTM->em) must be set up, configured 
+          and working before enabling this functionality in BACKUPMON.
+        - PATCH: Changed the versioning logic to align with the general accepted way of versioning, using the
+          notation: major.minor.patch ... finally, right? After seeing @thelonelycoder changing his ways, I
+          figured it was probably time for me as well. All my scripts moving forward will go this route. Change
+          log wording is now changed to conform to the major/minor/patch standards. So previously, FIXED now
+          conforms to PATCH, ADDED conforms to MINOR, and MAJOR stays the same!
 v1.46   - (January 31, 2024)
         - ADDED: File integrity checks for the tar.gz files created containing JFFS and Ext USB Drive data. After
           creation of these files, an integrity check executes to ensure that the file is intact before moving on
