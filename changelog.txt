@@ -1,7 +1,7 @@
 v1.5.1b1- (TBA)
-        - MINOR: Added new functionality to BACKUPMON to give you the ability to receive SUCCESS and FAILURE
-          email notifications. This capability is provided through the AMTM Email functionality (AMTM->em) and 
-          made possible through a wonderful common library graciously made available by @Martinski! When you 
+        - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
+          FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
+          and made possible through a wonderful common library graciously made available by @Martinski! When you 
           enable the AMTM email notification functionality in the config menu (option #14), the script will
           download a library file into /jffs/addons/shared-libs. Libraries and functions like these can be shared 
           between many other scripts from one common location. In BACKUPMON, you can enable notifcations for either
