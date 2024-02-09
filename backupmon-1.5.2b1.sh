@@ -2525,7 +2525,11 @@ vsetup () {
             echo ""
             echo -e "${CCyan}Messages:${CClear}"
             backup
-            secondary
+            sendmessage 0 "Primary Backup completed successfully"
+            secondary               #Run secondary backups
+            if [ $SECONDARYSTATUS -eq 1 ]; then
+              sendmessage 0 "Secondary Backup completed successfully"
+            fi
           ;;
 
           rs)
