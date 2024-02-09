@@ -1881,7 +1881,7 @@ fi
     printf "Firmware/Build Number: ${FWBUILD}\n"
     printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
     printf "\n"
-    printf "SUCCESS: BACKUPMON completed a successful primary backup."
+    printf "SUCCESS: BACKUPMON completed a successful primary backup to destination: ${BACKUPMEDIA}."
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Secondary Backup completed successfully" ]; then
@@ -1892,7 +1892,7 @@ fi
     printf "Firmware/Build Number: ${FWBUILD}\n"
     printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
     printf "\n"
-    printf "SUCCESS: BACKUPMON completed a successful secondary backup."
+    printf "SUCCESS: BACKUPMON completed a successful secondary backup to destination: ${BACKUPMEDIA}."
     printf "\n"
     } > "$tmpEMailBodyFile"
   fi
