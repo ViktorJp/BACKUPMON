@@ -1,4 +1,4 @@
-v1.5.2b1- (TBA)
+v1.5.2b2- (TBA)
         - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
           FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
           and made possible through a wonderful common library graciously made available by @Martinski! When you 
@@ -16,6 +16,9 @@ v1.5.2b1- (TBA)
         - PATCH: Due to an overlap of common variable names when integrating with AMTM, some mitigations had to be
           made and will change the username and password variable names within the backupmon.cfg upon start. This
           will run 1x only once variable names have been corrected.
+        - PATCH: Added AMTM Email testing as a menu item off the main setup menu. This allows you to give the AMTM
+          email capabilities a quick test, providing verbose on-screen feedback during the process.
+
 v1.46   - (January 31, 2024)
         - ADDED: File integrity checks for the tar.gz files created containing JFFS and Ext USB Drive data. After
           creation of these files, an integrity check executes to ensure that the file is intact before moving on
