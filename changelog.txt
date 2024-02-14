@@ -1,4 +1,4 @@
-v1.5.3b2- (TBA)
+v1.5.3  - (February 14, 2024)
         - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
           FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
           and made possible through a wonderful common library graciously made available by @Martinski! When you 
