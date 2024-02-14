@@ -2602,6 +2602,7 @@ vsetup () {
                 fi
                 
                 echo ""
+                cemIsFormatHTML=false
                 cemIsVerboseMode=true  ## true OR false ##
                 emailSubject="TEST: BACKUPMON Email Notification"
                 tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
