@@ -1,13 +1,13 @@
 Future Enhancements (Planned)
 -----------------------------
 * Possibility of supporting NFS in addition to CIFS/SMB
-* Possible email/text notifications in case of failure through AMTM communication features
 
 In Progress:
 ------------
 
 Completed:
 ----------
+* Possible email/text notifications in case of failure through AMTM communication features
 * Do a tar.gz integrity validation after backup completes
 * Possibility of supporting SMB v1.0 or v2.0 for backwards compatibility
 * Redirect screen output to a logfile
