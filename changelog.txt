@@ -1,4 +1,4 @@
-v1.5.5  - (TBA)
+v1.5.6  - (TBA)
         - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
           folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
           should your EXT USB fail, you will lose all your backups in the process. Also, if your backup folder
@@ -11,7 +11,9 @@ v1.5.5  - (TBA)
         - PATCH: Moved and added some items around on the setup menu, including now the ability to edit your
           primary and secondary exclusion files (options: 'ep' and 'es'). Performing this action will launch your
           exclusion files with the NANO text editor, allowing you to free-form edit any items you wish to add,
-          delete or modify. Remember to save: CTRL-O + enter.  To exit: CTRL-X. 
+          delete or modify. Remember to save: CTRL-O + enter.  To exit: CTRL-X.
+        - PATCH: Minor fixes around the secondary backup setup screen, to add some logic to prompt for a mount
+          point should the backup media type change from USB to Network or vice versa. 
 
 v1.5.3  - (February 14, 2024)
         - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
