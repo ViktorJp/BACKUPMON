@@ -1,4 +1,4 @@
-v1.5.x  - (TBA)
+v1.5.5  - (TBA)
         - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
           folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
           should your EXT USB fail, you will lose all your backups in the process. Also, if your backup folder
