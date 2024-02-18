@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.3 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.6 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.3"                                                 # Current version
+Version="1.5.6"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -416,6 +416,7 @@ vconfig () {
               USBSOURCE="TRUE"
               _GetMountPoint_ "Select an EXT USB Drive Mount Point: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
+              checkusbexclusion
             ;;
 
             2) # -----------------------------------------------------------------------------------------
@@ -517,8 +518,8 @@ vconfig () {
                 USBTARGET="TRUE"
                 _GetMountPoint_ "Select a Target USB Backup Drive Mount Point: "
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
+                checkusbexclusion
               fi
-              
             ;;
 
             7) # -----------------------------------------------------------------------------------------
@@ -531,8 +532,7 @@ vconfig () {
               echo -e "${CClear}"
               read -p 'Target Backup Directory Path: ' BKDIR1
               if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
-           
-     
+              checkusbexclusion
             ;;
 
             8) # -----------------------------------------------------------------------------------------
@@ -939,8 +939,11 @@ vconfig () {
                   echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
                 fi
               fi
-              if [ -z "$SECONDARYUNCDRIVE" ]; then SECONDARYUNCDRIVE="/tmp/mnt/backups"; fi
-              echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
+              if [ "$SECONDARYUNCDRIVE" == "" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
+                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+              else
+                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
+              fi
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Secondary Target Directory Path    : ${CGreen}$SECONDARYBKDIR"
               echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Exclusion File Name                : ${CGreen}$SECONDARYEXCLUSION"
@@ -982,12 +985,12 @@ vconfig () {
               read -r SECONDARYINPUT
                   case $SECONDARYINPUT in
                     1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
-                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; else SECONDARYBACKUPMEDIA="Network"; fi;;
+                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; SECONDARYUNCDRIVE=""; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; SECONDARYUNCDRIVE=""; else SECONDARYBACKUPMEDIA="Network"; fi;;
                     3 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
                     4 ) echo ""; if [ "$SECONDARYPWD" == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
-                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
-                    7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR;;
+                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi; checkusbexclusion;;
+                    7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR; checkusbexclusion;;
                     8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION; if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then SECONDARYEXCLUSION="$PFEXCLUSION"; fi;;
                     9 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
                     10 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
@@ -1390,6 +1393,94 @@ vupdate () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# This function checks to see if the source and target are the same, that it throws up a warning to add the backup folder
+# to the exclusion file
+
+checkusbexclusion ()
+{
+
+if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
+  BKDIREXCL=$(echo $BKDIR | sed 's/^.\{1\}//')
+  if grep -q $BKDIREXCL $EXCLUSION; then 
+    echo ""
+    echo -e "${CGreen}SUCCESS: Primary USB Backup Folder already included in TAR Exclusion File${CCLear}"
+    sleep 2
+  else
+    echo ""
+    echo -e "${CRed}WARNING: Primary USB Backup Folder not found in TAR Exclusion File${CClear}"
+    echo ""
+    echo -e "${CCyan}Your settings indicate that your are backing up your USB drive to the same USB drive."
+    echo -e "While it is possible to continue with this configuration, it is not recommended, as a"
+    echo -e "failure of your USB drive will result in a complete loss of your backups. Also, by not"
+    echo -e "exluding your backup folder in your TAR exclusion file, you will be backing up your"
+    echo -e "backups, which will result in exponential growth of your your backup files, and the"
+    echo -e "time it will take to run your backups. It is recommended to add your backup folder to"
+    echo -e "your TAR exclusion file now (assuming it is in '/mainfolder/subfolder' format)${CClear}"
+    echo ""
+    echo -e "Would you like to exclude your USB backup folder from your regular backups?"
+    if promptyn " (y/n): "; then
+      echo -e "$BKDIREXCL/*" >> $EXCLUSION
+      echo ""
+      echo -e "\n${CGreen}SUCCESS: Primary USB Backup Folder added to TAR Exclusion File${CCLear}"
+      sleep 2
+    else
+      echo -e "\n\n${CRed}WARNING: Primary USB Backup Folder not added to TAR Exclusion File${CClear}"
+      echo ""
+      echo -e "${CCyan}You are assuming the risk and responsibility of your USB drive possibly running out"
+      echo -e "of space due to exponential backup file growth, as well as the ever-increasing time"
+      echo -e "it will take to run backups. Please consider the risk of loss of all backups if your"
+      echo -e "USB drive fails. Consider adding your USB backup folder as an exclusion in your TAR"
+      echo -e "exclusion file to mitigate some of these risks.${CClear}"
+      echo ""
+      read -rsp $'Press any key to acknowledge you are taking ownership of this risk...\n' -n1 key
+    fi
+  fi
+fi
+
+if [ $SECONDARYSTATUS -eq 1 ]; then
+  if [ "$EXTDRIVE" == "$SECONDARYUNCDRIVE" ]; then
+    SECONDARYBKDIREXCL=$(echo $SECONDARYBKDIR | sed 's/^.\{1\}//')
+    if grep -q $SECONDARYBKDIREXCL $SECONDARYEXCLUSION; then 
+      echo ""
+      echo -e "${CGreen}SUCCESS: Secondary USB Backup Folder already included in TAR Exclusion File${CCLear}"
+      sleep 2
+    else
+      echo ""
+      echo -e "${CRed}WARNING: Secondary USB Backup Folder not found in TAR Exclusion File${CClear}"
+      echo ""
+      echo -e "${CCyan}Your settings indicate that your are backing up your USB drive to the same USB drive."
+      echo -e "While it is possible to continue with this configuration, it is not recommended, as a"
+      echo -e "failure of your USB drive will result in a complete loss of your backups. Also, by not"
+      echo -e "exluding your backup folder in your TAR exclusion file, you will be backing up your"
+      echo -e "backups, which will result in exponential growth of your your backup files, and the"
+      echo -e "time it will take to run your backups. It is recommended to add your backup folder to"
+      echo -e "your TAR exclusion file now (assuming it is in '/mainfolder/subfolder' format)${CClear}"
+      echo ""
+      echo -e "Would you like to exclude your USB backup folder from your regular backups?"
+      if promptyn " (y/n): "; then
+        echo -e "$SECONDARYBKDIREXCL/*" >> $SECONDARYEXCLUSION
+        echo ""
+        echo -e "\n${CGreen}SUCCESS: Secondary USB Backup Folder added to TAR Exclusion File${CCLear}"
+        sleep 2
+      else
+        echo -e "\n\n${CRed}WARNING: Secondary USB Backup Folder not added to TAR Exclusion File${CClear}"
+        echo ""
+        echo -e "${CCyan}You are assuming the risk and responsibility of your USB drive possibly running out"
+        echo -e "of space due to exponential backup file growth, as well as the ever-increasing time"
+        echo -e "it will take to run backups. Please consider the risk of loss of all backups if your"
+        echo -e "USB drive fails. Consider adding your USB backup folder as an exclusion in your TAR"
+        echo -e "exclusion file to mitigate some of these risks.${CClear}"
+        echo ""
+        read -rsp $'Press any key to acknowledge you are taking ownership of this risk...\n' -n1 key
+      fi
+    fi
+  fi
+fi
+
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 
 # This amazing function was borrowed from none other than @Martinski... a genius approach to filtering and deleting files/folders
 # $1 = path, $2 = age, $3 = show/delete
@@ -1690,7 +1781,7 @@ _DownloadCEMLibraryFile_()
              *) return 1 ;;
    esac
    
-   echo -e "${CGreen}STATUS: ${msgStr} the shared library script file to support email notifications...${CClear}"	
+   echo -e "${CGreen}STATUS: ${msgStr} the shared library script file to support email notifications...${CClear}" 
    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: ${msgStr} the shared library script file to support email notifications..." >> $LOGFILE
 
    mkdir -m 755 -p "$CUSTOM_EMAIL_LIBDir"
@@ -1739,7 +1830,7 @@ _SendEMailNotification_()
    if _SendEMailNotification_CEM_ "$2" "-F=$3"
    then
        retCode=0
-       echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}"	
+       echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}" 
        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
 
    else
@@ -1906,12 +1997,12 @@ fi
 
   if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
-	fi
-	
-	if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
+  fi
+  
+  if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
-	fi
-	
+  fi
+  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2501,13 +2592,20 @@ vsetup () {
     else
       echo -e "${InvDkGray}${CWhite} ps ${CClear}${CDkGray}: Purge Perpetual Secondary Backups"
     fi
+    echo -e "${InvDkGray}${CWhite} ep ${CClear}${CCyan}: Edit your Primary TAR Exclusion File"
+    if [ $SECONDARYSTATUS -eq 1 ]; then
+      echo -e "${InvDkGray}${CWhite} es ${CClear}${CCyan}: Edit your Secondary TAR Exclusion File"
+    else
+      echo -e "${InvDkGray}${CWhite} es ${CClear}${CDkGray}: Edit your Secondary TAR Exclusion File"
+    fi
+    echo -e "${InvDkGray}${CWhite}    ${CClear}"
+    echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
+    echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
     echo ""
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${CGreen}Setup + Configuration"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure BACKUPMON"
-    echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
-    echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
     echo -e "${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
     echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
     echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
@@ -2587,7 +2685,7 @@ vsetup () {
               echo ""
               echo -e "Would you like to send a TEST email from BACKUPMON?"
               if promptyn "(y/n): "; then
-              	echo ""
+                echo ""
                 
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
                   then
@@ -2619,6 +2717,18 @@ vsetup () {
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
                 
               fi
+          ;;
+          
+          ep)
+            export TERM=linux
+            nano +999999 --linenumbers $EXCLUSION
+          ;;
+          
+          es)
+            if [ $SECONDARYSTATUS -eq 1 ]; then
+              export TERM=linux
+              nano +999999 --linenumbers $SECONDARYEXCLUSION
+            fi
           ;;
           
           vl)
@@ -2710,10 +2820,21 @@ backup () {
           done
       fi
   fi
+  
+  # Check to see if EXT USB is backing up to EXT USB
+  if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
+    BKDIREXCL=$(echo $BKDIR | sed 's/^.\{1\}//')
+    if grep -q $BKDIREXCL $EXCLUSION; then
+      echo -e "${CGreen}STATUS: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is in place.${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is in place." >> $LOGFILE
+    else
+      echo -e "${CYellow}WARNING: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is missing!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is missing!" >> $LOGFILE
+    fi
+  fi
 
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
-
       if [ "$BACKUPMEDIA" == "USB" ]; then
         echo -en "${CGreen}STATUS: External drive (USB) mounted successfully as: $UNCDRIVE ${CClear}"; printf "%s\n"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) mounted successfully as: $UNCDRIVE" >> $LOGFILE
@@ -2814,7 +2935,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -2863,7 +2984,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -2912,7 +3033,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -2961,7 +3082,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3017,7 +3138,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3052,7 +3173,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3087,7 +3208,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3122,7 +3243,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -3166,7 +3287,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3215,7 +3336,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3264,7 +3385,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3320,7 +3441,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -3355,7 +3476,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -3390,7 +3511,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -3527,6 +3648,18 @@ secondary () {
       fi
   fi
 
+  # Check to see if EXT USB is backing up to EXT USB
+  if [ "$EXTDRIVE" == "$SECONDARYUNCDRIVE" ]; then
+    SECONDARYBKDIREXCL=$(echo $SECONDARYBKDIR | sed 's/^.\{1\}//')
+    if grep -q $SECONDARYBKDIREXCL $SECONDARYEXCLUSION; then
+      echo -e "${CGreen}STATUS: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is in place.${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is in place." >> $LOGFILE
+    else
+      echo -e "${CYellow}WARNING: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is missing!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: **High Risk** -> EXT USB is backing up to EXT USB. TAR exclusion is missing!" >> $LOGFILE
+    fi
+  fi
+
   # If the local mount is connected to the UNC, proceed
   if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
 
@@ -3630,7 +3763,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3679,7 +3812,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3728,7 +3861,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3777,7 +3910,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}" 
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3834,7 +3967,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3869,7 +4002,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3904,7 +4037,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3939,7 +4072,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"  
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -3983,7 +4116,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4032,7 +4165,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4081,7 +4214,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"	
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4137,7 +4270,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -4172,7 +4305,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -4207,7 +4340,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"	
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
           fi
