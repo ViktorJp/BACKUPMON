@@ -1,3 +1,18 @@
+v1.5.x  - (TBA)
+        - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
+          folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
+          should your EXT USB fail, you will lose all your backups in the process. Also, if your backup folder
+          is not being excluded in the TAR exclusion file, your backups will be backed up each time, exponentially
+          increasing their size and the time it takes to back them up. Warnings will now also be displayed on
+          screen and in the logs indicating this risk, and whether or not the backup folder is being excluded.
+          When choosing a source or target path, or backup folder path, BACKUPMON will evaluate whether or not
+          your backup folder needs to be excluded, giving ample language describing the issue and allowing you
+          to automatically add the exclusion.
+        - PATCH: Moved and added some items around on the setup menu, including now the ability to edit your
+          primary and secondary exclusion files (options: e1 and e2). Performing this action will launch your
+          exclusion files with the NANO text editor, allowing you to free-form edit any items you wish to add,
+          delete or modify. Remember to save: CTRL-O + enter.  To exit: CTRL-X. 
+
 v1.5.3  - (February 14, 2024)
         - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
           FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
