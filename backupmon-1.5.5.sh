@@ -939,8 +939,11 @@ vconfig () {
                   echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
                 fi
               fi
-              if [ -z "$SECONDARYUNCDRIVE" ]; then SECONDARYUNCDRIVE="/tmp/mnt/backups"; fi
-              echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
+              if [ "$SECONDARYUNCDRIVE" == "" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
+                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+              else
+                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
+              fi
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Secondary Target Directory Path    : ${CGreen}$SECONDARYBKDIR"
               echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Exclusion File Name                : ${CGreen}$SECONDARYEXCLUSION"
@@ -982,7 +985,7 @@ vconfig () {
               read -r SECONDARYINPUT
                   case $SECONDARYINPUT in
                     1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
-                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; else SECONDARYBACKUPMEDIA="Network"; fi;;
+                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; SECONDARYUNCDRIVE=""; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; SECONDARYUNCDRIVE=""; else SECONDARYBACKUPMEDIA="Network"; fi;;
                     3 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
                     4 ) echo ""; if [ "$SECONDARYPWD" == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
@@ -1427,7 +1430,7 @@ if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
       echo -e "of space due to exponential backup file growth, as well as the ever-increasing time"
       echo -e "it will take to run backups. Please consider the risk of loss of all backups if your"
       echo -e "USB drive fails. Consider adding your USB backup folder as an exclusion in your TAR"
-      echo -e "exclusion file to avoid this risk.${CClear}"
+      echo -e "exclusion file to mitigate some of these risks.${CClear}"
       echo ""
       read -rsp $'Press any key to acknowledge you are taking ownership of this risk...\n' -n1 key
     fi
@@ -1466,7 +1469,7 @@ if [ $SECONDARYSTATUS -eq 1 ]; then
         echo -e "of space due to exponential backup file growth, as well as the ever-increasing time"
         echo -e "it will take to run backups. Please consider the risk of loss of all backups if your"
         echo -e "USB drive fails. Consider adding your USB backup folder as an exclusion in your TAR"
-        echo -e "exclusion file to avoid this risk.${CClear}"
+        echo -e "exclusion file to mitigate some of these risks.${CClear}"
         echo ""
         read -rsp $'Press any key to acknowledge you are taking ownership of this risk...\n' -n1 key
       fi
@@ -2589,11 +2592,11 @@ vsetup () {
     else
       echo -e "${InvDkGray}${CWhite} ps ${CClear}${CDkGray}: Purge Perpetual Secondary Backups"
     fi
-    echo -e "${InvDkGray}${CWhite} e1 ${CClear}${CCyan}: Edit your Primary TAR Exclusion File"
+    echo -e "${InvDkGray}${CWhite} ep ${CClear}${CCyan}: Edit your Primary TAR Exclusion File"
     if [ $SECONDARYSTATUS -eq 1 ]; then
-      echo -e "${InvDkGray}${CWhite} e2 ${CClear}${CCyan}: Edit your Secondary TAR Exclusion File"
+      echo -e "${InvDkGray}${CWhite} es ${CClear}${CCyan}: Edit your Secondary TAR Exclusion File"
     else
-      echo -e "${InvDkGray}${CWhite} e2 ${CClear}${CDkGray}: Edit your Secondary TAR Exclusion File"
+      echo -e "${InvDkGray}${CWhite} es ${CClear}${CDkGray}: Edit your Secondary TAR Exclusion File"
     fi
     echo -e "${InvDkGray}${CWhite}    ${CClear}"
     echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
@@ -2716,12 +2719,12 @@ vsetup () {
               fi
           ;;
           
-          e1)
+          ep)
             export TERM=linux
             nano +999999 --linenumbers $EXCLUSION
           ;;
           
-          e2)
+          es)
             if [ $SECONDARYSTATUS -eq 1 ]; then
               export TERM=linux
               nano +999999 --linenumbers $SECONDARYEXCLUSION
