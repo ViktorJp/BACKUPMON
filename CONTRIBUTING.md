@@ -1,4 +1,4 @@
-****Contributing to BACKUPMON****
+# Contributing to BACKUPMON
 
 We're thrilled that you're interested in contributing to BACKUPMON! This document provides a set of guidelines for contributing to BACKUPMON. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
