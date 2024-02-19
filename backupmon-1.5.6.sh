@@ -2578,7 +2578,7 @@ vsetup () {
     echo ""
     echo -e "${InvDkGray}${CWhite}                    Setup + Operations Menu                     ${CClear}"
     echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Operations"
+    echo -e "${CGreen}Backup Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a Manual Backup"
     echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a Manual Restore"
@@ -2598,7 +2598,10 @@ vsetup () {
     else
       echo -e "${InvDkGray}${CWhite} es ${CClear}${CDkGray}: Edit your Secondary TAR Exclusion File"
     fi
-    echo -e "${InvDkGray}${CWhite}    ${CClear}"
+    echo ""
+    echo -e "${CGreen}----------------------------------------------------------------"
+    echo -e "${CGreen}Testing and Diagnostics"
+    echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
     echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
     echo ""
