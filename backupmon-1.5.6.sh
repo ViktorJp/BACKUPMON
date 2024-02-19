@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.6 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.7-Beta1 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.6"                                                 # Current version
+Version="1.5.7-Beta1"                                           # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -850,15 +850,15 @@ vconfig () {
               if [ "$AMTMEMAIL" == "1" ]; then
                 
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
-                  then
+                then
                     . "$CUSTOM_EMAIL_LIBFile"
 
                     if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+                       _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
                     then
-                    _DownloadCEMLibraryFile_ "update"
+                        _DownloadCEMLibraryFile_ "update"
                     fi
-                 else
+                else
                     _DownloadCEMLibraryFile_ "install"
                 fi
                 
@@ -873,17 +873,18 @@ vconfig () {
                 if promptyn "(y/n): "; then
 
                   echo ""
-                  cemIsFormatHTML=false
+                  cemIsFormatHTML=true
                   cemIsVerboseMode=true  ## true OR false ##
+                  emailBodyTitle="Testing Email Notification"
                   emailSubject="TEST: BACKUPMON Email Notification"
                   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
-                  
+
                   {
-                  printf "This is a TEST to check & verify if sending email notifications is working well from BACKUPMON.\n"
+                  printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
                   } > "$tmpEMailBodyFile"
 
-                  _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
-                  
+                  _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+
                   echo ""
                   read -rsp $'Press any key to acknowledge...\n' -n1 key
                 
@@ -1803,14 +1804,17 @@ _DownloadCEMLibraryFile_()
    return "$retCode"
 }
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Feb-18] ##
+##----------------------------------------##
 #-----------------------------------------------------------#
-# ARG1: The email address to be used as "FROM_NAME"
-# ARG1: The email Subject string
-# ARG2: Full path of file containing the email Body text.
+# ARG1: The email name/alias to be used as "FROM_NAME"
+# ARG2: The email Subject string.
+# ARG3: Full path of file containing the email Body text.
+# ARG4: The email Body Title string [OPTIONAL].
 #-----------------------------------------------------------#
 _SendEMailNotification_()
 {
-   
    if [ -z "${amtmIsEMailConfigFileEnabled:+xSETx}" ]
    then
        echo -e "${CRed}ERROR: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND.${CClear}"
@@ -1824,18 +1828,21 @@ _SendEMailNotification_()
        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: INSUFFICIENT email parameters." >> $LOGFILE
        return 1
    fi
-   local retCode
+   local retCode  emailBodyTitleStr=""
+
+   [ $# -gt 3 ] && [ -n "$4" ] && emailBodyTitleStr="$4"
 
    FROM_NAME="$1"
-   if _SendEMailNotification_CEM_ "$2" "-F=$3"
+   _SendEMailNotification_CEM_ "$2" "-F=$3" "$emailBodyTitleStr"
+   retCode="$?"
+
+   if [ "$retCode" -eq 0 ]
    then
-       retCode=0
        echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}" 
        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
 
    else
-       retCode=1
-       echo -e "${CRed}ERROR: Failure to send email notification [$2].${CClear}"
+       echo -e "${CRed}ERROR: Failure to send email notification [Error Code: $retCode][$2].${CClear}"
        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Failure to send email notification [$2]." >> $LOGFILE
    fi
 
@@ -2689,32 +2696,33 @@ vsetup () {
               echo -e "Would you like to send a TEST email from BACKUPMON?"
               if promptyn "(y/n): "; then
                 echo ""
-                
+
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
-                  then
+                then
                     . "$CUSTOM_EMAIL_LIBFile"
 
                     if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+                       _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
                     then
-                    echo ""
-                    _DownloadCEMLibraryFile_ "update"
+                        echo ""
+                        _DownloadCEMLibraryFile_ "update"
                     fi
-                 else
+                else
                     echo ""
                     _DownloadCEMLibraryFile_ "install"
                 fi
-                
-                cemIsFormatHTML=false
+
+                cemIsFormatHTML=true
                 cemIsVerboseMode=true  ## true OR false ##
+                emailBodyTitle="Testing Email Notification"
                 emailSubject="TEST: BACKUPMON Email Notification"
                 tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
                 {
-                printf "This is a TEST to check & verify if sending email notifications is working well from BACKUPMON.\n"
+                printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
                 } > "$tmpEMailBodyFile"
 
-                _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
+                _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
 
                 echo ""
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
