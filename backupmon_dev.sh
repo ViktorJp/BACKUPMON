@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.6 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.7 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -2614,7 +2614,7 @@ vsetup () {
     fi
     echo ""
     echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Testing and Diagnostics"
+    echo -e "${CGreen}Testing + Diagnostics Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
     echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
