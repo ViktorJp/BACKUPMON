@@ -1,3 +1,12 @@
+v1.5.7  - (TBA)
+        - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
+          and functionality. HTML emails are now being sent by default, and have been tested using all major email
+          providers. A new title header is now visible in the email, as well as the ability to bold characters.
+          Looking at adding a secondary email address in the near future as that capability has now been built-in
+          as well, which could optionally be used for text messaging.
+        - PATCH: Noticed that when the "scheduled backup" item was set to "No", that one of its sub-items continued
+          to stay active. Now, when this item is set to no, both the time and backup modes are grayed out.
+
 v1.5.6  - (February 18, 2024)
         - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
           folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
