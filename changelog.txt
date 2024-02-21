@@ -1,4 +1,4 @@
-v1.5.7  - (TBA)
+v1.5.8  - (TBA)
         - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
           and functionality. HTML emails are now being sent by default, and have been tested using all major email
           providers. A new title header is now visible in the email, as well as the ability to bold characters.
