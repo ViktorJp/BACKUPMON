@@ -5,7 +5,7 @@ We're thrilled that you're interested in contributing to BACKUPMON! This documen
 BACKUPMON is licensed under the Unlicense, a license with no conditions whatsoever which dedicates works to the public domain.
 
 ****How Can I Contribute?****
-For those wishing to contribute to BACKUPMON, please make your mods to the "backupmon_dev.sh" file under the "develop" branch. For more info, please see below:
+For those wishing to contribute to BACKUPMON, please make your mods to the **"backupmon.sh"** file under the "develop" branch. For more info, please see below:
 
 ------
 
