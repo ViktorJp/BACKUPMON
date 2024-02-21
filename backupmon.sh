@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.6 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.9 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.6"                                                 # Current version
+Version="1.5.9"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -359,14 +359,19 @@ vconfig () {
       else printf "Yes"; printf "%s\n"; fi
       if [ "$SCHEDULE" == "1" ]; then
         echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Time:                             : ${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : ${CGreen}"
+        if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
+          printf "Backup Only"; printf "%s\n";
+        elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
+          printf "Backup + Autopurge"; printf "%s\n"; fi
       else
         echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                             : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Scheduled Backup Mode             : ${CDkGray}"
+        if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
+          printf "Backup Only"; printf "%s\n";
+        elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
+          printf "Backup + Autopurge"; printf "%s\n"; fi
       fi
-      echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : ${CGreen}"
-      if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
-        printf "Backup Only"; printf "%s\n";
-      elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
-        printf "Backup + Autopurge"; printf "%s\n"; fi
 
       echo -en "${InvDkGray}${CWhite} 14 ${CClear}${CCyan}: AMTM Email Notifications?          : ${CGreen}"
       if [ "$AMTMEMAIL" == "0" ]; then
@@ -850,15 +855,15 @@ vconfig () {
               if [ "$AMTMEMAIL" == "1" ]; then
                 
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
-                  then
-                    . "$CUSTOM_EMAIL_LIBFile"
+                then
+                  . "$CUSTOM_EMAIL_LIBFile"
 
-                    if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+                  if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
                     _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
-                    then
+                  then
                     _DownloadCEMLibraryFile_ "update"
-                    fi
-                 else
+                  fi
+                else
                     _DownloadCEMLibraryFile_ "install"
                 fi
                 
@@ -873,16 +878,17 @@ vconfig () {
                 if promptyn "(y/n): "; then
 
                   echo ""
-                  cemIsFormatHTML=false
+                  cemIsFormatHTML=true
                   cemIsVerboseMode=true  ## true OR false ##
+                  emailBodyTitle="Testing Email Notification"
                   emailSubject="TEST: BACKUPMON Email Notification"
                   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
-                  
+
                   {
-                  printf "This is a TEST to check & verify if sending email notifications is working well from BACKUPMON.\n"
+                  printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
                   } > "$tmpEMailBodyFile"
 
-                  _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
+                  _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
                   
                   echo ""
                   read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -1356,7 +1362,7 @@ vupdate () {
       if promptyn "(y/n): "; then
         echo ""
         echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
+        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
         echo -e "${CCyan}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
@@ -1375,7 +1381,7 @@ vupdate () {
       if promptyn " (y/n): "; then
         echo ""
         echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
-        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon-$DLVersion.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
+        curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
         echo -e "${CCyan}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
@@ -1804,13 +1810,14 @@ _DownloadCEMLibraryFile_()
 }
 
 #-----------------------------------------------------------#
-# ARG1: The email address to be used as "FROM_NAME"
-# ARG1: The email Subject string
-# ARG2: Full path of file containing the email Body text.
+# ARG1: The email name/alias to be used as "FROM_NAME"
+# ARG2: The email Subject string.
+# ARG3: Full path of file containing the email Body text.
+# ARG4: The email Body Title string [OPTIONAL].
 #-----------------------------------------------------------#
 _SendEMailNotification_()
 {
-   
+
    if [ -z "${amtmIsEMailConfigFileEnabled:+xSETx}" ]
    then
        echo -e "${CRed}ERROR: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND.${CClear}"
@@ -1824,19 +1831,21 @@ _SendEMailNotification_()
        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: INSUFFICIENT email parameters." >> $LOGFILE
        return 1
    fi
-   local retCode
+   local retCode  emailBodyTitleStr=""
+   
+   [ $# -gt 3 ] && [ -n "$4" ] && emailBodyTitleStr="$4"
 
    FROM_NAME="$1"
-   if _SendEMailNotification_CEM_ "$2" "-F=$3"
+   _SendEMailNotification_CEM_ "$2" "-F=$3" "$emailBodyTitleStr"
+   retCode="$?"
+   
+   if [ "$retCode" -eq 0 ]
    then
-       retCode=0
-       echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}" 
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
-
+     echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}" 
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
    else
-       retCode=1
-       echo -e "${CRed}ERROR: Failure to send email notification [$2].${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Failure to send email notification [$2]." >> $LOGFILE
+     echo -e "${CRed}ERROR: Failure to send email notification [Error Code: $retCode][$2].${CClear}"
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Failure to send email notification [$2]." >> $LOGFILE
    fi
 
    return "$retCode"
@@ -1857,150 +1866,160 @@ fi
 
   #Load, install or update the shared AMTM Email integration library
   if [ -f "$CUSTOM_EMAIL_LIBFile" ]
-    then
-      . "$CUSTOM_EMAIL_LIBFile"
+  then
+    . "$CUSTOM_EMAIL_LIBFile"
 
-      if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-        _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
-      then
-        _DownloadCEMLibraryFile_ "update"
-      fi
-    else
+    if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+      _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+    then
+      _DownloadCEMLibraryFile_ "update"
+    fi
+  else
       _DownloadCEMLibraryFile_ "install"
   fi
 
-  cemIsFormatHTML=false
-  cemIsVerboseMode=false  ## true OR false ##
+  cemIsFormatHTML=true
+  cemIsVerboseMode=false
   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
-  
+
   #Pick the scenario and send email
 
   if [ "$2" == "Unable to mount network drive" ]; then
     emailSubject="FAILURE: Unable to mount network drive"
+    emailBodyTitle="FAILURE: Unable to mount network drive"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to mount the primary network drive.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to mount the primary network drive.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Unable to mount secondary network drive" ]; then
     emailSubject="FAILURE: Unable to mount secondary network drive"
+    emailBodyTitle="FAILURE: Unable to mount secondary network drive"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to mount the secondary network drive.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to mount the secondary network drive.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Unable to unmount network drive" ]; then
     emailSubject="FAILURE: Unable to unmount network drive"
+    emailBodyTitle="FAILURE: Unable to unmount network drive"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to unmount the primary network drive.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the primary network drive.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Unable to unmount secondary network drive" ]; then
     emailSubject="FAILURE: Unable to unmount secondary network drive"
+    emailBodyTitle="FAILURE: Unable to unmount secondary network drive"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to unmount the secondary network drive.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the secondary network drive.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Error creating JFFS tar file" ]; then
     emailSubject="FAILURE: Error creating JFFS tar file"
+    emailBodyTitle="FAILURE: Error creating JFFS tar file"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to create/write the JFFS tar file.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the JFFS tar file.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "JFFS tar file integrity failure" ]; then
     emailSubject="FAILURE: JFFS tar file integrity failure"
+    emailBodyTitle="FAILURE: JFFS tar file integrity failure"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON experienced a JFFS tar file integrity issue.\n"
+    printf "<b>FAILURE: BACKUPMON</b> experienced a JFFS tar file integrity issue.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Error creating EXT USB tar file" ]; then
     emailSubject="FAILURE: Error creating EXT USB tar file"
+    emailBodyTitle="FAILURE: Error creating EXT USB tar file"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON was unable to create/write the EXT USB tar file.\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the EXT USB tar file.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "EXT USB tar file integrity failure" ]; then
     emailSubject="FAILURE: EXT USB tar file integrity failure"
+    emailBodyTitle="FAILURE: EXT USB tar file integrity failure"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "FAILURE: BACKUPMON experienced a EXT USB tar file integrity issue.\n"
+    printf "<b>FAILURE: BACKUPMON</b> experienced a EXT USB tar file integrity issue.\n"
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Primary Backup completed successfully" ]; then
     emailSubject="SUCCESS: Primary Backup completed successfully"
+    emailBodyTitle="SUCCESS: Primary Backup completed successfully"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "SUCCESS: BACKUPMON completed a successful primary backup to destination: ${BACKUPMEDIA}\n"
+    printf "<b>SUCCESS: BACKUPMON</b> completed a successful primary backup to destination: <b>${BACKUPMEDIA}</b>\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   elif [ "$2" == "Secondary Backup completed successfully" ]; then
     emailSubject="SUCCESS: Secondary Backup completed successfully"
+    emailBodyTitle="SUCCESS: Secondary Backup completed successfully"
     {
-    printf "Date/Time: $(date +'%b %d %Y %X')\n"
-    printf "Asus Router Model: ${ROUTERMODEL}\n"
-    printf "Firmware/Build Number: ${FWBUILD}\n"
-    printf "EXT USB Drive Label Name: ${EXTLABEL}\n"
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
     printf "\n"
-    printf "SUCCESS: BACKUPMON completed a successful secondary backup to destination: ${BACKUPMEDIA}\n"
+    printf "<b>SUCCESS: BACKUPMON</b> completed a successful secondary backup to destination: <b>${BACKUPMEDIA}</b>\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
   fi
 
   if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
-    _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
+    _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
   
   if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
-    _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
+    _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
   
 }
@@ -2600,7 +2619,7 @@ vsetup () {
     fi
     echo ""
     echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Testing and Diagnostics"
+    echo -e "${CGreen}Testing + Diagnostics Operations"
     echo -e "${CGreen}----------------------------------------------------------------"
     echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
     echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
@@ -2689,32 +2708,33 @@ vsetup () {
               echo -e "Would you like to send a TEST email from BACKUPMON?"
               if promptyn "(y/n): "; then
                 echo ""
-                
+
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
                   then
                     . "$CUSTOM_EMAIL_LIBFile"
 
                     if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+                      _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
                     then
-                    echo ""
-                    _DownloadCEMLibraryFile_ "update"
+                      echo ""
+                      _DownloadCEMLibraryFile_ "update"
                     fi
-                 else
+                  else
                     echo ""
                     _DownloadCEMLibraryFile_ "install"
                 fi
                 
-                cemIsFormatHTML=false
-                cemIsVerboseMode=true  ## true OR false ##
+                cemIsFormatHTML=true
+                cemIsVerboseMode=true
+                emailBodyTitle="Testing Email Notification"
                 emailSubject="TEST: BACKUPMON Email Notification"
                 tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
                 {
-                printf "This is a TEST to check & verify if sending email notifications is working well from BACKUPMON.\n"
+                printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
                 } > "$tmpEMailBodyFile"
 
-                _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile"
+                _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
 
                 echo ""
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
