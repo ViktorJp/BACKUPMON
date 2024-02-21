@@ -1,4 +1,4 @@
-v1.5.8  - (TBA)
+v1.5.9  - (TBA)
         - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
           and functionality. HTML emails are now being sent by default, and have been tested using all major email
           providers. A new title header is now visible in the email, as well as the ability to bold characters.
@@ -6,6 +6,8 @@ v1.5.8  - (TBA)
           as well, which could optionally be used for text messaging.
         - PATCH: Noticed that when the "scheduled backup" item was set to "No", that one of its sub-items continued
           to stay active. Now, when this item is set to no, both the time and backup modes are grayed out.
+        - PATCH: The update logic now pulls the backupmon.sh directly from github, instead of the backupmon-X.Y.Z.sh
+          file based on the version number from the version.txt file.
 
 v1.5.6  - (February 18, 2024)
         - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
