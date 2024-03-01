@@ -1,3 +1,8 @@
+v1.5.10 - (March 1, 2024)
+        - PATCH: @Martinski came up with some new ideas on best ways to capture the EXT USB drive label. Many
+          thanks to him for bringing this change to BACKUPMON, and hope this helps solve some of the issues that
+          some are facing when it comes to drive label detection.
+
 v1.5.9  - (February 21, 2024)
         - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
           and functionality. HTML emails are now being sent by default, and have been tested using all major email
