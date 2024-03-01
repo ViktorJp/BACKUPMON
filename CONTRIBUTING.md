@@ -20,7 +20,7 @@ For those wishing to contribute to BACKUPMON, please make your mods to the **"ba
 
 **Your First Code Contribution**
 * Pull requests are the method for submitting changes. Here's the general process:
-* Fork the repository.
+* Fork the "develop" repository.
 * Create a new branch in your fork (git checkout -b feature/my-new-feature).
 * Make your changes.
 * Commit your changes (git commit -am 'Add some feature').
@@ -32,6 +32,7 @@ For those wishing to contribute to BACKUPMON, please make your mods to the **"ba
 * Include links to existing BUGS or REQs when possible.
 * Include screenshots and logs whenever possible.
 * End all files with a newline.
+* Send $20 for an expedited commit turnaround <jk> :)
 
 **Documentation Styleguide**
 * Keep language simple and clear.
