@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.9 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.10 heavily modified and restore functionality added by @Viktor Jaep, 2023
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.9"                                                 # Current version
+Version="1.5.10"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1735,36 +1735,40 @@ _GetDefaultUSBMountPoint_()
 
 # -------------------------------------------------------------------------------------------------------------------------
 
-##-------------------------------------##
-## Added by Martinski W. [2024-Jan-29] ##
-##-------------------------------------##
+##----------------------------------------##
+## Modified by Martinski W. [2024-Feb-29] ##
+##----------------------------------------##
 #---------------------------------------------------------#
 # The USB-attached drives may have multiple partitions
 # with different file systems (NTFS, ext3, ext4, etc.),
 # which means that multiple mount points can be found.
 # Here we check if a mounted USB-attached drive exists;
 # if not, we return a null string. If it exists, then
-# we get one of the Volume labels, if found; otherwise
-# we return a null string.
+# we search for the Volume Labels; if found, we return
+# the first label; otherwise, we return a null string.
 #---------------------------------------------------------#
 _CheckForMountPointAndVolumeLabel_()
 {
-   local mounPointPaths  mounPointLabels  foundLabelOK=false
+   local theLabel  foundLabelOK=false
+   local mounPointPaths  nvramLabels  blkidLabels  
    local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointPaths="$(grep -E "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
    [ -z "$mounPointPaths" ] && echo "" && return 1
 
-   mounPointLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
-   [ -z "$mounPointLabels" ] && echo "" && return 1
+   blkidLabels="$(blkid | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')"
+   nvramLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
+   { [ -z "$blkidLabels" ] && [ -z "$nvramLabels" ] ; } && echo "" && return 1
 
-   for theLabel in $mounPointLabels
+   theLabel=""
+   for theLabel in $nvramLabels $blkidLabels
    do
-      if echo "${mounPointPaths}" | grep -qE "/${theLabel}$"
-      then foundLabelOK=true ; break ; fi
+       if echo "${mounPointPaths}" | grep -qE "/${theLabel}$"
+       then foundLabelOK=true ; break ; fi
    done
-   ! "$foundLabelOK" && echo "" && return 1
-   echo "$theLabel" && return 0
+   "$foundLabelOK" && echo "$theLabel" && return 0
+
+   echo "" ; return 1
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
