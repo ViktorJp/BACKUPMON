@@ -1752,16 +1752,16 @@ _CheckForMountPointAndVolumeLabel_()
    local theLabel  foundLabelOK=false
    local mounPointPaths  nvramLabels  blkidLabels  
    local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
-   local rwPartitions
+   local validPartitions
 
    mounPointPaths="$(grep -E "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
    [ -z "$mounPointPaths" ] && echo "" && return 1
 
-   # Get a list of read-write mounted partitions
-   rwPartitions=$(mount | awk '$6 ~ /\<rw\>/ {print $1}')
+   # Filter to get a list of valid partitions, excluding UBI, mtdblock, and any that don't follow the conventional naming schemes
+   validPartitions=$(awk '{print $4}' /proc/partitions | grep -E '^(sd|hd|nvme)[a-zA-Z0-9]+[0-9]+' | sed 's/^/\/dev\//' | tr '\n' ' ')
    
    # Ensure blkid only checks those read-write partitions
-   blkidLabels="$(echo $rwPartitions | xargs -n 1 blkid | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')"
+   blkidLabels="$(echo $validPartitions | xargs -n 1 blkid | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')"
    nvramLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
    { [ -z "$blkidLabels" ] && [ -z "$nvramLabels" ] ; } && echo "" && return 1
 
