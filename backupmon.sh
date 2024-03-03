@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.11 heavily modified and restore functionality added by @Viktor Jaep, 2023
+# BACKUPMON v1.5.13 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.11"                                                # Current version
+Version="1.5.13"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1967,6 +1967,19 @@ fi
     printf "Please check your network environment and configuration.\n"
     printf "\n"
     } > "$tmpEMailBodyFile"
+  elif [ "$2" == "NVRAM config export failure" ]; then
+    emailSubject="FAILURE: NVRAM config export failure"
+    emailBodyTitle="FAILURE: NVRAM config export failure"
+    {
+    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+    printf "\n"
+    printf "<b>FAILURE: BACKUPMON</b> was unable to export NVRAM config file.\n"
+    printf "Please check your network environment and configuration.\n"
+    printf "\n"
+    } > "$tmpEMailBodyFile"
   elif [ "$2" == "Error creating EXT USB tar file" ]; then
     emailSubject="FAILURE: Error creating EXT USB tar file"
     emailBodyTitle="FAILURE: Error creating EXT USB tar file"
@@ -2969,10 +2982,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3018,10 +3040,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3067,10 +3098,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3116,10 +3156,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${PDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3157,6 +3206,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3192,6 +3243,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3227,6 +3280,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3262,6 +3317,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3321,10 +3378,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${WDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3370,10 +3436,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${MDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3419,10 +3494,19 @@ backup () {
 
           #Save a copy of the NVRAM
           nvram save ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${YDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3460,6 +3544,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3495,6 +3581,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3530,6 +3618,8 @@ backup () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -3797,10 +3887,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3846,10 +3945,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3895,10 +4003,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3944,10 +4061,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/nvram.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -3986,6 +4112,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4021,6 +4149,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4056,6 +4186,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4091,6 +4223,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4150,10 +4284,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -4199,10 +4342,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -4248,10 +4400,19 @@ secondary () {
 
           #Save a copy of the NVRAM
           nvram save ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg >/dev/null 2>&1
-          logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg"
-          echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
-          sleep 1
+          NS=$?
+          if [ $NS -ne 0 ]; then
+            echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+            sendmessage 1 "NVRAM config export failure"
+            echo -e "\n"
+            exit 1
+          elif [ $NS -eq 0 ]; then
+            logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg"
+            echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg.${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/nvram-${datelabel}.cfg" >> $LOGFILE
+            sleep 1
+          fi
 
           #include current router model/firmware/build info in the backup location
           { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -4289,6 +4450,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4324,6 +4487,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -4359,6 +4524,8 @@ secondary () {
             sleep 1
             
             #Verify file integrity
+            echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
+            echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
             tar -tzf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz >/dev/null
             TI=$?
             if [ $TI -ne 0 ]; then
@@ -5432,7 +5599,7 @@ USBPRODUCT="$(nvram get usb_path1_product)"
 EXTLABEL="$(_CheckForMountPointAndVolumeLabel_)"
 LABELSIZE=$(echo $EXTLABEL | sed 's/ //g' | wc -m)
 
-# If there's no label or product, there's no EXT USB Drive, else the label might be blank
+# If there's no label or product, there's probably no EXT USB Drive, else the label might be blank
 if [ -z "$EXTLABEL" ] && [ -z "$USBPRODUCT" ]; then
   EXTLABEL="NOTFOUND"
 elif [ $LABELSIZE -le 1 ]; then
