@@ -1,3 +1,15 @@
+v1.5.13 - (March 3, 2024)
+        - PATCH: Continued development efforts from both @Martinski and @ExtremeFiretop to come up with a fool-
+          proof solution to determine EXT USB drive labels. Thanks to both for your contributions to BACKUPMON!
+          With the recent finding that the blkid command is creating some weird kernel error messages in the
+          syslog, some workarounds have been put in place to only call on mounted partions.
+        - PATCH: Included more log statements for the EXT USB .tar.gz file integrity check. Now includes a new
+          on-screen/log entry that indicates that the integrity check is starting, and to please stand by. When
+          it comes to larger .tar.gz files, even integrity checks can take some time to complete. This just gives
+          an indicator that it started working on it.
+        - PATCH: Included an error check on the NVRAM SAVE command completion. If the router isn't able to save
+          it's firmware .cfg file, BACKUPMON will error out with the proper error codes.
+
 v1.5.10 - (March 1, 2024)
         - PATCH: @Martinski came up with some new ideas on best ways to capture the EXT USB drive label. Many
           thanks to him for bringing this change to BACKUPMON, and hope this helps solve some of the issues that
