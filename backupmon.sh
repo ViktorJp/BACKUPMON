@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.13 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.5.14 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.13"                                                # Current version
+Version="1.5.14"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -4710,7 +4710,19 @@ restore () {
 
       # Show a list of valid backups on screen
       echo -e "${CGreen}Available Backup Selections:${CClear}"
-      ls -ld ${UNCDRIVE}${BKDIR}/*/
+
+      ##----------------------------------------##
+      ## Modified by Martinski W. [2024-Mar-13] ##
+      ##----------------------------------------##
+      ## Sort by modification time ##
+      latestTimeFromTop=true   #true OR false#
+      if "$latestTimeFromTop"
+      then lsFlags="-letd"
+      else lsFlags="-lertd"
+      fi
+      ls $lsFlags ${UNCDRIVE}${BKDIR}/*/ | \
+      awk -F ' ' '{printf "%s %s %2d %s %s %s\n",$6,$7,$8,$9,$10,$11}'
+
       echo ""
       echo -e "${CGreen}Would you like to continue to restore from backup?"
 
@@ -5068,7 +5080,19 @@ restore () {
 
       # Show a list of valid backups on screen
       echo -e "${CGreen}Available Backup Selections:${CClear}"
-      ls -ld ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/*/
+
+      ##----------------------------------------##
+      ## Modified by Martinski W. [2024-Mar-13] ##
+      ##----------------------------------------##
+      ## Sort by modification time ##
+      latestTimeFromTop=true   #true OR false#
+      if "$latestTimeFromTop"
+      then lsFlags="-letd"
+      else lsFlags="-lertd"
+      fi
+      ls $lsFlags ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/*/ | \
+      awk -F ' ' '{printf "%s %s %2d %s %s %s\n",$6,$7,$8,$9,$10,$11}'
+
       echo ""
       echo -e "${CGreen}Would you like to continue to restore from backup?"
 
