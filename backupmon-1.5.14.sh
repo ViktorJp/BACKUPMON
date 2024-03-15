@@ -5096,7 +5096,7 @@ restore () {
       #ls $lsFlags ${UNCDRIVE}${BKDIR}/*/ | \
       #awk -F ' ' '{printf "%s %s %2d %s %s %s\n",$6,$7,$8,$9,$10,$11}'
       ## Modified by Viktor Jaep for color [2024-Mar-15] ##
-      ls $lsFlags ${UNCDRIVE}${BKDIR}/*/ | \
+      ls $lsFlags ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/*/ | \
       awk -F ' ' '{printf "%s %s %2d %s %s",$6,$7,$8,$9,$10} { printf " \033[34m"$11" \033[0m\n";}'
 
       echo ""
