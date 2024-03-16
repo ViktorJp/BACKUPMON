@@ -1,3 +1,11 @@
+v1.5.14 - (March 15, 2024)
+        - PATCH: Thanks to @Martinski, he contributed some code to allow for the sorting of the directories
+          when going through a restore, and are now being sorted in date order (instead of folder name order).
+          This only seemed to be apparent when using the "weekly" backup method, as the other monthly, yearly
+          or perpetual were already in order due to their folder naming conventions. I made a few more minor
+          mods to this to display the foldernames in color as they did before with the "ls" command. Thanks to
+          @maghuro for the suggestion! :)
+
 v1.5.13 - (March 3, 2024)
         - PATCH: Continued development efforts from both @Martinski and @ExtremeFiretop to come up with a fool-
           proof solution to determine EXT USB drive labels. Thanks to both for your contributions to BACKUPMON!
