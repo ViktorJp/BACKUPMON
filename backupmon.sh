@@ -644,28 +644,30 @@ vconfig () {
             ;;
 
             10) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}10. What version of the CIFS/SMB protocol would you like to use? This protocol"
-              echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
-              echo -e "${CCyan}files and backups from source to target. While BACKUPMON supports the latest"
-              echo -e "${CCyan}SMB protocol available (v3.02), you can choose older versions for backwards"
-              echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
-              echo -e "${CCyan}support a more recent version."
-               echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
-              echo -e "${CClear}"
-              while true; do
-                read -p 'CIFS/SMB Version (1/2/3/4/5)?: ' SMBVER
-                  case $SMBVER in
-                    [1] ) SMBVER="2.1"; break ;;
-                    [2] ) SMBVER="2.0"; break ;;
-                    [3] ) SMBVER="1.0"; break ;;
-                    [4] ) SMBVER="3.0"; break ;;
-                    [5] ) SMBVER="3.02"; break ;;
-                    "" ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
-                    * ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
-                  esac
-              done
-            ;;      
+              if [ "$BACKUPMEDIA" == "Network" ]; then
+                echo ""
+                echo -e "${CCyan}10. What version of the CIFS/SMB protocol would you like to use? This protocol"
+                echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
+                echo -e "${CCyan}files and backups from source to target. While BACKUPMON supports the latest"
+                echo -e "${CCyan}SMB protocol available (v3.02), you can choose older versions for backwards"
+                echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
+                echo -e "${CCyan}support a more recent version."
+                echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
+                echo -e "${CClear}"
+                while true; do
+                  read -p 'CIFS/SMB Version (1/2/3/4/5)?: ' SMBVER
+                    case $SMBVER in
+                      [1] ) SMBVER="2.1"; break ;;
+                      [2] ) SMBVER="2.0"; break ;;
+                      [3] ) SMBVER="1.0"; break ;;
+                      [4] ) SMBVER="3.0"; break ;;
+                      [5] ) SMBVER="3.02"; break ;;
+                       "" ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
+                        * ) echo -e "\nError: Please use either 1, 2, 3, 4 or 5\n";;
+                    esac
+                done
+             fi
+           ;;
 
 
             11) # -----------------------------------------------------------------------------------------
