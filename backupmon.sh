@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.5.14 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.6.0b1 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,8 +16,8 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.5.14"                                                # Current version
-Beta=0                                                          # Beta release Y/N
+Version="1.6.0b1"                                                # Current version
+Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 LOGFILE="/jffs/addons/backupmon.d/backupmon.log"                # Path to the local logfile
@@ -293,18 +293,40 @@ vconfig () {
         echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Backup Target Username             : "${CDkGray}$BTUSERNAME
         echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Backup Target Password (ENC)       : "${CDkGray}$BTPASSWORD
         if [ "$UNCUPDATED" == "True" ]; then
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target UNC Path             : "${CDkGray};printf '%s' $UNC; printf "%s\n"
+          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target Path                 : "${CDkGray};printf '%s' $UNC; printf "%s\n"
         else
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target UNC Path             : "${CDkGray}; echo $UNC | sed -e 's,\\,\\\\,g'
+          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target Path                 : "${CDkGray}; echo $UNC | sed -e 's,\\,\\\\,g'
         fi
-      else  
+      elif [ "$BACKUPMEDIA" == "Network" ]; then
         echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target Username             : "${CGreen}$BTUSERNAME
         echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Backup Target Password (ENC)       : "${CGreen}$BTPASSWORD
-        if [ "$UNCUPDATED" == "True" ]; then
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target UNC Path             : "${CGreen};printf '%s' $UNC; printf "%s\n"
+        if [ -z "$UNC" ]; then
+          echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
         else
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target UNC Path             : "${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
+          if [ "$UNCUPDATED" == "True" ]; then
+            echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen};printf '%s' $UNC; printf "%s\n"
+          else
+            echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
+          fi
         fi
+      elif [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+        echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Backup Target Username             : "${CDkGray}$BTUSERNAME
+        echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Backup Target Password (ENC)       : "${CDkGray}$BTPASSWORD
+        if [ -z "$UNC" ]; then
+          echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+        else
+          if [ "$UNCUPDATED" == "True" ]; then
+            echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}$UNC
+          else
+            echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}$UNC
+          fi
+        fi
+      fi
+
+      if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  NFS Mount Options?                : "${CGreen}$NFSMOUNTOPT
+      else
+        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  NFS Mount Options?                : N/A"
       fi
       
       if [ "$UNCDRIVE" == "" ] || [ -z "$UNCDRIVE" ]; then
@@ -323,7 +345,11 @@ vconfig () {
         elif [ "$BACKUPSWAP" == "1" ]; then
           printf "Yes"; printf "%s\n";fi
 
-      echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
+      if [ "$BACKUPMEDIA" == "Network" ]; then
+        echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
+      else
+        echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CDkGray}: Backup CIFS/SMB Version            : "${CDkGray}$SMBVER
+      fi
 
       echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Backup Frequency?                  : ${CGreen}"
       if [ "$FREQUENCY" == "W" ]; then
@@ -428,21 +454,25 @@ vconfig () {
               echo ""
               echo -e "${CCyan}2. What is the TARGET Backup Media Type? This is the type of device that you"
               echo -e "${CCyan}want your backups copied to. Please indicate whether the media is a network"
-              echo -e "${CCyan}device (accessible via UNC path), or a local USB device (connected to router)."
-              echo -e "${CCyan}PLEASE NOTE: If the USB option is chosen, there will be no need to complete"
-              echo -e "${CCyan}further information for the Target UNC, username or password, and will be"
-              echo -e "${CCyan}grayed out." 
-              echo -e "${CYellow}(Network=1, USB=2) (Default = 1)"
+              echo -e "${CCyan}device (accessible via UNC path using the common CIFS/SMB network protocol),"
+              echo -e "${CCyan}a local USB device (connected to router), or a network device (accessible"
+              echo -e "${CCyan}via an NFS share). PLEASE NOTE: If the USB or Network-NFS option is chosen,"
+              echo -e "${CCyan}there will be no need to complete further information for the Target"
+              echo -e "${CCyan}username or password, and will be grayed out."
+              echo -e "${CYellow}(Network=1, USB=2, Network-NFS=3) (Default = 1)"
               echo -e "${CClear}"
               while true; do
-                read -p 'Media Type (1/2)?: ' BACKUPMEDIA
+                read -p 'Media Type (1/2/3)?: ' BACKUPMEDIA
                   case $BACKUPMEDIA in
                     [1] ) BACKUPMEDIA="Network"; break ;;
                     [2] ) BACKUPMEDIA="USB"; break ;;
-                    "" ) echo -e "\nError: Please use either 1 or 2\n";;
-                    * ) echo -e "\nError: Please use either 1 or 2\n";;
+                    [3] ) BACKUPMEDIA="Network-NFS"; break ;;
+                    "" ) echo -e "\nError: Please use either 1, 2 or 3\n";;
+                    * ) echo -e "\nError: Please use either 1, 2 or 3\n";;
                   esac                  
               done
+              
+              UNC=""
               
               if [ "$BACKUPMEDIA" == "Network" ] && [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
                 UNCDRIVE=""
@@ -452,49 +482,78 @@ vconfig () {
                 UNCDRIVE=""
               fi
               
+              if [ "$BACKUPMEDIA" == "Network-NFS" ] && [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
+                UNCDRIVE=""
+              fi
+              
             ;;      
 
             3) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}3. What is the TARGET Network Backup Username?"
-              echo -e "${CYellow}(Default = admin)"
-              echo -e "${CClear}"
-              read -p 'Username: ' BTUSERNAME1
-              if [ "$BTUSERNAME1" == "" ] || [ -z "$BTUSERNAME1" ]; then BTUSERNAME="admin"; else BTUSERNAME="$BTUSERNAME1"; fi # Using default value on enter keypress
+              if [ "$BACKUPMEDIA" == "Network" ]; then
+                echo ""
+                echo -e "${CCyan}3. What is the TARGET Network Backup Username?"
+                echo -e "${CYellow}(Default = admin)"
+                echo -e "${CClear}"
+                read -p 'Username: ' BTUSERNAME1
+                if [ "$BTUSERNAME1" == "" ] || [ -z "$BTUSERNAME1" ]; then BTUSERNAME="admin"; else BTUSERNAME="$BTUSERNAME1"; fi # Using default value on enter keypress
+              fi
             ;;
 
             4) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}4. What is the TARGET Network Backup Password?"
-              echo -e "${CYellow}(Default = admin)"
-              echo -e "${CClear}"
-              if [ $BTPASSWORD == "admin" ]; then
-                echo -e "${CGreen}Old Password (Unencoded): admin"
-              else
-                echo -en "${CGreen}Old Password (Unencoded): "; echo "$BTPASSWORD" | openssl enc -d -base64 -A
+              if [ "$BACKUPMEDIA" == "Network" ]; then
+                echo ""
+                echo -e "${CCyan}4. What is the TARGET Network Backup Password?"
+                echo -e "${CYellow}(Default = admin)"
+                echo -e "${CClear}"
+                if [ $BTPASSWORD == "admin" ]; then
+                  echo -e "${CGreen}Old Password (Unencoded): admin"
+                else
+                  echo -en "${CGreen}Old Password (Unencoded): "; echo "$BTPASSWORD" | openssl enc -d -base64 -A
+                fi
+                echo ""
+                read -rp 'New Password: ' BTPASSWORD1
+                if [ "$BTPASSWORD1" == "" ] || [ -z "$BTPASSWORD1" ]; then BTPASSWORD=`echo "admin" | openssl enc -base64 -A`; else BTPASSWORD=`echo $BTPASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
               fi
-              echo ""
-              read -rp 'New Password: ' BTPASSWORD1
-              if [ "$BTPASSWORD1" == "" ] || [ -z "$BTPASSWORD1" ]; then BTPASSWORD=`echo "admin" | openssl enc -base64 -A`; else BTPASSWORD=`echo $BTPASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
             ;;
 
             5) # -----------------------------------------------------------------------------------------
-              echo ""
-              echo -e "${CCyan}5. What is the TARGET Backup UNC Path? This is the path of a local network"
-              echo -e "${CCyan}backup device that has a share made available for backups to be pushed to."
-              echo -e "${CCyan}Please note: Use proper notation for the network path by starting with"
-              echo -en "${CCyan}4 backslashes "; printf "%s" "(\\\\\\\\)"; echo -en " and using 2 backslashes "; printf "%s" "(\\\\)"; echo -e " between any additional"
-              echo -e "${CCyan}folders. Example below:"
-              echo -en "${CYellow}"; printf "%s" "(Default = \\\\\\\\192.168.50.25\\\\Backups)"
-              echo -e "${CClear}"
-              read -rp 'Target Backup UNC Path: ' UNC1
-              if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="\\\\\\\\192.168.50.25\\\\Backups"; else UNC="$UNC1"; fi # Using default value on enter keypress
-              UNCUPDATED="True"
+              if [ "$BACKUPMEDIA" == "Network" ]; then
+                echo ""
+                echo -e "${CCyan}5. What is the TARGET Backup UNC Path? This is the path of a local network"
+                echo -e "${CCyan}backup device that has a share made available for backups to be pushed to."
+                echo -e "${CCyan}Please note: Use proper notation for the network path by starting with"
+                echo -en "${CCyan}4 backslashes "; printf "%s" "(\\\\\\\\)"; echo -en " and using 2 backslashes "; printf "%s" "(\\\\)"; echo -e " between any additional"
+                echo -e "${CCyan}folders. Example below:"
+                echo -en "${CYellow}"; printf "%s" "(Default = \\\\\\\\192.168.50.25\\\\Backups)"
+                echo -e "${CClear}"
+                read -rp 'Target Backup UNC Path: ' UNC1
+                if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="\\\\\\\\192.168.50.25\\\\Backups"; else UNC="$UNC1"; fi # Using default value on enter keypress
+                UNCUPDATED="True"
+              elif [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+                echo ""
+                echo -e "${CCyan}5. What is the TARGET Backup NFS Path? This is the path of a local network"
+                echo -e "${CCyan}backup device that has an NFS share made available for backups to be pushed"
+                echo -e "${CCyan}to. Please note: Use proper notation for the NFS network path by using the"
+                echo -e "${CCyan}example below:"
+                echo -e "${CYellow}192.168.50.25:/BACKUPS"
+                echo -e "${CClear}"
+                read -rp 'Target Backup NFS Path: ' UNC1
+                if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="192.168.50.25:/BACKUPS"; else UNC="$UNC1"; fi # Using default value on enter keypress
+                UNCUPDATED="True"
+                echo ""
+                echo -e "${CCyan}5a. What optional NFS Mount Options would you like to use (if any)? These"
+                echo -e "${CCyan}options are custom settings that may be needed to establish a successful"
+                echo -e "${CCyan}connection to your NFS share. Please follow format of example below:"
+                echo -e "${CYellow}nfsvers=3,nolock,_netdev,rsize=8192,wsize=8192"
+                echo -e "${CClear}"
+                read -rp 'NFS Mount Options: ' NFSMOUNTOPT1
+                if [ "$NFSMOUNTOPT1" == "" ] || [ -z "$NFSMOUNTOPT1" ]; then NFSMOUNTOPT=""; else NFSMOUNTOPT="$NFSMOUNTOPT1"; fi # Using default value on enter keypress
+              fi
             ;;
 
             6) # -----------------------------------------------------------------------------------------
               
-              if [ "$BACKUPMEDIA" == "Network" ]; then
+              if [ "$BACKUPMEDIA" == "Network" ] || [ "$BACKUPMEDIA" == "Network-NFS" ]; then
                 echo ""
                 echo -e "${CCyan}6. What would you like to name the TARGET Network Backup Drive Mount Point? This"
                 echo -e "${CCyan}mount path will be created for you, and is the local path on your router"
@@ -1020,6 +1079,7 @@ vconfig () {
                 { echo 'BTUSERNAME="'"$BTUSERNAME"'"'
                   echo 'BTPASSWORD="'"$BTPASSWORD"'"'
                   echo 'UNC="'"$UNC"'"'
+                  echo 'NFSMOUNTOPT="'"$NFSMOUNTOPT"'"'
                   echo 'UNCDRIVE="'"$UNCDRIVE"'"'
                   echo 'EXTDRIVE="'"$EXTDRIVE"'"'
                   echo 'EXTLABEL="'"$EXTLABEL"'"'
@@ -1080,6 +1140,7 @@ vconfig () {
       { echo 'BTUSERNAME="admin"'
         echo 'BTPASSWORD="admin"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
+        echo 'NFSMOUNTOPT=""'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
         echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
         echo 'EXTLABEL="usbdrive"'
@@ -2827,16 +2888,13 @@ backup () {
 
   # If everything successfully was created, proceed
   if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
-
-      # Check the build to see if modprobe needs to be called
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      if [ "$BACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
-      else
+ 
+      if [ "$BACKUPMEDIA" == "Network" ]; then
+        # Check the build to see if modprobe needs to be called
+        if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+          modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+        fi
+        
         CNT=0
         TRIES=3
           while [ $CNT -lt $TRIES ]; do # Loop through number of tries
@@ -2859,6 +2917,41 @@ backup () {
               fi
             fi
           done
+      fi
+      
+      if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+        modprobe nfs nfsv3 > /dev/null
+          
+        CNT=0
+        TRIES=3
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            if [ -z "$NFSMOUNTOPT" ]; then
+              mount -t nfs $UNC $UNCDRIVE
+            else
+              mount -t nfs $UNC $UNCDRIVE -o "$NFSMOUNTOPT"
+            fi
+            MRC=$?
+            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to mount to external NFS network drive. Trying every 10 seconds for 30 seconds.${CClear}"
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to mount to external NFS network drive. Please check your configuration. Exiting.${CClear}"
+                logger "BACKUPMON ERROR: Unable to mount to external NFS network drive. Please check your configuration!"
+                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external NFS network drive. Please check your configuration!" >> $LOGFILE
+                sendmessage 1 "Unable to mount network drive"
+                echo -e "\n"
+                exit 1
+              fi
+            fi
+          done
+      fi
+
+      if [ "$BACKUPMEDIA" == "USB" ]; then
+        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
       fi
   fi
   
