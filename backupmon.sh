@@ -443,7 +443,7 @@ vconfig () {
               echo -e "${CCyan}attached to your sda1 partition should be selected. Should there be only one"
               echo -e "${CCyan}mount point available, it will be automatically selected."
               printf "${CYellow}Recommended Mount Point = ${CClear}"
-              _GetDefaultUSBMountPoint_
+              _GetDefaultMountPoint_ USBmp
               USBSOURCE="TRUE"
               _GetMountPoint_ "Select an EXT USB Drive Mount Point: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -1796,7 +1796,28 @@ _GetDefaultUSBMountPoint_()
    echo "$mounPointPath" ; return "$retCode"
 }
 
-# -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2024-Mar-18] ##
+##----------------------------------------##
+_GetDefaultMountPoint_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ] || \
+      { [ "$1" != "USBmp" ] && [ "$1" != "NFSmp" ] ; }
+   then echo "" ; return 1 ; fi
+
+   local mountPointRegExp  mounPointPath  retCode=0
+
+   case "$1" in
+       USBmp) mountPointRegExp="^/dev/sd.* /tmp/mnt/.*" ;;
+       NFSmp) mountPointRegExp="^[\]134[\]134.* /tmp/mnt/.*" ;;
+   esac
+
+   mounPointPath="$(grep -Em1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
+   [ -z "$mounPointPath" ] && retCode=1
+   echo "$mounPointPath" ; return "$retCode"
+}
+
+#-------------------------------------------------------------------------------------------------------------------------
 
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-03] ##
