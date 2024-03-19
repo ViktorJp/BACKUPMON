@@ -3790,6 +3790,9 @@ backup () {
       logger "BACKUPMON ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!"
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Failed to run Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
       sleep 3
+      sendmessage 1 "Unable to mount network drive"
+      echo -e "\n"
+      exit 1
 
   fi
 
@@ -4696,6 +4699,9 @@ secondary () {
       logger "BACKUPMON ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!"
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
       sleep 3
+      sendmessage 1 "Unable to mount network drive"
+      echo -e "\n"
+      exit 1
 
   fi
 
