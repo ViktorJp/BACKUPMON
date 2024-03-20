@@ -1674,7 +1674,7 @@ _GetMountPointSelectionIndex_()
 _GetMountPointSelection_()
 {
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
-      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)$"
+      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)[+]?"
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mountPointRegExp  mounPointCnt  mounPointVar=""  mounPointTmp=""
@@ -1683,13 +1683,19 @@ _GetMountPointSelection_()
    local NFSmpPrefix="${IPv4RegEx}:/mnt/.*"
    local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
 
+   mounPointPath=""
+
    case "$1" in
        USBmp) mountPointRegExp="^$USBmpPrefix /tmp/mnt/.*" ;;
        NFSmp) mountPointRegExp="^$NFSmpPrefix /tmp/mnt/.*" ;;
        SMBmp) mountPointRegExp="^$SMBmpPrefix /tmp/mnt/.*" ;;
+       "USBmp+NFSmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "NFSmp+SMBmp") mountPointRegExp="^($NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+NFSmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       *) return 1 ;;
    esac
 
-   mounPointPath=""
    mounPointCnt="$(mount | grep -Ec "$mountPointRegExp")"
    if [ "$mounPointCnt" -eq 0 ]
    then
@@ -1776,6 +1782,11 @@ _GetMountPoint_()
            NFSmp) mpType="NFS share" ;;
            SMBmp) mpType="CIFS/SMB share"
            USBmp) mpType="USB-attached drive" ;;
+           "USBmp+NFSmp") mpType="USB-attached drive or NFS share" ;;
+           "USBmp+SMBmp") mpType="USB-attached drive or CIFS/SMB share" ;;
+           "NFSmp+SMBmp") mpType="NFS share or CIFS/SMB share" ;;
+           "USBmp+NFSmp+SMBmp") mpType="USB-attached drive, NFS share, or CIFS/SMB share" ;;
+           *) mpType="UNKNOWN Parameter [$1]"
        esac
        printf "\nNo Mount Point for $mpType was selected.\n\n"
        return 1
@@ -1819,7 +1830,7 @@ _GetDefaultUSBMountPoint_()
 _GetDefaultMountPoint_()
 {
    if [ $# -eq 0 ] || [ -z "$1" ] || \
-      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)$"
+      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)[+]?"
    then echo "" ; return 1 ; fi
 
    local mountPointRegExp  mounPointPath  retCode=0
@@ -1832,6 +1843,11 @@ _GetDefaultMountPoint_()
        USBmp) mountPointRegExp="^$USBmpPrefix /tmp/mnt/.*" ;;
        NFSmp) mountPointRegExp="^$NFSmpPrefix /tmp/mnt/.*" ;;
        SMBmp) mountPointRegExp="^$SMBmpPrefix /tmp/mnt/.*" ;;
+       "USBmp+NFSmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "NFSmp+SMBmp") mountPointRegExp="^($NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+NFSmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       *) echo "" ; return 1 ;;
    esac
 
    mounPointPath="$(grep -Em1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
