@@ -1780,13 +1780,13 @@ _GetMountPoint_()
    then
        case "$1" in
            NFSmp) mpType="NFS share" ;;
-           SMBmp) mpType="CIFS/SMB share"
+           SMBmp) mpType="CIFS/SMB share" ;;
            USBmp) mpType="USB-attached drive" ;;
            "USBmp+NFSmp") mpType="USB-attached drive or NFS share" ;;
            "USBmp+SMBmp") mpType="USB-attached drive or CIFS/SMB share" ;;
            "NFSmp+SMBmp") mpType="NFS share or CIFS/SMB share" ;;
            "USBmp+NFSmp+SMBmp") mpType="USB-attached drive, NFS share, or CIFS/SMB share" ;;
-           *) mpType="UNKNOWN Parameter [$1]"
+           *) mpType="UNKNOWN Parameter [$1]" ;;
        esac
        printf "\nNo Mount Point for $mpType was selected.\n\n"
        return 1
