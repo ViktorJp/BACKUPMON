@@ -443,9 +443,9 @@ vconfig () {
               echo -e "${CCyan}attached to your sda1 partition should be selected. Should there be only one"
               echo -e "${CCyan}mount point available, it will be automatically selected."
               printf "${CYellow}Recommended Mount Point = ${CClear}"
-              _GetDefaultUSBMountPoint_
+              _GetDefaultMountPoint_ USBmp
               USBSOURCE="TRUE"
-              _GetMountPoint_ "Select an EXT USB Drive Mount Point: "
+              _GetMountPoint_ USBmp "Select an EXT USB Drive Mount Point: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
               checkusbexclusion
             ;;
@@ -580,7 +580,7 @@ vconfig () {
                 echo -e "${CCyan}available, it will be automatically selected. PLEASE NOTE: It is highly recommended"
                 echo -e "${CCyan}not to use the same USB drive to both be a SOURCE and TARGET for backups.${CClear}"
                 USBTARGET="TRUE"
-                _GetMountPoint_ "Select a Target USB Backup Drive Mount Point: "
+                _GetMountPoint_ USBmp "Select a Target USB Backup Drive Mount Point: "
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
                 checkusbexclusion
               fi
@@ -1056,7 +1056,7 @@ vconfig () {
                     3 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
                     4 ) echo ""; if [ "$SECONDARYPWD" == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
                     5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
-                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi; checkusbexclusion;;
+                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ USBmp "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi; checkusbexclusion;;
                     7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR; checkusbexclusion;;
                     8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION; if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then SECONDARYEXCLUSION="$PFEXCLUSION"; fi;;
                     9 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
@@ -1246,7 +1246,7 @@ while true; do
         2 ) echo ""; read -p 'Test Username: ' TESTUSER;;
         3 ) echo ""; read -rp 'Test Password: ' TESTPWD;;
         4 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
-        5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
+        5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ USBmp "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
         6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
         7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; elif [ "$TESTSMBVER" == "4" ]; then TESTSMBVER="3.0"; elif [ "$TESTSMBVER" == "5" ]; then TESTSMBVER="3.02"; else TESTSMBVER="2.1"; fi;;
         [Ee] ) break ;;
@@ -1669,18 +1669,34 @@ _GetMountPointSelectionIndex_()
 # -------------------------------------------------------------------------------------------------------------------------
 
 ##----------------------------------------##
-## Modified by Martinski W. [2023-Nov-08] ##
+## Modified by Martinski W. [2024-Mar-19] ##
 ##----------------------------------------##
 _GetMountPointSelection_()
 {
-   if [ $# -eq 0 ] || [ -z "$1" ]
+   if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
+      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)[+]?"
    then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
 
-   local mounPointCnt  mounPointVar=""  mounPointTmp=""
-   local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
+   local mountPointRegExp  mounPointCnt  mounPointVar=""  mounPointTmp=""
+   local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
+   local USBmpPrefix="/dev/sd.*"
+   local NFSmpPrefix="${IPv4RegEx}:/mnt/.*"
+   local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
 
    mounPointPath=""
-   mounPointCnt="$(mount | grep -c "$mountPointRegExp")"
+
+   case "$1" in
+       USBmp) mountPointRegExp="^$USBmpPrefix /tmp/mnt/.*" ;;
+       NFSmp) mountPointRegExp="^$NFSmpPrefix /tmp/mnt/.*" ;;
+       SMBmp) mountPointRegExp="^$SMBmpPrefix /tmp/mnt/.*" ;;
+       "USBmp+NFSmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "NFSmp+SMBmp") mountPointRegExp="^($NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+NFSmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       *) return 1 ;;
+   esac
+
+   mounPointCnt="$(mount | grep -Ec "$mountPointRegExp")"
    if [ "$mounPointCnt" -eq 0 ]
    then
        printf "\n${REDct}**ERROR**${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
@@ -1688,15 +1704,15 @@ _GetMountPointSelection_()
    fi
    if [ "$mounPointCnt" -eq 1 ]
    then
-       mounPointPath="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $3}')"
+       mounPointPath="$(mount | grep -E "$mountPointRegExp" | awk -F ' ' '{print $3}')"
        return 0
    fi
    local retCode=0  indexType  multiIndex=false  selectionIndex=0
 
-   if [ $# -lt 2 ] || [ "$2" != "-MULTIOK" ]
-   then indexType="" ; else indexType="$2" ; fi
+   if [ $# -lt 3 ] || [ "$3" != "-MULTIOK" ]
+   then indexType="" ; else indexType="$3" ; fi
 
-   printf "\n$1\n"
+   printf "\n${2}\n"
    mounPointCnt=0
    while IFS="$(printf '\n')" read -r mounPointInfo
    do
@@ -1706,7 +1722,7 @@ _GetMountPointSelection_()
        printf "${GRNct}%3d${NOct}. " "$mounPointCnt"
        eval echo "\$${mounPointVar}"
    done <<EOT
-$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
+$(mount | grep -E "$mountPointRegExp" | awk -F ' ' '{print $1,$2,$3,$4,$5}' | sort -dt ' ' -k 1)
 EOT
 
    echo
@@ -1720,7 +1736,7 @@ EOT
        then
            if [ "$selectionIndex" = "ALL" ]
            then
-               mounPointTmp="$(mount | grep "$mountPointRegExp" | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
+               mounPointTmp="$(mount | grep -E "$mountPointRegExp" | awk -F ' ' '{print $1,$3}' | sort -dt ' ' -k 1)"
                mounPointPath="$(echo "$mounPointTmp" | awk -F ' ' '{print $2}')"
                break
            fi
@@ -1751,16 +1767,28 @@ EOT
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
+##----------------------------------------##
+## Modified by Martinski W. [2024-Mar-19] ##
+##----------------------------------------##
 _GetMountPoint_()
 {
    local NOct="\033[0m"  REDct="\033[0;31m\033[1m"  GRNct="\033[1;32m\033[1m"
-   local mounPointPath=""
+   local mounPointPath=""  mpType
 
    _GetMountPointSelection_ "$@"
    if [ $? -gt 0 ] || [ -z "$mounPointPath" ]
    then
-       printf "\nNo Mount Points for USB-attached drives were selected.\n\n"
+       case "$1" in
+           NFSmp) mpType="NFS share" ;;
+           SMBmp) mpType="CIFS/SMB share" ;;
+           USBmp) mpType="USB-attached drive" ;;
+           "USBmp+NFSmp") mpType="USB-attached drive or NFS share" ;;
+           "USBmp+SMBmp") mpType="USB-attached drive or CIFS/SMB share" ;;
+           "NFSmp+SMBmp") mpType="NFS share or CIFS/SMB share" ;;
+           "USBmp+NFSmp+SMBmp") mpType="USB-attached drive, NFS share, or CIFS/SMB share" ;;
+           *) mpType="UNKNOWN Parameter [$1]" ;;
+       esac
+       printf "\nNo Mount Point for $mpType was selected.\n\n"
        return 1
    fi
 
@@ -1777,7 +1805,7 @@ _GetMountPoint_()
    elif [ "$TESTUSBTARGET" == "TRUE" ]; then
     TESTUNCDRIVE=$mounPointPath
    fi
-   
+
    USBSOURCE="FALSE"
    USBTARGET="FALSE"
    SECONDARYUSBTARGET="FALSE"
@@ -1796,7 +1824,38 @@ _GetDefaultUSBMountPoint_()
    echo "$mounPointPath" ; return "$retCode"
 }
 
-# -------------------------------------------------------------------------------------------------------------------------
+##----------------------------------------##
+## Modified by Martinski W. [2024-Mar-19] ##
+##----------------------------------------##
+_GetDefaultMountPoint_()
+{
+   if [ $# -eq 0 ] || [ -z "$1" ] || \
+      ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)[+]?"
+   then echo "" ; return 1 ; fi
+
+   local mountPointRegExp  mounPointPath  retCode=0
+   local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
+   local USBmpPrefix="/dev/sd.*"
+   local NFSmpPrefix="${IPv4RegEx}:/mnt/.*"
+   local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
+
+   case "$1" in
+       USBmp) mountPointRegExp="^$USBmpPrefix /tmp/mnt/.*" ;;
+       NFSmp) mountPointRegExp="^$NFSmpPrefix /tmp/mnt/.*" ;;
+       SMBmp) mountPointRegExp="^$SMBmpPrefix /tmp/mnt/.*" ;;
+       "USBmp+NFSmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "NFSmp+SMBmp") mountPointRegExp="^($NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       "USBmp+NFSmp+SMBmp") mountPointRegExp="^($USBmpPrefix|$NFSmpPrefix|$SMBmpPrefix) /tmp/mnt/.*" ;;
+       *) echo "" ; return 1 ;;
+   esac
+
+   mounPointPath="$(grep -Em1 "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $2}')"
+   [ -z "$mounPointPath" ] && retCode=1
+   echo "$mounPointPath" ; return "$retCode"
+}
+
+#-------------------------------------------------------------------------------------------------------------------------
 
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-03] ##
