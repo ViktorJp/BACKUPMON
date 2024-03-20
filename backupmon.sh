@@ -1669,7 +1669,7 @@ _GetMountPointSelectionIndex_()
 # -------------------------------------------------------------------------------------------------------------------------
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Mar-19] ##
+## Modified by Martinski W. [2024-Mar-20] ##
 ##----------------------------------------##
 _GetMountPointSelection_()
 {
@@ -1680,7 +1680,7 @@ _GetMountPointSelection_()
    local mountPointRegExp  mounPointCnt  mounPointVar=""  mounPointTmp=""
    local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
    local USBmpPrefix="/dev/sd.*"
-   local NFSmpPrefix="${IPv4RegEx}:/mnt/.*"
+   local NFSmpPrefix="${IPv4RegEx}:/.*"
    local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
 
    mounPointPath=""
@@ -1825,7 +1825,7 @@ _GetDefaultUSBMountPoint_()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Mar-19] ##
+## Modified by Martinski W. [2024-Mar-20] ##
 ##----------------------------------------##
 _GetDefaultMountPoint_()
 {
@@ -1836,7 +1836,7 @@ _GetDefaultMountPoint_()
    local mountPointRegExp  mounPointPath  retCode=0
    local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
    local USBmpPrefix="/dev/sd.*"
-   local NFSmpPrefix="${IPv4RegEx}:/mnt/.*"
+   local NFSmpPrefix="${IPv4RegEx}:/.*"
    local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
 
    case "$1" in
