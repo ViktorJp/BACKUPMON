@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.6.0b1 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.6.0b3 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.6.0b1"                                                # Current version
+Version="1.6.0b3"                                                # Current version
 Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -988,23 +988,33 @@ vconfig () {
                 echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Secondary Target Username          : ${CDkGray}$SECONDARYUSER"
                 if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
                 echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Secondary Target Password (ENC)    : ${CDkGray}$SECONDARYPWD"
-                if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
-                if [ "$SECONDARYUNCUPDATED" == "True" ]; then
-                  echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target UNC Path          : ${CDkGray}"; printf '%s' $SECONDARYUNC; printf "%s\n"
-                else
-                  echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target UNC Path          : ${CDkGray}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
-                fi
-              else
+                echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target Path              : N/A"
+              elif [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
                 if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
                 echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Secondary Target Username          : ${CGreen}$SECONDARYUSER"
                 if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
                 echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target Password (ENC)    : ${CGreen}$SECONDARYPWD"
-                if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="\\\\192.168.50.25\\Backups"; fi
-                if [ "$SECONDARYUNCUPDATED" == "True" ]; then
-                  echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+                if [ -z "$SECONDARYUNC" ]; then
+                  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
                 else
-                  echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target UNC Path          : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+                  if [ "$SECONDARYUNCUPDATED" == "True" ]; then
+                    echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+                  else
+                    echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+                  fi
                 fi
+              elif [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+                if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
+                echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Secondary Target Username          : ${CDkGray}$SECONDARYUSER"
+                if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
+                echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Secondary Target Password (ENC)    : ${CDkGray}$SECONDARYPWD"
+                if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="192.168.50.25:/Backups"; fi
+                echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}$SECONDARYUNC"
+              fi
+              if [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Secondary NFS Mount Options       : ${CGreen}$SECONDARYNFSMOUNTOPT"
+              else
+                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Secondary NFS Mount Options       : ${CDkGray}N/A"
               fi
               if [ "$SECONDARYUNCDRIVE" == "" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
                 echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
@@ -1051,19 +1061,114 @@ vconfig () {
               printf "Selection: ${CClear}"
               read -r SECONDARYINPUT
                   case $SECONDARYINPUT in
-                    1 ) echo ""; read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS;;
-                    2 ) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2): ' SECONDARYBACKUPMEDIA; if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; SECONDARYUNCDRIVE=""; elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; SECONDARYUNCDRIVE=""; else SECONDARYBACKUPMEDIA="Network"; fi;;
-                    3 ) echo ""; read -p 'Secondary Username: ' SECONDARYUSER;;
-                    4 ) echo ""; if [ "$SECONDARYPWD" == "admin" ]; then echo -e "Old Secondary Password (Unencoded): admin"; else echo -en "Old Secondary Password (Unencoded): "; echo $SECONDARYPWD | openssl enc -d -base64 -A; fi; echo ""; read -rp 'New Secondary Password: ' SECONDARYPWD1; if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`; else SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`; fi;;
-                    5 ) echo ""; read -rp 'Secondary Target UNC (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1; SECONDARYUNC="$SECONDARYUNC1"; SECONDARYUNCUPDATED="True";;
-                    6 ) echo ""; if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE; elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then SECONDARYUSBTARGET="TRUE"; _GetMountPoint_ USBmp "Select a Secondary Target USB Backup Drive Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi; checkusbexclusion;;
-                    7 ) echo ""; read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR; checkusbexclusion;;
-                    8 ) echo ""; read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION; if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then SECONDARYEXCLUSION="$PFEXCLUSION"; fi;;
-                    9 ) echo ""; read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY; SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}'); SECONDARYPURGE=0; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE; read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT; else SECONDARYPURGELIMIT=0; fi;;
-                    10 ) echo ""; read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE; if [ "$SECONDARYMODE" == "0" ]; then SECONDARYMODE="Basic"; elif [ "$SECONDARYMODE" == "1" ]; then SECONDARYMODE="Advanced"; else SECONDARYMODE="Basic"; fi; if [ "$SECONDARYFREQUENCY" == "P" ]; then SECONDARYMODE="Basic"; fi;;
+                    1) echo ""
+                        read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS
+                    ;;
+                    
+                    2) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2, Network-NFS=3): ' SECONDARYBACKUPMEDIA
+                        if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then
+                          SECONDARYBACKUPMEDIA="Network"
+                          SECONDARYUNCDRIVE=""
+                          SECONDARYUNC=""
+                        elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then 
+                          SECONDARYBACKUPMEDIA="USB"
+                          SECONDARYUNCDRIVE=""
+                        elif [ "$SECONDARYBACKUPMEDIA" == "3" ]; then 
+                          SECONDARYBACKUPMEDIA="Network-NFS"
+                          SECONDARYUNCDRIVE=""
+                          SECONDARYUNC="${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+                        else SECONDARYBACKUPMEDIA="Network"
+                        fi
+                    ;;
+                    
+                    3) echo ""
+                       read -p 'Secondary Username: ' SECONDARYUSER
+                    ;;
+                    
+                    4) echo ""
+                       if [ "$SECONDARYPWD" == "admin" ]; then
+                         echo -e "Old Secondary Password (Unencoded): admin"
+                       else
+                         echo -en "Old Secondary Password (Unencoded): "
+                         echo $SECONDARYPWD | openssl enc -d -base64 -A
+                       fi
+                       echo ""
+                       read -rp 'New Secondary Password: ' SECONDARYPWD1
+                       if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then 
+                         SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`
+                       else
+                         SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`
+                       fi
+                    ;;
+                    
+                    5) echo ""
+                       if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+                         read -rp 'Secondary Target UNC Path (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1
+                         SECONDARYUNC="$SECONDARYUNC1"
+                         SECONDARYUNCUPDATED="True"
+                       elif [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+                         read -rp 'Secondary Target NFS Path (ex: 192.168.50.25:/BACKUPS ): ' SECONDARYUNC1
+                         SECONDARYUNC="$SECONDARYUNC1"
+                         echo ""
+                         echo "Secondary NFS Mount Options (ex: nfsvers=3,nolock,_netdev,rsize=8192,wsize=8192)"
+                         read -rp '(Optional): ' SECONDARYNFSMOUNTOPT1
+                         SECONDARYNFSMOUNTOPT="$SECONDARYNFSMOUNTOPT1"
+                       fi
+                    ;;
+                    
+                    6) echo ""
+                       if [ "$SECONDARYBACKUPMEDIA" == "Network" ] || [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+                         read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE
+                       elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then 
+                         SECONDARYUSBTARGET="TRUE"
+                         _GetMountPoint_ USBmp "Select a Secondary Target USB Backup Drive Mount Point: "
+                         read -rsp $'Press any key to acknowledge...\n' -n1 key
+                       fi
+                       checkusbexclusion
+                    ;;
+                    
+                    7) echo ""
+                       read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR
+                       checkusbexclusion
+                    ;;
+                    
+                    8) echo ""
+                       read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION
+                       if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then
+                         SECONDARYEXCLUSION="$PFEXCLUSION"
+                       fi
+                    ;;
+                    
+                    9) echo ""
+                       read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
+                       SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}')
+                       SECONDARYPURGE=0
+                       if [ "$SECONDARYFREQUENCY" == "P" ]; then 
+                         SECONDARYMODE="Basic"
+                         read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE
+                         read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT
+                       else
+                         SECONDARYPURGELIMIT=0
+                       fi
+                    ;;
+                    
+                    10) echo ""
+                        read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE
+                        if [ "$SECONDARYMODE" == "0" ]; then
+                          SECONDARYMODE="Basic"
+                        elif [ "$SECONDARYMODE" == "1" ]; then
+                          SECONDARYMODE="Advanced"
+                        else 
+                          SECONDARYMODE="Basic"
+                        fi 
+                        if [ "$SECONDARYFREQUENCY" == "P" ]; then 
+                          SECONDARYMODE="Basic"
+                        fi
+                    ;;
+                    
                     [Ee] ) break ;;
-                    "" ) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
-                    * ) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
+                    "") echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
+                    *) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
                   esac
               done
             ;;
@@ -1105,6 +1210,7 @@ vconfig () {
                   echo 'SECONDARYUSER="'"$SECONDARYUSER"'"'
                   echo 'SECONDARYPWD="'"$SECONDARYPWD"'"'
                   echo 'SECONDARYUNC="'"$SECONDARYUNC"'"'
+                  echo 'SECONDARYNFSMOUNTOPT="'"$SECONDARYNFSMOUNTOPT"'"'
                   echo 'SECONDARYUNCDRIVE="'"$SECONDARYUNCDRIVE"'"'
                   echo 'SECONDARYBKDIR="'"$SECONDARYBKDIR"'"'
                   echo 'SECONDARYBACKUPMEDIA="'"$SECONDARYBACKUPMEDIA"'"'
@@ -1166,6 +1272,7 @@ vconfig () {
         echo 'SECONDARYUSER="admin"'
         echo 'SECONDARYPWD="admin"'
         echo 'SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"'
+        echo 'SECONDARYNFSMOUNTOPT=""'
         echo 'SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"'
         echo 'SECONDARYBKDIR="/router/GT-AX6000-2ndBackup"'
         echo 'SECONDARYBACKUPMEDIA="Network"'
@@ -1215,23 +1322,36 @@ while true; do
   if [ "$TESTBACKUPMEDIA" == "Network" ]; then
     echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Test Target Username                : ${CGreen}$TESTUSER"
     echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target Password                : ${CGreen}$TESTPWD"
-    if [ "$TESTUNCUPDATED" == "True" ]; then
-      echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
+    if [ -z "$TESTUNC" ]; then
+      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${InvRed}${CWhite}<-- Attention Needed${CClear}"
     else
-      echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+      if [ "$TESTUNCUPDATED" == "True" ]; then
+        echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
+      else
+        echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+      fi
     fi
   elif [ "$TESTBACKUPMEDIA" == "USB" ]; then
     echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CDkGray}: Test Target Username                : ${CDkGray}$TESTUSER"
     echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Test Target Password                : ${CDkGray}$TESTPWD"
-    if [ "$TESTUNCUPDATED" == "True" ]; then
-      echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}"; printf '%s' $TESTUNC; printf "%s\n"
-    else
-      echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
-    fi
+    echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}N/A"
+  elif [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
+    echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CDkGray}: Test Target Username                : ${CDkGray}$TESTUSER"
+    echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Test Target Password                : ${CDkGray}$TESTPWD"
+    echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target NFS Path                : ${CGreen}$TESTUNC"
+  fi
+  if [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
+    echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}- Test NFS Mount Options              : ${CGreen}$TESTNFSMOUNTOPT"
+  else
+    echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}- Test NFS Mount Options              : ${CDkGray}N/A"
   fi
   echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Backup Mount Point      : ${CGreen}$TESTUNCDRIVE"
   echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Test Target Dir Path                : ${CGreen}$TESTBKDIR"
-  echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Test CIFS/SMB Version               : ${CGreen}$TESTSMBVER"
+  if [ "$TESTBACKUPMEDIA" == "Network" ]; then
+    echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Test CIFS/SMB Version               : ${CGreen}$TESTSMBVER"
+  else
+    echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CDkGray}: Test CIFS/SMB Version               : N/A"
+  fi  
   echo -e "${InvDkGray}${CWhite} |  ${CClear}"
   echo -e "${InvDkGray}${CWhite} t  ${CClear}${CCyan}: Test your Network Backup Connection"
   echo -e "${InvDkGray}${CWhite} p  ${CClear}${CCyan}: Import your Primary Backup Settings"
@@ -1242,17 +1362,103 @@ while true; do
   printf "Selection: ${CClear}"
   read -r TESTINPUT
       case $TESTINPUT in
-        1 ) echo ""; read -p 'Test Target Media Type (ex: Network=1 / USB=2) (Choose 1 or 2): ' TESTBACKUPMEDIA; if [ "$TESTBACKUPMEDIA" == "1" ]; then TESTBACKUPMEDIA="Network"; elif [ "$TESTBACKUPMEDIA" == "2" ]; then TESTBACKUPMEDIA="USB"; else TESTBACKUPMEDIA="Network"; fi;;
-        2 ) echo ""; read -p 'Test Username: ' TESTUSER;;
-        3 ) echo ""; read -rp 'Test Password: ' TESTPWD;;
-        4 ) echo ""; read -rp 'Test Target UNC (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1; if [ -z $TESTUNC1 ]; then TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"; else TESTUNC="$TESTUNC1"; fi; TESTUNCUPDATED="True";;
-        5 ) echo ""; if [ "$TESTBACKUPMEDIA" == "Network" ]; then read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE; elif [ "$TESTBACKUPMEDIA" == "USB" ]; then TESTUSBTARGET="TRUE"; _GetMountPoint_ USBmp "Select a Test Target USB Backup Mount Point: "; read -rsp $'Press any key to acknowledge...\n' -n1 key; fi;;
-        6 ) echo ""; read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR;;
-        7 ) echo ""; read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER; if [ "$TESTSMBVER" == "1" ]; then TESTSMBVER="2.1"; elif [ "$TESTSMBVER" == "2" ]; then TESTSMBVER="2.0"; elif [ "$TESTSMBVER" == "3" ]; then TESTSMBVER="1.0"; elif [ "$TESTSMBVER" == "4" ]; then TESTSMBVER="3.0"; elif [ "$TESTSMBVER" == "5" ]; then TESTSMBVER="3.02"; else TESTSMBVER="2.1"; fi;;
-        [Ee] ) break ;;
-        [Pp] ) TESTUSER=$BTUSERNAME; TESTPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A); TESTUNC=$UNC; TESTUNCDRIVE=$UNCDRIVE; TESTBKDIR=$BKDIR; TESTBACKUPMEDIA=$BACKUPMEDIA; TESTSMBVER=$SMBVER;;
-        [Ss] ) TESTUSER=$SECONDARYUSER; TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A); TESTUNC=$SECONDARYUNC; TESTUNCDRIVE=$SECONDARYUNCDRIVE; TESTBKDIR=$SECONDARYBKDIR; TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA; TESTSMBVER=$SMBVER;;
-        [Tt] )  # Connection test script
+        1) echo ""
+           read -p 'Test Target Media Type (ex: Network=1 / USB=2 / Network-NFS=3) (Choose 1, 2 or 3): ' TESTBACKUPMEDIA
+           if [ "$TESTBACKUPMEDIA" == "1" ]; then 
+             TESTBACKUPMEDIA="Network"
+             TESTUNC=""
+           elif [ "$TESTBACKUPMEDIA" == "2" ]; then
+             TESTBACKUPMEDIA="USB"
+             TESTUNC=""
+           elif [ "$TESTBACKUPMEDIA" == "3" ]; then
+             TESTBACKUPMEDIA="Network-NFS"
+             TESTUNC="${InvRed}${CWhite}<-- Attention Needed${CClear}"
+           else 
+             TESTBACKUPMEDIA="Network"
+           fi
+        ;;
+        
+        2) echo ""
+           read -p 'Test Username: ' TESTUSER
+        ;;
+        
+        3) echo ""
+           read -rp 'Test Password: ' TESTPWD
+        ;;
+        
+        4) echo ""
+           if [ "$TESTBACKUPMEDIA" == "Network" ]; then 
+             read -rp 'Test Target UNC Path (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1
+             if [ -z $TESTUNC1 ]; then 
+               TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"
+             else 
+               TESTUNC="$TESTUNC1"
+             fi
+             TESTUNCUPDATED="True"
+           elif [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then 
+             read -rp 'Test Target NFS Path (ex: 192.168.50.25:/BACKUPS ): ' TESTUNC1
+             if [ -z $TESTUNC1 ]; then 
+               TESTUNC="192.168.50.25:/BACKUPS"
+             else 
+               TESTUNC="$TESTUNC1"
+             fi
+           fi
+        ;;
+        
+        5) echo ""
+           if [ "$TESTBACKUPMEDIA" == "Network" ] || [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then 
+           	 read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE
+           elif [ "$TESTBACKUPMEDIA" == "USB" ]; then 
+             TESTUSBTARGET="TRUE"
+             _GetMountPoint_ USBmp "Select a Test Target USB Backup Mount Point: "
+             read -rsp $'Press any key to acknowledge...\n' -n1 key
+           fi
+        ;;
+        
+        6) echo ""
+           read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR
+        ;;
+        
+        7) echo ""
+           read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER
+           if [ "$TESTSMBVER" == "1" ]; then 
+             TESTSMBVER="2.1"
+           elif [ "$TESTSMBVER" == "2" ]; then 
+             TESTSMBVER="2.0"
+           elif [ "$TESTSMBVER" == "3" ]; then
+             TESTSMBVER="1.0"
+           elif [ "$TESTSMBVER" == "4" ]; then 
+             TESTSMBVER="3.0"
+           elif [ "$TESTSMBVER" == "5" ]; then 
+             TESTSMBVER="3.02"
+           else 
+             TESTSMBVER="2.1"
+           fi
+        ;;
+        
+        [Ee]) break ;;
+        
+        [Pp]) TESTUSER=$BTUSERNAME
+              TESTPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
+              TESTUNC=$UNC
+              TESTUNCDRIVE=$UNCDRIVE
+              TESTBKDIR=$BKDIR
+              TESTBACKUPMEDIA=$BACKUPMEDIA
+              TESTSMBVER=$SMBVER
+              TESTNFSMOUNTOPT=$NFSMOUNTOPT
+        ;;
+        
+        [Ss]) TESTUSER=$SECONDARYUSER
+              TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+              TESTUNC=$SECONDARYUNC
+              TESTUNCDRIVE=$SECONDARYUNCDRIVE
+              TESTBKDIR=$SECONDARYBKDIR
+              TESTBACKUPMEDIA=$SECONDARYBACKUPMEDIA
+              TESTSMBVER=$SMBVER
+              TESTNFSMOUNTOPT=$SECONDARYNFSMOUNTOPT
+        ;;
+        
+        [Tt])   # Connection test script
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
                 echo -e "${CCyan}Messages:${CClear}"
@@ -1293,14 +1499,12 @@ while true; do
                 # If everything successfully was created, proceed
                 if ! mount | grep $TESTUNCDRIVE > /dev/null 2>&1; then
 
+                  if [ "$TESTBACKUPMEDIA" == "Network" ]; then
                     # Check the build to see if modprobe needs to be called
                     if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
                       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
                     fi
 
-                    if [ "$TESTBACKUPMEDIA" == "USB" ]; then
-                      echo -en "${CGreen}STATUS: External test drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-                    else
                       CNT=0
                       TRIES=3
                         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
@@ -1319,7 +1523,40 @@ while true; do
                             fi
                           fi
                         done
-                    fi
+                  fi
+                  
+                  if [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
+                    # Check the build to see if modprobe needs to be called
+                    modprobe nfs nfsv3 > /dev/null
+
+                      CNT=0
+                      TRIES=3
+                        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+                          if [ -z "$TESTNFSMOUNTOPT" ]; then
+                            mount -t nfs $TESTUNC $TESTUNCDRIVE
+                          else
+                            mount -t nfs $TESTUNC $TESTUNCDRIVE -o "$TESTNFSMOUNTOPT"
+                          fi
+                          MRC=$?
+                          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+                            break
+                          else
+                            echo -e "${CYellow}WARNING: Unable to mount to external NFS network drive. Retrying...${CClear}"
+                            sleep 5
+                            CNT=$((CNT+1))
+                            if [ $CNT -eq $TRIES ];then
+                              echo -e "${CRed}ERROR: Unable to mount to external NFS network drive ($TESTUNCDRIVE). Please check your configuration. Exiting.${CClear}"
+                              FAILURE="TRUE"
+                              break
+                            fi
+                          fi
+                        done
+                  fi
+                    
+                  if [ "$TESTBACKUPMEDIA" == "USB" ]; then
+                  echo -en "${CGreen}STATUS: External test drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+                  fi
+                
                 fi
 
                 if [ "$FAILURE" == "TRUE" ]; then
@@ -1880,7 +2117,7 @@ _CheckForMountPointAndVolumeLabel_()
    [ -z "$mounPointPaths" ] && echo "" && return 1
 
    nvramLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
-   blkidLabels="$(blkid $mounPointDevSD | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')"
+ blkidLabels="$(blkid $mounPointDevSD | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')" #'Fix
    { [ -z "$blkidLabels" ] && [ -z "$nvramLabels" ] ; } && echo "" && return 1
 
    theLabel=""
@@ -2165,6 +2402,160 @@ fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# mountprimary is a function checks for a mounted primary drive, if not, mounts it...
+
+mountprimary () {
+
+    # If everything successfully was created, proceed
+    if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
+
+      if [ "$BACKUPMEDIA" == "Network" ]; then
+        # Check the build to see if modprobe needs to be called
+        if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+          modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+        fi
+        
+        CNT=0
+        TRIES=3
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            UNENCPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
+            mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${BTUSERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
+            MRC=$?
+            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to mount to external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to mount to external network drive. Please check your configuration. Exiting.${CClear}"
+                logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
+                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
+                sendmessage 1 "Unable to mount network drive"
+                echo -e "\n"
+                exit 1
+              fi
+            fi
+          done
+      fi
+      
+      if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+        modprobe nfs nfsv3 > /dev/null
+          
+        CNT=0
+        TRIES=3
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            if [ -z "$NFSMOUNTOPT" ]; then
+              mount -t nfs $UNC $UNCDRIVE
+            else
+              mount -t nfs $UNC $UNCDRIVE -o "$NFSMOUNTOPT"
+            fi
+            MRC=$?
+            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to mount to external NFS network drive. Trying every 10 seconds for 30 seconds.${CClear}"
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to mount to external NFS network drive. Please check your configuration. Exiting.${CClear}"
+                logger "BACKUPMON ERROR: Unable to mount to external NFS network drive. Please check your configuration!"
+                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external NFS network drive. Please check your configuration!" >> $LOGFILE
+                sendmessage 1 "Unable to mount network drive"
+                echo -e "\n"
+                exit 1
+              fi
+            fi
+          done
+      fi
+
+      if [ "$BACKUPMEDIA" == "USB" ]; then
+        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
+      fi
+
+    fi
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# mountsecondary is a function checks for a mounted secondary drive, if not, mounts it...
+
+mountsecondary () {
+
+    # If everything successfully was created, proceed
+    if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
+
+      if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+        # Check the build to see if modprobe needs to be called
+        if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
+          modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
+        fi
+
+        CNT=0
+        TRIES=3
+          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+            UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
+            mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
+            MRC=$?
+            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+              break
+            else
+              echo -e "${CYellow}WARNING: Unable to mount to secondary external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
+              sleep 10
+              CNT=$((CNT+1))
+              if [ $CNT -eq $TRIES ];then
+                echo -e "${CRed}ERROR: Unable to mount to secondary external network drive. Please check your configuration. Exiting.${CClear}"
+                logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
+                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
+                sendmessage 1 "Unable to mount secondary network drive"
+                echo -e "\n"
+                exit 1
+              fi
+            fi
+          done
+      fi
+  
+      if [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+        modprobe nfs nfsv3 > /dev/null
+          
+        CNT=0
+        TRIES=3
+        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
+          if [ -z "$NFSMOUNTOPT" ]; then
+            mount -t nfs $SECONDARYUNC $SECONDARYUNCDRIVE
+          else
+            mount -t nfs $SECONDARYUNC $SECONDARYUNCDRIVE -o "$NFSMOUNTOPT"
+          fi
+          MRC=$?
+          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
+            break
+          else
+            echo -e "${CYellow}WARNING: Unable to mount to secondary external NFS network drive. Trying every 10 seconds for 30 seconds.${CClear}"
+            sleep 10
+            CNT=$((CNT+1))
+            if [ $CNT -eq $TRIES ];then
+              echo -e "${CRed}ERROR: Unable to mount to secondary external NFS network drive. Please check your configuration. Exiting.${CClear}"
+              logger "BACKUPMON ERROR: Unable to mount to secondaryexternal NFS network drive. Please check your configuration!"
+              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external NFS network drive. Please check your configuration!" >> $LOGFILE
+              sendmessage 1 "Unable to mount secondary network drive"
+              echo -e "\n"
+              exit 1
+            fi
+          fi
+        done
+      fi
+
+      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+        echo -en "${CGreen}STATUS: Secondary external drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external drive (USB) skipping mounting process." >> $LOGFILE
+      fi
+
+    fi
+
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
 
 # purgebackups is a function that allows you to see which backups will be purged before deleting them...
 purgebackups () {
@@ -2197,47 +2588,8 @@ purgebackups () {
         sleep 3
     fi
 
-    # If the mount does not exist yet, proceed
-    if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
-
-      # Check if the build supports modprobe
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      # Mount the local backup drive directory to the UNC
-      if [ "$BACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
-      else
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
-            mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${BTUSERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-              printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External network drive ( ${UNC} ) mounted successfully under: $UNCDRIVE" >> $LOGFILE
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-      sleep 2
-    fi
-
+    mountprimary
+    
     # If the UNC is successfully mounted, proceed
     if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
@@ -2340,46 +2692,7 @@ autopurge () {
       sleep 3
   fi
 
-  # If the mount does not exist yet, proceed
-  if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
-
-    # Check if the build supports modprobe
-    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-    fi
-
-    # Mount the local backup drive directory to the UNC
-    if [ "$BACKUPMEDIA" == "USB" ]; then
-      echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
-    else
-      CNT=0
-      TRIES=3
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
-          mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${BTUSERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-            printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External network drive ( ${UNC} ) mounted successfully under: $UNCDRIVE" >> $LOGFILE
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to external network drive. Please check your configuration. Exiting.${CClear}"
-              logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
-              sendmessage 1 "Unable to mount network drive"
-              echo -e "\n"
-              exit 1
-            fi
-          fi
-        done
-    fi
-    sleep 2
-  fi
+  mountprimary
 
   # If the UNC is successfully mounted, proceed
   if [ -n "`mount | grep $UNCDRIVE`" ]; then
@@ -2462,46 +2775,7 @@ purgesecondaries () {
         sleep 3
     fi
 
-    # If the mount does not exist yet, proceed
-    if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
-
-      # Check if the build supports modprobe
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      # Mount the local backup drive directory to the UNC
-      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: Secondary external drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external drive (USB) skipping mounting process." >> $LOGFILE
-      else
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-            mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
-              printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external network drive ( ${SECONDARYUNC} ) mounted successfully under: $SECONDARYUNCDRIVE" >> $LOGFILE
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to secondary external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to secondary external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount secondary network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-      sleep 2
-    fi
+    mountsecondary
 
     # If the UNC is successfully mounted, proceed
     if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
@@ -2609,46 +2883,7 @@ autopurgesecondaries () {
       sleep 3
   fi
 
-  # If the mount does not exist yet, proceed
-  if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
-
-    # Check if the build supports modprobe
-    if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-      modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-    fi
-
-    # Mount the local backup drive directory to the UNC
-    if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
-      echo -en "${CGreen}STATUS: Secondary External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary External drive (USB) skipping mounting process." >> $LOGFILE
-    else  
-      CNT=0
-      TRIES=3
-        while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-          UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-          mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-          MRC=$?
-          if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-            echo -en "${CGreen}STATUS: Secondary external network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
-            printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external network drive ( ${SECONDARYUNC} ) mounted successfully under: $SECONDARYUNCDRIVE" >> $LOGFILE
-            break
-          else
-            echo -e "${CYellow}WARNING: Unable to mount to secondary external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-            sleep 10
-            CNT=$((CNT+1))
-            if [ $CNT -eq $TRIES ];then
-              echo -e "${CRed}ERROR: Unable to mount to secondary external network drive. Please check your configuration. Exiting.${CClear}"
-              logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
-              echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
-              sendmessage 1 "Unable to mount secondary network drive"
-              echo -e "\n"
-              exit 1
-            fi
-          fi
-        done
-    fi
-    sleep 2
-  fi
+  mountsecondary
 
   # If the UNC is successfully mounted, proceed
   if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
@@ -2947,75 +3182,8 @@ backup () {
     excludeswap
   fi
 
-  # If everything successfully was created, proceed
-  if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
- 
-      if [ "$BACKUPMEDIA" == "Network" ]; then
-        # Check the build to see if modprobe needs to be called
-        if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-          modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-        fi
-        
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
-            mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${BTUSERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-      
-      if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
-        modprobe nfs nfsv3 > /dev/null
-          
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            if [ -z "$NFSMOUNTOPT" ]; then
-              mount -t nfs $UNC $UNCDRIVE
-            else
-              mount -t nfs $UNC $UNCDRIVE -o "$NFSMOUNTOPT"
-            fi
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to external NFS network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to external NFS network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to external NFS network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external NFS network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
+  mountprimary
 
-      if [ "$BACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
-      fi
-  fi
-  
   # Check to see if EXT USB is backing up to EXT USB
   if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
     BKDIREXCL=$(echo $BKDIR | sed 's/^.\{1\}//')
@@ -3886,42 +4054,7 @@ secondary () {
     excludeswap
   fi
 
-  # If everything successfully was created, proceed
-  if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
-
-      # Check the build to see if modprobe needs to be called
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: Secondary external drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external drive (USB) skipping mounting process." >> $LOGFILE
-      else
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-            mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to secondary external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to secondary external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount secondary network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-  fi
+  mountsecondary
 
   # Check to see if EXT USB is backing up to EXT USB
   if [ "$EXTDRIVE" == "$SECONDARYUNCDRIVE" ]; then
@@ -4824,46 +4957,7 @@ restore () {
         sleep 3
     fi
 
-    # If the mount does not exist yet, proceed
-    if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
-
-      # Check if the build supports modprobe
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      # Mount the local backup drive directory to the UNC
-      if [ "$BACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: External drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External drive (USB) skipping mounting process." >> $LOGFILE
-      else
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
-            mount -t cifs $UNC $UNCDRIVE -o "vers=${SMBVER},username=${BTUSERNAME},password=${UNENCPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
-              printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External network drive ( ${UNC} ) mounted successfully under: $UNCDRIVE" >> $LOGFILE
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount secondary network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-      sleep 2
-    fi
+    mountprimary
 
     # If the UNC is successfully mounted, proceed
     if [ -n "`mount | grep $UNCDRIVE`" ]; then
@@ -5197,46 +5291,7 @@ restore () {
         sleep 3
     fi
 
-    # If the mount does not exist yet, proceed
-    if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
-
-      # Check if the build supports modprobe
-      if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
-        modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-      fi
-
-      # Mount the local backup drive directory to the Secondary UNC
-      if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
-        echo -en "${CGreen}STATUS: Secondary external drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external drive (USB) skipping mounting process." >> $LOGFILE
-      else
-        CNT=0
-        TRIES=3
-          while [ $CNT -lt $TRIES ]; do # Loop through number of tries
-            UNENCSECPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
-            mount -t cifs $SECONDARYUNC $SECONDARYUNCDRIVE -o "vers=${SMBVER},username=${SECONDARYUSER},password=${UNENCSECPWD}"  # Connect the UNC to the local backup drive mount
-            MRC=$?
-            if [ $MRC -eq 0 ]; then  # If mount come back successful, then proceed
-              echo -en "${CGreen}STATUS: External secondary network drive ("; printf "%s" "${SECONDARYUNC}"; echo -en ") mounted successfully under: $SECONDARYUNCDRIVE ${CClear}"; printf "%s\n"
-              printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External secondary network drive ( ${SECONDARYUNC} ) mounted successfully under: $SECONDARYUNCDRIVE" >> $LOGFILE
-              break
-            else
-              echo -e "${CYellow}WARNING: Unable to mount to secondary external network drive. Trying every 10 seconds for 30 seconds.${CClear}"
-              sleep 10
-              CNT=$((CNT+1))
-              if [ $CNT -eq $TRIES ];then
-                echo -e "${CRed}ERROR: Unable to mount to secondary external network drive. Please check your configuration. Exiting.${CClear}"
-                logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
-                sendmessage 1 "Unable to mount secondary network drive"
-                echo -e "\n"
-                exit 1
-              fi
-            fi
-          done
-      fi
-      sleep 2
-    fi
+    mountsecondary
 
     # If the UNC is successfully mounted, proceed
     if [ -n "`mount | grep $SECONDARYUNCDRIVE`" ]; then
@@ -5280,7 +5335,7 @@ restore () {
                 else
                   ok=1
                 fi
-              elif [ $FREQUENCY == "M" ]; then
+              elif [ $SECONDARYFREQUENCY == "M" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
@@ -5290,7 +5345,7 @@ restore () {
                 else
                   ok=1
                 fi
-              elif [ $FREQUENCY == "Y" ]; then
+              elif [ $SECONDARYFREQUENCY == "Y" ]; then
                 echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
@@ -5300,7 +5355,7 @@ restore () {
                 else
                   ok=1
                 fi
-              elif [ $FREQUENCY == "P" ]; then
+              elif [ $SECONDARYFREQUENCY == "P" ]; then
                 echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
