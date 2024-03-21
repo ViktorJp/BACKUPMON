@@ -1,3 +1,15 @@
+v1.6.X  - (TBA)
+        - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
+          standard CIFS/SMB methods of transferring data across a network to a network share to safely store
+          your router backup in case of need! All necessary changes to the config menu have been considered
+          in order to handle NFS. When choosing NFS, an additional field will become available that allows
+          you to enter "NFS Mount Options". Understanding that different NFS implementations may require
+          special mount options/switches, this field allows you to customize your connection based on your
+          needs. Also huge thanks to @Martinski for revamping his mount point selector functionality in order
+          to handle USB, CIFS/SMB and NFS mount points if they exist.
+        - PATCH: Found some variable name mismatches under the restore -> secondary backups logic that was 
+          looking at variables for the primary backups. This has been fixed!
+
 v1.5.14 - (March 15, 2024)
         - PATCH: Thanks to @Martinski, he contributed some code to allow for the sorting of the directories
           when going through a restore, and are now being sorted in date order (instead of folder name order).
