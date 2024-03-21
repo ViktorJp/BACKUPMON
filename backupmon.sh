@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.6.0b3 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.6.0b4 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.6.0b3"                                                # Current version
+Version="1.6.0b4"                                                # Current version
 Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -33,6 +33,7 @@ UpdateNotify=0                                                  # Tracking wheth
 BSWITCH="False"                                                 # Tracking -backup switch to eliminate timer
 USBSOURCE="FALSE"                                               # Tracking switch
 USBTARGET="FALSE"                                               # Tracking switch
+SMBTARGET="FALSE"                                               # Tracking switch
 SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
 TESTUSBTARGET="FALSE"                                           # Tracking switch
 
@@ -562,8 +563,11 @@ vconfig () {
                 echo -e "${CCyan}path by using single forward slashes between directories. Example below:"
                 echo -e "${CYellow}(Default = /tmp/mnt/backups)"
                 echo -e "${CClear}"
-                read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
-                if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
+                #read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
+                #if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
+                SMBTARGET="TRUE"
+                _GetMountPoint_ SMBmp "Select an existing Target CIFS/SMB Backup Drive Mount Point: "
+                read -rsp $'Press any key to acknowledge...\n' -n1 key
                 if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
                   UNCDRIVE=""
                   echo ""
@@ -1402,6 +1406,9 @@ while true; do
              else 
                TESTUNC="$TESTUNC1"
              fi
+             echo ""
+             echo "Optional NFS Mount Options? (Example: nfsvers=3,nolock,_netdev,rsize=8192,wsize=8192)"
+             read -rp 'NFS Mount Options: ' TESTNFSMOUNTOPT
            fi
         ;;
         
@@ -1569,8 +1576,26 @@ while true; do
                     echo -en "${CGreen}STATUS: External test drive ("; printf "%s" "${TESTUNC}"; echo -en ") mounted successfully under: ${CYellow}$TESTUNCDRIVE ${CClear}"; printf "%s\n"
 
                     # Create the backup directories and daily directories if they do not exist yet
-                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}" ]; then mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}"; echo -e "${CGreen}STATUS: Test Backup Directory successfully created under: ${CYellow}$TESTBKDIR${CClear}"; fi
-                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}/test" ]; then mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}/test"; echo -e "${CGreen}STATUS: Daily Test Backup Subdirectory successfully created under: ${CYellow}$TESTBKDIR/test${CClear}";fi
+                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}" ]; then
+                      mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}"
+                      MKD=$?
+                      if [ $MKD -eq 0 ]; then
+                        echo -e "${CGreen}STATUS: Test Backup Directory successfully created under: ${CYellow}$TESTBKDIR${CClear}"
+                      else
+                        echo -e "${CRed}ERROR: Test Backup Directory unable to be created under: ${CYellow}$TESTBKDIR${CClear}"
+                        read -rsp $'Press any key to acknowledge...\n' -n1 key
+                      fi
+                    fi
+                    if ! [ -d "${TESTUNCDRIVE}${TESTBKDIR}/test" ]; then
+                      mkdir -p "${TESTUNCDRIVE}${TESTBKDIR}/test"
+                      MKD=$?
+                      if [ $MKD -eq 0 ]; then
+                        echo -e "${CGreen}STATUS: Daily Test Backup Subdirectory successfully created under: ${CYellow}$TESTBKDIR/test${CClear}"
+                      else
+                        echo -e "${CRed}ERROR: Daily Test Backup Subdirectory unable to be created under: ${CYellow}$TESTBKDIR/test${CClear}"
+                        read -rsp $'Press any key to acknowledge...\n' -n1 key
+                      fi                   
+                    fi
 
                     #include restore instructions in the backup location
                     { echo 'TEST FILE'
@@ -1579,7 +1604,12 @@ while true; do
                       echo ''
                       echo 'Please delete this file and associated test directories at your convenience'
                     } > ${TESTUNCDRIVE}${TESTBKDIR}/Test/testfile.txt
-                    echo -e "${CGreen}STATUS: Finished copying ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    TST=$?
+                    if [ $TST -eq 0 ]; then
+                      echo -e "${CGreen}STATUS: Finished copying ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    else
+                      echo -e "${CRed}ERROR: Unable to copy ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    fi
                     echo -e "${CGreen}STATUS: Settling for 10 seconds..."
                     sleep 10
 
@@ -1918,7 +1948,7 @@ _GetMountPointSelection_()
    local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
    local USBmpPrefix="/dev/sd.*"
    local NFSmpPrefix="${IPv4RegEx}:/.*"
-   local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
+   local SMBmpPrefix="[\][\]${IPv4RegEx}[\].*"
 
    mounPointPath=""
 
@@ -2033,20 +2063,26 @@ _GetMountPoint_()
 
    ## Do whatever you need to do with value of "$mounPointPath" ##
    if [ "$USBSOURCE" == "TRUE" ]; then
-    EXTDRIVE=$mounPointPath
-    EXTLABEL=$(echo "${mounPointPath##*/}")
+     EXTDRIVE=$mounPointPath
+     EXTLABEL=$(echo "${mounPointPath##*/}")
    elif [ "$USBTARGET" == "TRUE" ]; then
-    UNCDRIVE=$mounPointPath
+     UNCDRIVE=$mounPointPath
    elif [ "$SECONDARYUSBTARGET" == "TRUE" ]; then
-    SECONDARYUNCDRIVE=$mounPointPath
+     SECONDARYUNCDRIVE=$mounPointPath
    elif [ "$TESTUSBTARGET" == "TRUE" ]; then
-    TESTUNCDRIVE=$mounPointPath
+     TESTUNCDRIVE=$mounPointPath
    fi
 
    USBSOURCE="FALSE"
    USBTARGET="FALSE"
    SECONDARYUSBTARGET="FALSE"
    TESTUSBTARGET="FALSE"
+   
+   if [ "$SMBTARGET" == "TRUE" ]; then
+     UNCDRIVE=$mounPointPath
+   fi
+   
+   SMBTARGET="FALSE"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2074,7 +2110,7 @@ _GetDefaultMountPoint_()
    local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
    local USBmpPrefix="/dev/sd.*"
    local NFSmpPrefix="${IPv4RegEx}:/.*"
-   local SMBmpPrefix="[\]134[\]134${IPv4RegEx}[\]134.*"
+   local SMBmpPrefix="[\][\]${IPv4RegEx}[\].*"
 
    case "$1" in
        USBmp) mountPointRegExp="^$USBmpPrefix /tmp/mnt/.*" ;;
@@ -2117,7 +2153,7 @@ _CheckForMountPointAndVolumeLabel_()
    [ -z "$mounPointPaths" ] && echo "" && return 1
 
    nvramLabels="$(nvram show 2>/dev/null | grep -E "^usb_path_sd[a-z][0-9]_label=" | sort -dt '_' -k 3 | awk -F '=' '{print $2}')"
- blkidLabels="$(blkid $mounPointDevSD | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')" #'Fix
+   blkidLabels="$(blkid $mounPointDevSD | grep "^/dev/sd.*: LABEL=" | sort -dt ':' -k 1 | awk -F ' ' '{print $2}' | awk -F '"' '{print $2}')" #'Fix
    { [ -z "$blkidLabels" ] && [ -z "$nvramLabels" ] ; } && echo "" && return 1
 
    theLabel=""
@@ -3017,7 +3053,6 @@ vsetup () {
 
           bk)
             clear
-            #sh /jffs/scripts/backupmon.sh -backup
             if [ "$UpdateNotify" == "0" ]; then
               echo -e "${CGreen}BACKUPMON v$Version"
             else
