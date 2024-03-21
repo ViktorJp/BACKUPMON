@@ -1,7 +1,7 @@
 v1.6.X  - (TBA)
         - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
           standard CIFS/SMB methods of transferring data across a network to a network share to safely store
-          your router backup in case of need! All necessary changes to the config menu have been considered
+          your router backups in case of need! All necessary changes to the config menu have been considered
           in order to handle NFS. When choosing NFS, an additional field will become available that allows
           you to enter "NFS Mount Options". Understanding that different NFS implementations may require
           special mount options/switches, this field allows you to customize your connection based on your
