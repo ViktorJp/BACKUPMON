@@ -1603,7 +1603,7 @@ while true; do
                       echo 'This is a test file created to ensure you have proper read/write access to your backup directory.'
                       echo ''
                       echo 'Please delete this file and associated test directories at your convenience'
-                    } > ${TESTUNCDRIVE}${TESTBKDIR}/Test/testfile.txt
+                    } > ${TESTUNCDRIVE}${TESTBKDIR}/test/testfile.txt
                     TST=$?
                     if [ $TST -eq 0 ]; then
                       echo -e "${CGreen}STATUS: Finished copying ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
