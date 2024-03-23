@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.6.0b4 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.6.0b5 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.6.0b4"                                                # Current version
+Version="1.6.0b5"                                                # Current version
 Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -280,79 +280,86 @@ vconfig () {
 
     while true; do
       clear
-      logoNM     
-      echo ""
-      echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${CGreen}Primary Backup Configuration Options"
-      echo -e "${CGreen}----------------------------------------------------------------"
-      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Model                : "${CGreen}$ROUTERMODEL
-      echo -e "${InvDkGray}${CWhite}    ${CClear}${CCyan}: Source Router Firmware/Build       : "${CGreen}$FWBUILD
-      echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Source EXT USB Drive Mount Point   : "${CGreen}$EXTDRIVE
+      DLVersionPF=$(printf "%-8s" $DLVersion)
+      VersionPF=$(printf "%-8s" $Version)
+      if [ "$UpdateNotify" == "0" ]; then
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Configuration Options                                           ${CClear}"
+      else
+        echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Configuration Options                    ${CClear}"
+      fi
+      echo -e "${InvGreen} ${CClear}"
+      echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
+      echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
+      echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+      echo -e "${InvGreen} ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CGreen}$EXTDRIVE"
 
-      echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Backup Target Media Type           : "${CGreen}$BACKUPMEDIA
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2) ${CClear} : Backup Target Media Type                     : ${CGreen}$BACKUPMEDIA"
       if [ "$BACKUPMEDIA" == "USB" ]; then
-        echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Backup Target Username             : "${CDkGray}$BTUSERNAME
-        echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Backup Target Password (ENC)       : "${CDkGray}$BTPASSWORD
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Backup Target Username                       : ${CDkGray}$BTUSERNAME"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Backup Target Password (ENC)                 : ${CDkGray}$BTPASSWORD"
         if [ "$UNCUPDATED" == "True" ]; then
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target Path                 : "${CDkGray};printf '%s' $UNC; printf "%s\n"
+          echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear}${CDkGray} : Backup Target Path                           : ${CDkGray}"; printf '%s' $UNC; printf "%s\n"
         else
-          echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Backup Target Path                 : "${CDkGray}; echo $UNC | sed -e 's,\\,\\\\,g'
+          echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear}${CDkGray} : Backup Target Path                           : ${CDkGray}"; echo $UNC | sed -e 's,\\,\\\\,g'
         fi
       elif [ "$BACKUPMEDIA" == "Network" ]; then
-        echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Backup Target Username             : "${CGreen}$BTUSERNAME
-        echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Backup Target Password (ENC)       : "${CGreen}$BTPASSWORD
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear} : Backup Target Username                       : ${CGreen}$BTUSERNAME"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear} : Backup Target Password (ENC)                 : ${CGreen}$BTPASSWORD"
         if [ -z "$UNC" ]; then
-          echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
         else
           if [ "$UNCUPDATED" == "True" ]; then
-            echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen};printf '%s' $UNC; printf "%s\n"
+            echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CGreen}"; printf '%s' $UNC; printf "%s\n"
           else
-            echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}; echo $UNC | sed -e 's,\\,\\\\,g'
+            echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CGreen}"; echo $UNC | sed -e 's,\\,\\\\,g'
           fi
         fi
       elif [ "$BACKUPMEDIA" == "Network-NFS" ]; then
-        echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Backup Target Username             : "${CDkGray}$BTUSERNAME
-        echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Backup Target Password (ENC)       : "${CDkGray}$BTPASSWORD
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Backup Target Username                       : ${CDkGray}$BTUSERNAME"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Backup Target Password (ENC)                 : ${CDkGray}$BTPASSWORD"
         if [ -z "$UNC" ]; then
-          echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
         else
           if [ "$UNCUPDATED" == "True" ]; then
-            echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}$UNC
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CGreen}$UNC"
           else
-            echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Backup Target Path                 : "${CGreen}$UNC
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Backup Target Path                           : ${CGreen}$UNC"
           fi
         fi
       fi
 
       if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  NFS Mount Options?                : "${CGreen}$NFSMOUNTOPT
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  NFS Mount Options?                          : ${CGreen}$NFSMOUNTOPT"
       else
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  NFS Mount Options?                : N/A"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  NFS Mount Options?                          : N/A"
       fi
       
       if [ "$UNCDRIVE" == "" ] || [ -z "$UNCDRIVE" ]; then
-        echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Backup Target Mount Point                    : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
       else
-        echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Backup Target Mount Point          : "${CGreen}$UNCDRIVE
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Backup Target Mount Point                    : ${CGreen}$UNCDRIVE"
       fi
 
-      echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Backup Target Directory Path       : "${CGreen}$BKDIR
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Backup Target Directory Path                 : ${CGreen}$BKDIR"
       
-      echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Backup Exclusion File Name         : "${CGreen}$EXCLUSION
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Backup Exclusion File Name                   : ${CGreen}$EXCLUSION"
 
-      echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Swap File                   : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Swap File                             : ${CGreen}"
         if [ "$BACKUPSWAP" == "0" ]; then
           printf "No"; printf "%s\n";
         elif [ "$BACKUPSWAP" == "1" ]; then
           printf "Yes"; printf "%s\n";fi
 
       if [ "$BACKUPMEDIA" == "Network" ]; then
-        echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup CIFS/SMB Version            : "${CGreen}$SMBVER
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Backup CIFS/SMB Version                      : ${CGreen}$SMBVER"
       else
-        echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CDkGray}: Backup CIFS/SMB Version            : "${CDkGray}$SMBVER
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear}${CDkGray} : Backup CIFS/SMB Version                      : ${CDkGray}$SMBVER"
       fi
 
-      echo -en "${InvDkGray}${CWhite} 11 ${CClear}${CCyan}: Backup Frequency?                  : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Backup Frequency                             : ${CGreen}"
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -362,73 +369,73 @@ vconfig () {
       elif [ "$FREQUENCY" == "P" ]; then
         printf "Perpetual"; printf "%s\n"; fi
       if [ "$FREQUENCY" == "P" ]; then
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Backups?                    : ${CGreen}"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Backups?                              : ${CGreen}"
         if [ "$PURGE" == "0" ]; then
           printf "No"; printf "%s\n";
         elif [ "$PURGE" == "1" ]; then
           printf "Yes"; printf "%s\n";fi
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge older than (days):          : ${CGreen}"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge older than (days)                     : ${CGreen}"
         if [ "$PURGELIMIT" == "0" ]; then
           printf "N/A"; printf "%s\n";
         else
           printf $PURGELIMIT; printf "%s\n";
         fi
       else
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Backups?                    : ${CDkGray}No"
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Purge older than (days):          : ${CDkGray}N/A"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Backups?                              : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge older than (days)                     : ${CDkGray}N/A"
       fi
 
-      echo -e "${InvDkGray}${CWhite} 12 ${CClear}${CCyan}: Backup/Restore Mode                : "${CGreen}$MODE
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Backup/Restore Mode                          : ${CGreen}$MODE"
 
-      echo -en "${InvDkGray}${CWhite} 13 ${CClear}${CCyan}: Schedule Backups?                  : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Schedule Backups?                            : ${CGreen}"
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$SCHEDULE" == "1" ]; then
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Time:                             : ${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Scheduled Backup Mode             : ${CGreen}"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Time:                                       : ${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Scheduled Backup Mode                       : ${CGreen}"
         if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
           printf "Backup Only"; printf "%s\n";
         elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
           printf "Backup + Autopurge"; printf "%s\n"; fi
       else
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  Time:                             : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
-        echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Scheduled Backup Mode             : ${CDkGray}"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Time:                                       : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Scheduled Backup Mode                       : ${CDkGray}"
         if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
           printf "Backup Only"; printf "%s\n";
         elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
           printf "Backup + Autopurge"; printf "%s\n"; fi
       fi
 
-      echo -en "${InvDkGray}${CWhite} 14 ${CClear}${CCyan}: AMTM Email Notifications?          : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : AMTM Email Notifications?                    : ${CGreen}"
       if [ "$AMTMEMAIL" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$AMTMEMAILSUCCESS" == "1" ]; then
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  On Success?                       : ${CGreen}Yes"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Success?                                 : ${CGreen}Yes"
       else
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  On Success?                       : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  On Success?                                 : ${CDkGray}No"
       fi
       if [ "$AMTMEMAILFAILURE" == "1" ]; then
-        echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  On Failure?                       : ${CGreen}Yes"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Failure?                                 : ${CGreen}Yes"
       else
-        echo -e "${InvDkGray}${CWhite} |  ${CClear}${CDkGray}-  On Failure?                       : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}${CDkGray}--  On Failure?                                 : ${CDkGray}No"
       fi
 
-      echo -en "${InvDkGray}${CWhite} 15 ${CClear}${CCyan}: Secondary Backup Config Options    : "${CGreen}$SECONDARY
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Secondary Backup Config Options              : ${CGreen}$SECONDARY"
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
       else printf "Enabled"; printf "%s\n"; fi
       
-      echo -e "${InvDkGray}${CWhite} |  ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}"
       if [ $CHANGES -eq 0 ]; then
-        echo -e "${InvDkGray}${CWhite} s  ${CClear}${CCyan}: Save Config & Exit"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(s) ${CClear} : Save Config & Exit"
       else
-        echo -e "${InvDkGray}${CWhite} s  ${CClear}${CCyan}: Save Config & Exit               ${CWhite}${InvRed}<-- Save your changes! ${CClear}"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(s) ${CClear} : Save Config & Exit               ${CWhite}${InvRed}<-- Save your changes! ${CClear}"
       fi
-      echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit & Discard Changes"
-      echo -e "${CGreen}----------------------------------------------------------------"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e) ${CClear} : Exit & Discard Changes"
+      echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo ""
       CHANGES=1
       printf "Selection: "
@@ -1310,58 +1317,62 @@ TESTSMBVER="2.1"
 
 while true; do
   clear
-  logoNM
-  echo ""
-  echo -e "${CCyan}The Backup Target Network Connection Tester allows you to play with"
-  echo -e "your connection variables, such as your username/password, network UNC"
-  echo -e "path, target directories and local backup drive mount paths. If your"
-  echo -e "network target is configured correctly, this utility will write a test"
-  echo -e "folder out there, and copy a test file into the test folder in order"
-  echo -e "to validate that read/write permissions are correct."
-  echo ""
-  echo -e "${CGreen}----------------------------------------------------------------"
-  echo -e "${CGreen}Backup Target Network Connection Tester"
-  echo -e "${CGreen}----------------------------------------------------------------"
-  echo -e "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Test Target Media Type              : ${CGreen}$TESTBACKUPMEDIA"
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Backup Target Network Connection Tester                         ${CClear}"
+  else
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Backup Target Network Connection Tester  ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} The Backup Target Network Connection Tester allows you to play with your connection${CClear}"
+  echo -e "${InvGreen} ${CClear} variables, such as your username/password, network UNC path, target directories and${CClear}"
+  echo -e "${InvGreen} ${CClear} local backup drive mount paths. If your network target is configured correctly, this${CClear}"
+  echo -e "${InvGreen} ${CClear} utility will write a test folder out there, and copy a test file into the test folder${CClear}"
+  echo -e "${InvGreen} ${CClear} in order to validate that read/write permissions are correct.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1)${CClear} : Test Target Media Type                       : ${CGreen}$TESTBACKUPMEDIA"
   if [ "$TESTBACKUPMEDIA" == "Network" ]; then
-    echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Test Target Username                : ${CGreen}$TESTUSER"
-    echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Test Target Password                : ${CGreen}$TESTPWD"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear} : Test Target Username                         : ${CGreen}$TESTUSER"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear} : Test Target Password                         : ${CGreen}$TESTPWD"
     if [ -z "$TESTUNC" ]; then
-      echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${InvRed}${CWhite}<-- Attention Needed${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Test Target UNC Path                         : ${InvRed}${CWhite}<-- Attention Needed${CClear}"
     else
       if [ "$TESTUNCUPDATED" == "True" ]; then
-        echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Test Target UNC Path                         : ${CGreen}"; printf '%s' $TESTUNC; printf "%s\n"
       else
-        echo -en "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target UNC Path                : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Test Target UNC Path                         : ${CGreen}"; echo $TESTUNC | sed -e 's,\\,\\\\,g'
       fi
     fi
   elif [ "$TESTBACKUPMEDIA" == "USB" ]; then
-    echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CDkGray}: Test Target Username                : ${CDkGray}$TESTUSER"
-    echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Test Target Password                : ${CDkGray}$TESTPWD"
-    echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Test Target UNC Path                : ${CDkGray}N/A"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear}${CDkGray} : Test Target Username                         : ${CDkGray}$TESTUSER"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear}${CDkGray} : Test Target Password                         : ${CDkGray}$TESTPWD"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear}${CDkGray} : Test Target UNC Path                         : ${CDkGray}N/A"
   elif [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
-    echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CDkGray}: Test Target Username                : ${CDkGray}$TESTUSER"
-    echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Test Target Password                : ${CDkGray}$TESTPWD"
-    echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Test Target NFS Path                : ${CGreen}$TESTUNC"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2)${CClear}${CDkGray} : Test Target Username                         : ${CDkGray}$TESTUSER"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3)${CClear}${CDkGray} : Test Target Password                         : ${CDkGray}$TESTPWD"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4)${CClear} : Test Target NFS Path                         : ${CGreen}$TESTUNC"
   fi
   if [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
-    echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}- Test NFS Mount Options              : ${CGreen}$TESTNFSMOUNTOPT"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |-${CClear}--  Test NFS Mount Options                      : ${CGreen}$TESTNFSMOUNTOPT"
   else
-    echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}- Test NFS Mount Options              : ${CDkGray}N/A"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |-${CClear}${CDkGray}--  Test NFS Mount Options                      : ${CDkGray}N/A"
   fi
-  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Test Target Backup Mount Point      : ${CGreen}$TESTUNCDRIVE"
-  echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Test Target Dir Path                : ${CGreen}$TESTBKDIR"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5)${CClear} : Test Target Backup Mount Point               : ${CGreen}$TESTUNCDRIVE"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6)${CClear} : Test Target Dir Path                         : ${CGreen}$TESTBKDIR"
   if [ "$TESTBACKUPMEDIA" == "Network" ]; then
-    echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Test CIFS/SMB Version               : ${CGreen}$TESTSMBVER"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Test CIFS/SMB Version                        : ${CGreen}$TESTSMBVER"
   else
-    echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CDkGray}: Test CIFS/SMB Version               : N/A"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear}${CDkGray} : Test CIFS/SMB Version                        : N/A"
   fi  
-  echo -e "${InvDkGray}${CWhite} |  ${CClear}"
-  echo -e "${InvDkGray}${CWhite} t  ${CClear}${CCyan}: Test your Network Backup Connection"
-  echo -e "${InvDkGray}${CWhite} p  ${CClear}${CCyan}: Import your Primary Backup Settings"
-  echo -e "${InvDkGray}${CWhite} s  ${CClear}${CCyan}: Import your Secondary Backup Settings"
-  echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit Back to Setup + Operations Menu"
-  echo -e "${CGreen}----------------------------------------------------------------"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(t)${CClear} : Test your Network Backup Connection"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(p)${CClear} : Import your Primary Backup Settings"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(s)${CClear} : Import your Secondary Backup Settings"
+  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e)${CClear} : Exit Back to Setup + Operations Menu"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   printf "Selection: ${CClear}"
   read -r TESTINPUT
@@ -1427,7 +1438,8 @@ while true; do
         ;;
         
         7) echo ""
-           read -p 'Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5) (Choose 1, 2, 3, 4 or 5): ' TESTSMBVER
+           echo "Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5)"
+           read -p '(Choose 1, 2, 3, 4 or 5): ' TESTSMBVER
            if [ "$TESTSMBVER" == "1" ]; then 
              TESTSMBVER="2.1"
            elif [ "$TESTSMBVER" == "2" ]; then 
@@ -1471,6 +1483,7 @@ while true; do
                 echo -e "${CCyan}Messages:${CClear}"
 
                 # Ping target to see if it's reachable
+                FAILURE="FALSE"
                 CNT=0
                 TRIES=3
                 TARGETIP=$(echo $TESTUNC | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
@@ -1639,15 +1652,22 @@ while true; do
 # vuninstall is a function that uninstalls and removes all traces of backupmon from your router...
 vuninstall () {
   clear
-  logoNM
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Uninstall Utility                                               ${CClear}"
+  else
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Uninstall Utility                        ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} The Uninstall Utility allows you to completely remove BACKUPMON from your router.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  echo -e "${CYellow}Uninstall Utility${CClear}"
-  echo ""
-  echo -e "${CCyan}You are about to uninstall BACKUPMON!  This action is irreversible."
-  echo -e "${CCyan}Do you wish to proceed?${CClear}"
+  echo -e "${CClear}You are about to uninstall BACKUPMON!  This action is irreversible."
+  echo -e "${CClear}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
     echo ""
-    echo -e "\n${CCyan}Are you sure? Please type 'y' to validate you want to proceed.${CClear}"
+    echo -e "\n${CClear}Are you sure? Please type 'y' to validate you want to proceed.${CClear}"
       if promptyn "(y/n): "; then
         clear
         rm -f -r /jffs/addons/backupmon.d
@@ -1678,23 +1698,33 @@ vuninstall () {
 vupdate () {
   updatecheck # Check for the latest version from source repository
   clear
-  logoNM
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Update Utility                                                  ${CClear}"
+  else
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Update Utility                           ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} The Update Utility allows you to check for the latest version available, and allows${CClear}"
+  echo -e "${InvGreen} ${CClear} you to download and update the script on your router. Should an update not be${CClear}"
+  echo -e "${InvGreen} ${CClear} available, this tool allows you to download and overwrite the current version present${CClear}"
+  echo -e "${InvGreen} ${CClear} on your router.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  echo -e "${CYellow}Update Utility${CClear}"
-  echo ""
-  echo -e "${CCyan}Current Version: ${CYellow}$Version${CClear}"
-  echo -e "${CCyan}Updated Version: ${CYellow}$DLVersion${CClear}"
+  echo -e "${CClear}Current Version: ${CGreen}$Version${CClear}"
+  echo -e "${CClear}Updated Version: ${CGreen}$DLVersion${CClear}"
   echo ""
   if [ "$Version" == "$DLVersion" ]
     then
-      echo -e "${CCyan}You are on the latest version! Would you like to download anyways?${CClear}"
-      echo -e "${CCyan}This will overwrite your local copy with the current build.${CClear}"
+      echo -e "${CClear}You are on the latest version! Would you like to download anyways?"
+      echo -e "${CClear}This will overwrite your local copy of BACKUPMON with the latest build."
       if promptyn "(y/n): "; then
         echo ""
-        echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
+        echo -e "\n${CClear}Downloading BACKUPMON ${CGreen}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
-        echo -e "${CCyan}Download successful!${CClear}"
+        echo -e "${CGreen}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
         read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
@@ -1707,13 +1737,13 @@ vupdate () {
         return
       fi
     else
-      echo -e "${CCyan}Score! There is a new version out there! Would you like to update?${CClear}"
+      echo -e "${CClear}Score! There is a new version out there! Would you like to update BACKUPMON?"
       if promptyn " (y/n): "; then
         echo ""
-        echo -e "\n${CCyan}Downloading BACKUPMON ${CYellow}v$DLVersion${CClear}"
+        echo -e "\n${CClear}Downloading BACKUPMON ${CGreen}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
         echo ""
-        echo -e "${CCyan}Download successful!${CClear}"
+        echo -e "${CGreen}Download successful!${CClear}"
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
         echo ""
         read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
@@ -2601,15 +2631,20 @@ purgebackups () {
   fi
 
   clear
-  logoNM
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Purge Perpetual Backups Utility                                 ${CClear}"
+  else
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Purge Perpetual Backups Utility          ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} You are about to purge ${CGreen}primary${CClear} backups! FUN! This action is irreversible and${CClear}"
+  echo -e "${InvGreen} ${CClear} permanent. But no worries! BACKUPMON will first show you which backups are affected${CClear}"
+  echo -e "${InvGreen} ${CClear} by the ${CGreen}$PURGELIMIT day${CClear} limit you have configured.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  echo -e "${CYellow}Purge Perpetual Backups Utility${CClear}"
-  echo ""
-  echo -e "${CCyan}You are about to purge backups! FUN! This action is irreversible and permanent."
-  echo -e "${CCyan}But no worries! BACKUPMON will first show you which backups are affected by the"
-  echo -e "${CYellow}$PURGELIMIT day${CCyan} limit you have configured."
-  echo ""
-  echo -e "${CCyan}Do you wish to proceed?${CClear}"
+  echo -e "${CClear}Do you wish to proceed?"
   if promptyn "(y/n): "; then
 
     echo ""
@@ -2655,7 +2690,7 @@ purgebackups () {
 
       # Continue with deleting backups permanently
       echo ""
-      echo -e "${CGreen}Would you like to permanently purge these backups?${CClear}"
+      echo -e "${CClear}Would you like to permanently purge these backups?"
 
       if promptyn "(y/n): "; then
         echo -e "\n${CRed}"
@@ -2679,6 +2714,7 @@ purgebackups () {
 
       else
 
+        echo ""
         echo ""
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
@@ -2788,15 +2824,20 @@ purgesecondaries () {
   fi
 
   clear
-  logoNM
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
+  if [ "$UpdateNotify" == "0" ]; then
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Purge Perpetual Backups Utility                                 ${CClear}"
+  else
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Purge Perpetual Backups Utility          ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} You are about to purge ${CGreen}secondary${CClear} backups! FUN! This action is irreversible and${CClear}"
+  echo -e "${InvGreen} ${CClear} permanent. But no worries! BACKUPMON will first show you which backups are affected${CClear}"
+  echo -e "${InvGreen} ${CClear} by the ${CGreen}$SECONDARYPURGELIMIT day${CClear} limit you have configured.${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
-  echo -e "${CYellow}Purge Perpetual Secondary Backups Utility${CClear}"
-  echo ""
-  echo -e "${CCyan}You are about to purge secondary backups! FUN! This action is irreversible and"
-  echo -e "${CCyan}permanent. But no worries! BACKUPMON will first show you which backups are affected"
-  echo -e "${CCyan}by the ${CYellow}$SECONDARYPURGELIMIT day${CCyan} limit you have configured."
-  echo ""
-  echo -e "${CCyan}Do you wish to proceed?${CClear}"
+  echo -e "${CClear}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
 
     echo ""
@@ -2842,7 +2883,7 @@ purgesecondaries () {
 
       # Continue with deleting backups permanently
       echo ""
-      echo -e "${CGreen}Would you like to permanently purge these secondary backups?${CClear}"
+      echo -e "${CClear}Would you like to permanently purge these secondary backups?"
 
       if promptyn "(y/n): "; then
         echo -e "\n${CRed}"
@@ -2866,6 +2907,7 @@ purgesecondaries () {
 
       else
 
+        echo ""
         echo ""
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
@@ -3000,52 +3042,54 @@ vsetup () {
 
   while true; do
     clear
-    logoNM
-    # Check for updates
-    if [ "$UpdateNotify" != "0" ]; then
-      echo -e "${CRed} $UpdateNotify"
-    fi
-    echo ""
-    echo -e "${InvDkGray}${CWhite}                    Setup + Operations Menu                     ${CClear}"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Backup Operations"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} bk ${CClear}${CCyan}: Run a Manual Backup"
-    echo -e "${InvDkGray}${CWhite} rs ${CClear}${CCyan}: Run a Manual Restore"
-    if [ $PURGE == "1" ]; then
-      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CCyan}: Purge Perpetual Primary Backups"
+    DLVersionPF=$(printf "%-8s" $DLVersion)
+    VersionPF=$(printf "%-8s" $Version)
+    if [ "$UpdateNotify" == "0" ]; then
+      echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Main Setup and Operations Menu                                  ${CClear}"
     else
-      echo -e "${InvDkGray}${CWhite} pg ${CClear}${CDkGray}: Purge Perpetual Primary Backups"
+      echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Main Setup and Operations Menu           ${CClear}"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
+    echo -e "${InvGreen} ${CClear} actions in the management of the BACKUPMON script.${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Backup Operations]                                                                   ${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(bk)${CClear} : Run a Manual Backup"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(rs)${CClear} : Run a Manual Restore"
+    if [ $PURGE == "1" ]; then
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(pg)${CClear} : Purge Perpetual Primary Backups"
+    else
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(pg)${CClear}${CDkGray} : Purge Perpetual Primary Backups"
     fi
     if [ $SECONDARYPURGE == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
-      echo -e "${InvDkGray}${CWhite} ps ${CClear}${CCyan}: Purge Perpetual Secondary Backups"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(ps)${CClear} : Purge Perpetual Secondary Backups"
     else
-      echo -e "${InvDkGray}${CWhite} ps ${CClear}${CDkGray}: Purge Perpetual Secondary Backups"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(ps)${CClear}${CDkGray} : Purge Perpetual Secondary Backups"
     fi
-    echo -e "${InvDkGray}${CWhite} ep ${CClear}${CCyan}: Edit your Primary TAR Exclusion File"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(ep)${CClear} : Edit your Primary TAR Exclusion File"
     if [ $SECONDARYSTATUS -eq 1 ]; then
-      echo -e "${InvDkGray}${CWhite} es ${CClear}${CCyan}: Edit your Secondary TAR Exclusion File"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(es)${CClear} : Edit your Secondary TAR Exclusion File"
     else
-      echo -e "${InvDkGray}${CWhite} es ${CClear}${CDkGray}: Edit your Secondary TAR Exclusion File"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(es)${CClear}${CDkGray} : Edit your Secondary TAR Exclusion File"
     fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Testing + Diagnostics Operations]                                                    ${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(ts)${CClear} : Test your Network Backup Target"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(te)${CClear} : Test AMTM Email Communications"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Setup + Configuration]                                                               ${CClear}"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(sc)${CClear} : Setup and Configure BACKUPMON"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(vl)${CClear} : View logs"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(up)${CClear} : Check for latest updates"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(un)${CClear} : Uninstall"
+    echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} (e)${CClear} : Exit"
+    echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo ""
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Testing + Diagnostics Operations"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} ts ${CClear}${CCyan}: Test your Network Backup Target"
-    echo -e "${InvDkGray}${CWhite} te ${CClear}${CCyan}: Test AMTM Email Communications"
-    echo ""
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${CGreen}Setup + Configuration"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo -e "${InvDkGray}${CWhite} sc ${CClear}${CCyan}: Setup and Configure BACKUPMON"
-    echo -e "${InvDkGray}${CWhite} vl ${CClear}${CCyan}: View logs"
-    echo -e "${InvDkGray}${CWhite} up ${CClear}${CCyan}: Check for latest updates"
-    echo -e "${InvDkGray}${CWhite} un ${CClear}${CCyan}: Uninstall"
-    echo -e "${InvDkGray}${CWhite}  e ${CClear}${CCyan}: Exit"
-    echo -e "${CGreen}----------------------------------------------------------------"
-    echo ""
-    printf "Selection: "
+    printf "Selection (e=Exit): "
     read -r InstallSelection
 
     # Execute chosen selections
@@ -3053,10 +3097,12 @@ vsetup () {
 
           bk)
             clear
+            DLVersionPF=$(printf "%-8s" $DLVersion)
+            VersionPF=$(printf "%-8s" $Version)
             if [ "$UpdateNotify" == "0" ]; then
-              echo -e "${CGreen}BACKUPMON v$Version"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF                                                                                          ${CClear}"
             else
-              echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+              echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update available: v$VersionPF -> v$DLVersionPF                                                        ${CClear}"
             fi
             echo ""
             echo -e "${CGreen}[Primary Backup Commencing]...          "
@@ -3072,11 +3118,12 @@ vsetup () {
 
           rs)
             clear
-            #sh /jffs/scripts/backupmon.sh -restore
+            DLVersionPF=$(printf "%-8s" $DLVersion)
+            VersionPF=$(printf "%-8s" $Version)
             if [ "$UpdateNotify" == "0" ]; then
-              echo -e "${CGreen}BACKUPMON v$Version"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF                                                                                          ${CClear}"
             else
-              echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+              echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update available: v$VersionPF -> v$DLVersionPF                                                        ${CClear}"
             fi
             echo ""
             restore
@@ -3108,48 +3155,54 @@ vsetup () {
           
           te)
             clear
-            logoNM
+            DLVersionPF=$(printf "%-8s" $DLVersion)
+            VersionPF=$(printf "%-8s" $Version)
+            if [ "$UpdateNotify" == "0" ]; then
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - AMTM Email Communications Tester                                ${CClear}"
+            else
+              echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - AMTM Email Communications Tester         ${CClear}"
+            fi
+            echo -e "${InvGreen} ${CClear}"
+            echo -e "${InvGreen} ${CClear} This test assumes that you have AMTM Email set up correctly. If you still need to${CClear}"
+            echo -e "${InvGreen} ${CClear} configure this feature, open up AMTM -> (em) to add your email server info, ports,${CClear}"
+            echo -e "${InvGreen} ${CClear} credentials, protocols, and other pertinent info.${CClear}"
+            echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
             echo ""
-            echo -e "${CCyan}This test assumes that you have AMTM Email set up correctly. If"
-              echo -e "${CCyan}you still need to configure this feature, open up AMTM -> (em)"
-              echo -e "${CCyan}to add your email server info, credentials, ports, protocols,"
-              echo -e "${CCyan}and other pertinent info.${CClear}"
+            echo -e "Would you like to send a TEST email from BACKUPMON?"
+            if promptyn "(y/n): "; then
               echo ""
-              echo -e "Would you like to send a TEST email from BACKUPMON?"
-              if promptyn "(y/n): "; then
-                echo ""
 
-                if [ -f "$CUSTOM_EMAIL_LIBFile" ]
+              if [ -f "$CUSTOM_EMAIL_LIBFile" ]
+                then
+                  . "$CUSTOM_EMAIL_LIBFile"
+
+                  if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
                   then
-                    . "$CUSTOM_EMAIL_LIBFile"
-
-                    if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-                      _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
-                    then
-                      echo ""
-                      _DownloadCEMLibraryFile_ "update"
-                    fi
-                  else
                     echo ""
-                    _DownloadCEMLibraryFile_ "install"
-                fi
-                
-                cemIsFormatHTML=true
-                cemIsVerboseMode=true
-                emailBodyTitle="Testing Email Notification"
-                emailSubject="TEST: BACKUPMON Email Notification"
-                tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
-
-                {
-                printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
-                } > "$tmpEMailBodyFile"
-
-                _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
-
-                echo ""
-                read -rsp $'Press any key to acknowledge...\n' -n1 key
-                
+                    _DownloadCEMLibraryFile_ "update"
+                  fi
+                else
+                  echo ""
+                  _DownloadCEMLibraryFile_ "install"
               fi
+              
+              cemIsFormatHTML=true
+              cemIsVerboseMode=true
+              emailBodyTitle="Testing Email Notification"
+              emailSubject="TEST: BACKUPMON Email Notification"
+              tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
+
+              {
+              printf "This is a <b>TEST</b> to check & verify if sending email notifications is working well from <b>BACKUPMON</b>.\n"
+              } > "$tmpEMailBodyFile"
+
+              _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
+
+              echo ""
+              read -rsp $'Press any key to acknowledge...\n' -n1 key
+              
+            fi
           ;;
           
           ep)
@@ -4940,37 +4993,38 @@ secondary () {
 restore () {
 
   clear
-  # Notify if a new version awaits
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  VersionPF=$(printf "%-8s" $Version)
   if [ "$UpdateNotify" == "0" ]; then
-    echo -e "${CGreen}BACKUPMON v$Version"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Restore Backup Utility                                          ${CClear}"
   else
-    echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Restore Backup Utility                   ${CClear}"
   fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} [Restore Backup Commencing]..."
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Please ensure your have performed the following before restoring your backups:"
+  echo -e "${InvGreen} ${CClear} 1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY)."
+  echo -e "${InvGreen} ${CClear} 2.) Run 'AMTM' and format a new USB drive on your router - label it exactly the same name as before! Reboot."
+  echo -e "${InvGreen} ${CClear}     (please refer to your restore instruction.txt file to find your original EXT USB drive label)"
+  echo -e "${InvGreen} ${CClear} 3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
+  echo -e "${InvGreen} ${CClear} 4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot."
+  echo -e "${InvGreen} ${CClear} 5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder."
+  echo -e "${InvGreen} ${CClear} 6.) Run 'sh backupmon.sh -setup' and ensure that all of the settings are correct before running a restore."
+  echo -e "${InvGreen} ${CClear} 7.) Run 'sh backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
+  echo -e "${InvGreen} ${CClear} 8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
   # Display instructions
   echo ""
-  echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
-  echo ""
-  echo -e "${CGreen}[Restore Backup Commencing]..."
-  echo ""
-  echo -e "${CGreen}Please ensure your have performed the following before restoring your backups:"
-  echo -e "${CGreen}1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY)."
-  echo -e "${CGreen}2.) Run 'AMTM' and format a new USB drive on your router - label it exactly the same name as before! Reboot."
-  echo -e "${CYellow}    (please refer to your restore instruction.txt file to find your original EXT USB drive label)"
-  echo -e "${CGreen}3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
-  echo -e "${CGreen}4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot."
-  echo -e "${CGreen}5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder."
-  echo -e "${CGreen}6.) Run 'sh backupmon.sh -setup' and ensure that all of the settings are correct before running a restore."
-  echo -e "${CGreen}7.) Run 'sh backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
-  echo -e "${CGreen}8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
-  echo ""
   if [ $SECONDARYSTATUS -eq 1 ]; then
-    echo -e "${CYellow}Please choose whether you would like to restore from primary or secondary backups? (Primary=P, Secondary=S)"
+    echo -e "${CClear}Please choose whether you would like to restore from primary or secondary backups?"
     while true; do
-      read -p 'Restoration Source (P/S)?: ' RESTOREFROM
+      read -p 'Restoration Source (P=Primary, S=Secondary, e=Exit)?: ' RESTOREFROM
         case $RESTOREFROM in
           [Pp] ) SOURCE="Primary"; echo ""; echo -e "${CGreen}[Primary Backup Source Selected]"; echo ""; break ;;
           [Ss] ) SOURCE="Secondary"; echo ""; echo -e "${CGreen}[Secondary Backup Source Selected]"; echo ""; break ;;
+          [Ee] ) echo ""; echo -e "${CClear}"; return;;
           "" ) echo -e "\nError: Please use either P or S.\n";;
           * ) echo -e "\nError: Please use either P or S.\n";;
         esac
@@ -5016,7 +5070,7 @@ restore () {
       awk -F ' ' '{printf "%s %s %2d %s %s",$6,$7,$8,$9,$10} { printf " \033[1;34m"$11" \033[0m\n";}'
 
       echo ""
-      echo -e "${CGreen}Would you like to continue to restore from backup?"
+      echo -e "${CClear}Would you like to continue to restore from backup?"
 
       if promptyn "(y/n): "; then
 
@@ -5027,7 +5081,7 @@ restore () {
             while [ $ok = 0 ]
             do
               if [ $FREQUENCY == "W" ]; then
-                echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
+                echo -e "${CClear}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
@@ -5037,7 +5091,7 @@ restore () {
                   ok=1
                 fi
               elif [ $FREQUENCY == "M" ]; then
-                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
+                echo -e "${CClear}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
@@ -5047,7 +5101,7 @@ restore () {
                   ok=1
                 fi
               elif [ $FREQUENCY == "Y" ]; then
-                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
+                echo -e "${CClear}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
@@ -5057,7 +5111,7 @@ restore () {
                   ok=1
                 fi
               elif [ $FREQUENCY == "P" ]; then
-                echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                echo -e "${CClear}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountdrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
@@ -5091,22 +5145,22 @@ restore () {
               ls -lR /${UNCDRIVE}${BKDIR}/$BACKUPDATE
 
               echo ""
-              echo -e "${CGreen}Would you like to continue using this backup set?"
+              echo -e "${CClear}Would you like to continue using this backup set?"
               if promptyn "(y/n): "; then
                 echo ""
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
                 read ADVJFFS
                 echo ""
                 if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                  echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                  echo -e "${CClear}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
                   read ADVUSB
                   echo ""
                 fi
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
                 read ADVRTRFW
                 if [ -f ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVRTRFW} ]; then
                   source ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVRTRFW}
@@ -5128,7 +5182,7 @@ restore () {
             logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
             echo ""
-            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            echo -e "${CClear}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
@@ -5151,7 +5205,7 @@ restore () {
             logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
             echo ""
-            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            echo -e "${CClear}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
@@ -5170,7 +5224,7 @@ restore () {
           echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          echo -e "${CClear}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
             echo ""
             echo ""
@@ -5227,7 +5281,7 @@ restore () {
           fi
           echo -e "NVRAM filename: $ADVNVRAM"
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          echo -e "${CClear}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
             echo ""
             echo ""
@@ -5350,7 +5404,7 @@ restore () {
       awk -F ' ' '{printf "%s %s %2d %s %s",$6,$7,$8,$9,$10} { printf " \033[1;34m"$11" \033[0m\n";}'
 
       echo ""
-      echo -e "${CGreen}Would you like to continue to restore from backup?"
+      echo -e "${CClear}Would you like to continue to restore from backup?"
 
       if promptyn "(y/n): "; then
 
@@ -5361,7 +5415,7 @@ restore () {
             while [ $ok = 0 ]
             do
               if [ $SECONDARYFREQUENCY == "W" ]; then
-                echo -e "${CGreen}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
+                echo -e "${CClear}Enter the Day of the backup you wish to restore? (ex: Mon or Fri) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
@@ -5371,7 +5425,7 @@ restore () {
                   ok=1
                 fi
               elif [ $SECONDARYFREQUENCY == "M" ]; then
-                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
+                echo -e "${CClear}Enter the Day # of the backup you wish to restore? (ex: 02 or 27) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 2 ] || [ ${#BACKUPDATE1} -lt 2 ]
@@ -5381,7 +5435,7 @@ restore () {
                   ok=1
                 fi
               elif [ $SECONDARYFREQUENCY == "Y" ]; then
-                echo -e "${CGreen}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
+                echo -e "${CClear}Enter the Day # of the backup you wish to restore? (ex: 002 or 270) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 3 ] || [ ${#BACKUPDATE1} -lt 3 ]
@@ -5391,7 +5445,7 @@ restore () {
                   ok=1
                 fi
               elif [ $SECONDARYFREQUENCY == "P" ]; then
-                echo -e "${CGreen}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
+                echo -e "${CClear}Enter the exact folder name of the backup you wish to restore? (ex: 20230909-083422) (e=Exit): "
                 read BACKUPDATE1
                 if [ $BACKUPDATE1 == "e" ]; then echo ""; echo -e "${CGreen}STATUS: Settling for 10 seconds..."; sleep 10; unmountsecondarydrv; echo -e "${CClear}"; return; fi
                 if [ ${#BACKUPDATE1} -gt 15 ] || [ ${#BACKUPDATE1} -lt 15 ]
@@ -5425,22 +5479,22 @@ restore () {
               ls -lR /${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE
 
               echo ""
-              echo -e "${CGreen}Would you like to continue using this secondary backup set?"
+              echo -e "${CClear}Would you like to continue using this secondary backup set?"
               if promptyn "(y/n): "; then
                 echo ""
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the JFFS backup you wish to restore?${CClear}"
                 read ADVJFFS
                 echo ""
                 if [ "$EXTLABEL" != "NOTFOUND" ]; then
-                  echo -e "${CGreen}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
+                  echo -e "${CClear}Enter the EXACT file name (including extensions) of the EXT USB backup you wish to restore?${CClear}"
                   read ADVUSB
                   echo ""
                 fi
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the NVRAM backup you wish to restore?${CClear}"
                 read ADVNVRAM
                 echo ""
-                echo -e "${CGreen}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
+                echo -e "${CClear}Enter the EXACT file name (including extensions) of the routerfw.txt file to be referenced?${CClear}"
                 read ADVRTRFW
                 if [ -f ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVRTRFW} ]; then
                   source ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVRTRFW}
@@ -5462,7 +5516,7 @@ restore () {
             logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
             echo ""
-            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            echo -e "${CClear}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
@@ -5485,7 +5539,7 @@ restore () {
             logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
             echo ""
-            echo -e "${CGreen}Would you like to continue to restore from backup?"
+            echo -e "${CClear}Would you like to continue to restore from backup?"
             if promptyn "(y/n): "; then
               echo ""
               echo ""
@@ -5504,7 +5558,7 @@ restore () {
           echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this secondary backup location:"
           echo -e "${CBlue}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$BACKUPDATE/"
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          echo -e "${CClear}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
             echo ""
             echo ""
@@ -5560,7 +5614,7 @@ restore () {
           fi
           echo -e "NVRAM filename: $ADVNVRAM"
           echo ""
-          echo -e "${CGreen}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
+          echo -e "${CClear}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
           if promptyn "(y/n): "; then
             echo ""
             echo ""
@@ -6056,32 +6110,35 @@ updatecheck
 
 clear
 # Check for updates
+DLVersionPF=$(printf "%-8s" $DLVersion)
+VersionPF=$(printf "%-8s" $Version)
+
 if [ "$UpdateNotify" == "0" ]; then
-  echo -e "${CGreen}BACKUPMON v$Version"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF                                                                                          ${CClear}"
 else
-  echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
+  echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update available: v$VersionPF -> v$DLVersionPF                                                        ${CClear}"
 fi
 
-echo ""
-echo -e "${CCyan}Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CCyan}etup or ${CRed}[X]${CCyan} to override and enter ${CRed}RESTORE${CCyan} mode"
-echo ""
-
-echo -e "${CCyan}Asus Router Model: ${CGreen}${ROUTERMODEL}"
-echo -e "${CCyan}Firmware/Build Number: ${CGreen}${FWBUILD}"
-echo -e "${CCyan}External USB Drive Mount Path: ${CGreen}${EXTDRIVE}"
+echo -e "${InvGreen} ${CClear}"
+echo -e "${InvGreen} ${CClear}${CWhite} Normal Backup starting in 10 seconds. Press ${CGreen}[S]${CWhite}etup or ${CRed}[X]${CWhite} to override and enter ${CRed}RESTORE${CWhite} mode"
+echo -e "${InvGreen} ${CClear}"
+echo -e "${InvGreen} ${CClear}${CWhite} Asus Router Model: ${CGreen}${ROUTERMODEL}"
+echo -e "${InvGreen} ${CClear}${CWhite} Firmware/Build Number: ${CGreen}${FWBUILD}"
+echo -e "${InvGreen} ${CClear}${CWhite} External USB Drive Mount Path: ${CGreen}${EXTDRIVE}"
 if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
   
 if [ "$BACKUPMEDIA" == "USB" ]; then  
-  echo -e "${CCyan}Backing up to ${CGreen}USB${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+  echo -e "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}USB${CWhite} mounted to ${CGreen}${UNCDRIVE}"
 else
-  echo -en "${CCyan}Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CCyan} mounted to ${CGreen}${UNCDRIVE}"
+  echo -en "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CWhite} mounted to ${CGreen}${UNCDRIVE}"
 fi
-echo -e "${CCyan}Backup directory location: ${CGreen}${BKDIR}"
-echo -e "${CCyan}Frequency: ${CGreen}$FREQEXPANDED"
-echo -e "${CCyan}Mode: ${CGreen}$MODE"
+echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BKDIR}"
+echo -e "${InvGreen} ${CClear}${CWhite} Frequency: ${CGreen}$FREQEXPANDED"
+echo -e "${InvGreen} ${CClear}${CWhite} Mode: ${CGreen}$MODE"
+echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
 echo ""
 
 # If the -backup switch is used then bypass the counter for immediate backup
