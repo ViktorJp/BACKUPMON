@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.6.0b5 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.6.0b6 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.6.0b5"                                                # Current version
+Version="1.6.0b6"                                                # Current version
 Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -270,7 +270,7 @@ vconfig () {
     if [ -z "$ROUTERMODEL" ]; then
       [ -z "$(nvram get odmpid)" ] && ROUTERMODEL="$(nvram get productid)" || ROUTERMODEL="$(nvram get odmpid)" # Thanks @thelonelycoder for this logic
     fi
-  
+
     # Check for the Swap File Exclusion
     if [ "$BACKUPSWAP" == "0" ]; then
       excludeswap
@@ -283,13 +283,13 @@ vconfig () {
       DLVersionPF=$(printf "%-8s" $DLVersion)
       VersionPF=$(printf "%-8s" $Version)
       if [ "$UpdateNotify" == "0" ]; then
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Configuration Options                                           ${CClear}"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Primary Backup Configuration Options                            ${CClear}"
       else
-        echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Configuration Options                    ${CClear}"
+        echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Primary Backup Configuration Options     ${CClear}"
       fi
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
-      echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of this script.${CClear}"
+      echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of the primary backup.${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
@@ -336,7 +336,7 @@ vconfig () {
       else
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  NFS Mount Options?                          : N/A"
       fi
-      
+
       if [ "$UNCDRIVE" == "" ] || [ -z "$UNCDRIVE" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Backup Target Mount Point                    : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
       else
@@ -344,7 +344,7 @@ vconfig () {
       fi
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Backup Target Directory Path                 : ${CGreen}$BKDIR"
-      
+
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Backup Exclusion File Name                   : ${CGreen}$EXCLUSION"
 
       echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Swap File                             : ${CGreen}"
@@ -392,14 +392,16 @@ vconfig () {
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$SCHEDULE" == "1" ]; then
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Time:                                       : ${CGreen}$SCHEDULEHRS:$SCHEDULEMIN"
+      	MINS=$(printf "%02.0f\n" $SCHEDULEMIN)
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Time:                                       : ${CGreen}$SCHEDULEHRS:$MINS"
         echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Scheduled Backup Mode                       : ${CGreen}"
         if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
           printf "Backup Only"; printf "%s\n";
         elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
           printf "Backup + Autopurge"; printf "%s\n"; fi
       else
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Time:                                       : ${CDkGray}$SCHEDULEHRS:$SCHEDULEMIN"
+        MINS=$(printf "%02.0f\n" $SCHEDULEMIN)
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Time:                                       : ${CDkGray}$SCHEDULEHRS:$MINS"
         echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Scheduled Backup Mode                       : ${CDkGray}"
         if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
           printf "Backup Only"; printf "%s\n";
@@ -427,7 +429,7 @@ vconfig () {
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
       else printf "Enabled"; printf "%s\n"; fi
-      
+
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}"
       if [ $CHANGES -eq 0 ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(s) ${CClear} : Save Config & Exit"
@@ -445,30 +447,39 @@ vconfig () {
           case "$ConfigSelection" in
 
             1) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - SOURCE Mount Point                                                        ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Please choose the SOURCE Mount Point of your attached external USB Drive that contains${CClear}"
+              echo -e "${InvGreen} ${CClear} data that you want to have backed up. In most cases, whatever is attached to your sda1${CClear}"
+              echo -e "${InvGreen} ${CClear} partition should be selected. Should there be only one mount point available, it will${CClear}"
+              echo -e "${InvGreen} ${CClear} be automatically selected.${CClear}"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}1. Please choose the SOURCE Mount Point of your attached external USB Drive that"
-              echo -e "${CCyan}contains data that you want to have backed up. In most cases, whatever is"
-              echo -e "${CCyan}attached to your sda1 partition should be selected. Should there be only one"
-              echo -e "${CCyan}mount point available, it will be automatically selected."
-              printf "${CYellow}Recommended Mount Point = ${CClear}"
+              printf "${CClear}Recommended Mount Point: ${CGreen}"
               _GetDefaultMountPoint_ USBmp
               USBSOURCE="TRUE"
+              echo -e "${CClear}"
               _GetMountPoint_ USBmp "Select an EXT USB Drive Mount Point: "
               read -rsp $'Press any key to acknowledge...\n' -n1 key
               checkusbexclusion
             ;;
 
             2) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Media Type                                                  ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} What is the TARGET Backup Media Type? This is the type of device that you want your${CClear}"
+              echo -e "${InvGreen} ${CClear} backups copied to. Please indicate whether the media is a network device (accessible${CClear}"
+              echo -e "${InvGreen} ${CClear} via UNC path using the common CIFS/SMB network protocol) a local attached USB device${CClear}"
+              echo -e "${InvGreen} ${CClear} (connected to router), or a network device (accessible via an NFS share). PLEASE NOTE:${CClear}"
+              echo -e "${InvGreen} ${CClear} If the USB or Network-NFS option is chosen, there will be no need to complete further${CClear}"
+              echo -e "${InvGreen} ${CClear} information for the Target username or password, and will be grayed out.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (Network=1, USB=2, Network-NFS=3) (Default = 1)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}2. What is the TARGET Backup Media Type? This is the type of device that you"
-              echo -e "${CCyan}want your backups copied to. Please indicate whether the media is a network"
-              echo -e "${CCyan}device (accessible via UNC path using the common CIFS/SMB network protocol),"
-              echo -e "${CCyan}a local USB device (connected to router), or a network device (accessible"
-              echo -e "${CCyan}via an NFS share). PLEASE NOTE: If the USB or Network-NFS option is chosen,"
-              echo -e "${CCyan}there will be no need to complete further information for the Target"
-              echo -e "${CCyan}username or password, and will be grayed out."
-              echo -e "${CYellow}(Network=1, USB=2, Network-NFS=3) (Default = 1)"
-              echo -e "${CClear}"
+              echo -e "${CClear}Current Media Type: ${CGreen}$BACKUPMEDIA"; echo -e "${CClear}"
               while true; do
                 read -p 'Media Type (1/2/3)?: ' BACKUPMEDIA
                   case $BACKUPMEDIA in
@@ -477,31 +488,36 @@ vconfig () {
                     [3] ) BACKUPMEDIA="Network-NFS"; break ;;
                     "" ) echo -e "\nError: Please use either 1, 2 or 3\n";;
                     * ) echo -e "\nError: Please use either 1, 2 or 3\n";;
-                  esac                  
+                  esac
               done
-              
+
               UNC=""
-              
+
               if [ "$BACKUPMEDIA" == "Network" ] && [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
                 UNCDRIVE=""
               fi
-              
+
               if [ "$BACKUPMEDIA" == "USB" ] && [ "$EXTDRIVE" != "$UNCDRIVE" ]; then
                 UNCDRIVE=""
               fi
-              
+
               if [ "$BACKUPMEDIA" == "Network-NFS" ] && [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
                 UNCDRIVE=""
               fi
-              
-            ;;      
+
+            ;;
 
             3) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" == "Network" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Network Backup Username                                            ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What is the TARGET Network Backup Username?${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = admin)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}3. What is the TARGET Network Backup Username?"
-                echo -e "${CYellow}(Default = admin)"
-                echo -e "${CClear}"
+                echo -e "${CClear}Current Username: ${CGreen}$BTUSERNAME"; echo -e "${CClear}"
                 read -p 'Username: ' BTUSERNAME1
                 if [ "$BTUSERNAME1" == "" ] || [ -z "$BTUSERNAME1" ]; then BTUSERNAME="admin"; else BTUSERNAME="$BTUSERNAME1"; fi # Using default value on enter keypress
               fi
@@ -509,16 +525,20 @@ vconfig () {
 
             4) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" == "Network" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Network Backup Password                                            ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What is the TARGET Network Backup Password?${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = admin)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}4. What is the TARGET Network Backup Password?"
-                echo -e "${CYellow}(Default = admin)"
-                echo -e "${CClear}"
                 if [ $BTPASSWORD == "admin" ]; then
-                  echo -e "${CGreen}Old Password (Unencoded): admin"
+                  echo -e "${CClear}Old Password (Unencoded): ${CGreen}admin"
                 else
-                  echo -en "${CGreen}Old Password (Unencoded): "; echo "$BTPASSWORD" | openssl enc -d -base64 -A
+                  echo -en "${CClear}Old Password (Unencoded): ${CGreen}"; echo "$BTPASSWORD" | openssl enc -d -base64 -A
                 fi
-                echo ""
+                echo -e "${CClear}"
                 read -rp 'New Password: ' BTPASSWORD1
                 if [ "$BTPASSWORD1" == "" ] || [ -z "$BTPASSWORD1" ]; then BTPASSWORD=`echo "admin" | openssl enc -base64 -A`; else BTPASSWORD=`echo $BTPASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
               fi
@@ -526,70 +546,92 @@ vconfig () {
 
             5) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" == "Network" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup UNC Path                                                    ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What is the TARGET Backup UNC Path? This is the path of a local network backup device${CClear}"
+                echo -e "${InvGreen} ${CClear} that has a share made available for backups to be pushed to. Please note: Use proper${CClear}"
+                echo -en "${InvGreen} ${CClear} notation for the network path by starting with 4 backslashes${CClear}"; printf "%s" "(\\\\\\\\)"; echo -e " and using two${CClear}"
+                echo -en "${InvGreen} ${CClear} backslashes "; printf "%s" " (\\\\)"; echo -e " between any additional folders. Example below:"
+                echo -e "${InvGreen} ${CClear}"
+                echo -en "${InvGreen} ${CClear}"; printf "%s" " (Default = \\\\\\\\192.168.50.25\\\\Backups)"; echo ""
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}5. What is the TARGET Backup UNC Path? This is the path of a local network"
-                echo -e "${CCyan}backup device that has a share made available for backups to be pushed to."
-                echo -e "${CCyan}Please note: Use proper notation for the network path by starting with"
-                echo -en "${CCyan}4 backslashes "; printf "%s" "(\\\\\\\\)"; echo -en " and using 2 backslashes "; printf "%s" "(\\\\)"; echo -e " between any additional"
-                echo -e "${CCyan}folders. Example below:"
-                echo -en "${CYellow}"; printf "%s" "(Default = \\\\\\\\192.168.50.25\\\\Backups)"
-                echo -e "${CClear}"
+                echo -en "${CClear}Current UNC Path: ${CGreen}"; echo $UNC | sed -e 's,\\,\\\\,g'; echo -e "${CClear}"
                 read -rp 'Target Backup UNC Path: ' UNC1
                 if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="\\\\\\\\192.168.50.25\\\\Backups"; else UNC="$UNC1"; fi # Using default value on enter keypress
                 UNCUPDATED="True"
               elif [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup NFS Path                                                    ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What is the TARGET Backup NFS Path? This is the path of a local network backup device${CClear}"
+                echo -e "${InvGreen} ${CClear} that has an NFS share made available for backups to be pushed to. Please note: Use${CClear}"
+                echo -e "${InvGreen} ${CClear} proper notation for the NFS network path by using the example below:${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = 192.168.50.25:/BACKUPS)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}5. What is the TARGET Backup NFS Path? This is the path of a local network"
-                echo -e "${CCyan}backup device that has an NFS share made available for backups to be pushed"
-                echo -e "${CCyan}to. Please note: Use proper notation for the NFS network path by using the"
-                echo -e "${CCyan}example below:"
-                echo -e "${CYellow}192.168.50.25:/BACKUPS"
-                echo -e "${CClear}"
+                echo -e "${CClear}Current NFS Path: ${CGreen}$UNC"; echo -e "${CClear}"
                 read -rp 'Target Backup NFS Path: ' UNC1
                 if [ "$UNC1" == "" ] || [ -z "$UNC1" ]; then UNC="192.168.50.25:/BACKUPS"; else UNC="$UNC1"; fi # Using default value on enter keypress
                 UNCUPDATED="True"
+                echo ""; echo ""
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup NFS Mount Options                                           ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What optional NFS Mount Options would you like to use (if any)? These options are${CClear}"
+                echo -e "${InvGreen} ${CClear} custom settings that may be needed to establish a successful connection to your NFS${CClear}"
+                echo -e "${InvGreen} ${CClear} share. Please follow format of example below:${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = nfsvers=3,nolock,_netdev,rsize=8192,wsize=8192)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}5a. What optional NFS Mount Options would you like to use (if any)? These"
-                echo -e "${CCyan}options are custom settings that may be needed to establish a successful"
-                echo -e "${CCyan}connection to your NFS share. Please follow format of example below:"
-                echo -e "${CYellow}nfsvers=3,nolock,_netdev,rsize=8192,wsize=8192"
-                echo -e "${CClear}"
+                echo -e "${CClear}Current NFS Mount Options: ${CGreen}$NFSMOUNTOPT"; echo -e "${CClear}"
                 read -rp 'NFS Mount Options: ' NFSMOUNTOPT1
                 if [ "$NFSMOUNTOPT1" == "" ] || [ -z "$NFSMOUNTOPT1" ]; then NFSMOUNTOPT=""; else NFSMOUNTOPT="$NFSMOUNTOPT1"; fi # Using default value on enter keypress
               fi
             ;;
 
             6) # -----------------------------------------------------------------------------------------
-              
+
               if [ "$BACKUPMEDIA" == "Network" ] || [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Drive Mount Point                                           ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What would you like to name the TARGET Network Backup Drive Mount Point? This mount${CClear}"
+                echo -e "${InvGreen} ${CClear} path will be created for you, and is the local path on your router typically located${CClear}"
+                echo -e "${InvGreen} ${CClear} under /tmp/mnt which provides a physical directory that is mounted to the network${CClear}"
+                echo -e "${InvGreen} ${CClear} backup location. Please note: Use proper notation for the path by using single${CClear}"
+                echo -e "${InvGreen} ${CClear} forward slashes between directories. Example below:${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = /tmp/mnt/backups)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}6. What would you like to name the TARGET Network Backup Drive Mount Point? This"
-                echo -e "${CCyan}mount path will be created for you, and is the local path on your router"
-                echo -e "${CCyan}typically located under /tmp/mnt which provides a physical directory that is"
-                echo -e "${CCyan}mounted to the network backup location. Please note: Use proper notation for the"
-                echo -e "${CCyan}path by using single forward slashes between directories. Example below:"
-                echo -e "${CYellow}(Default = /tmp/mnt/backups)"
-                echo -e "${CClear}"
-                #read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
-                #if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
-                SMBTARGET="TRUE"
-                _GetMountPoint_ SMBmp "Select an existing Target CIFS/SMB Backup Drive Mount Point: "
-                read -rsp $'Press any key to acknowledge...\n' -n1 key
+                echo -e "${CClear}Current Mount Point: ${CGreen}$UNCDRIVE"; echo -e "${CClear}"
+                read -p 'Target Network Backup Drive Mount Point: ' UNCDRIVE1
+                if [ "$UNCDRIVE1" == "" ] || [ -z "$UNCDRIVE1" ]; then UNCDRIVE="/tmp/mnt/backups"; else UNCDRIVE="$UNCDRIVE1"; fi # Using default value on enter keypress
+                #SMBTARGET="TRUE"
+                #_GetMountPoint_ SMBmp "Select an existing Target CIFS/SMB Backup Drive Mount Point: "
+                #read -rsp $'Press any key to acknowledge...\n' -n1 key
                 if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
                   UNCDRIVE=""
                   echo ""
-                  echo -e "${CYellow} WARNING: Your TARGET Network Backup Drive Mount Point cannot be named the"
-                  echo -e "${CYellow} same as your SOURCE External USB Drive Mount. Please choose a mount point"
-                  echo -e "${CYellow} name that is unique for this network target.${CClear}\n"
+                  echo -e "${CYellow}WARNING: Your TARGET Network Backup Drive Mount Point cannot be named the same as your"
+                  echo -e "${CYellow}SOURCE External USB Drive Mount. Please choose a mount point name that is unique for"
+                  echo -e "${CYellow}this network target.${CClear}\n"
                   read -rsp $'Press any key to acknowledge...\n' -n1 key
                 fi
-                
+
               elif [ "$BACKUPMEDIA" == "USB" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup USB Drive Mount Point                                       ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} Please choose the TARGET USB Backup Drive Mount Point assigned to your external USB${CClear}"
+                echo -e "${InvGreen} ${CClear} Drive where you want backups to be stored. Should there be only one drive available,${CClear}"
+                echo -e "${InvGreen} ${CClear} it will be automatically selected. PLEASE NOTE: It is highly recommended not to use${CClear}"
+                echo -e "${InvGreen} ${CClear} the same USB drive to both be a SOURCE and TARGET for backups.${CClear}"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}6. Please choose the TARGET USB Backup Drive Mount Point assigned to your external"
-                echo -e "${CCyan}USB Drive where you want backups to be stored. Should there be only one drive"
-                echo -e "${CCyan}available, it will be automatically selected. PLEASE NOTE: It is highly recommended"
-                echo -e "${CCyan}not to use the same USB drive to both be a SOURCE and TARGET for backups.${CClear}"
                 USBTARGET="TRUE"
                 _GetMountPoint_ USBmp "Select a Target USB Backup Drive Mount Point: "
                 read -rsp $'Press any key to acknowledge...\n' -n1 key
@@ -598,57 +640,72 @@ vconfig () {
             ;;
 
             7) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Directory Path                                              ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} What is the TARGET Backup Directory Path? This is the path that is created on your${CClear}"
+              echo -e "${InvGreen} ${CClear} network backup location in order to store and order the backups by day. Please note:${CClear}"
+              echo -e "${InvGreen} ${CClear} Use proper notation for the path by using single forward slashes between directories.${CClear}"
+              echo -e "${InvGreen} ${CClear} Example below:${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (Default = /router/GT-AX6000-Backup)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}7. What is the TARGET Backup Directory Path? This is the path that is created"
-              echo -e "${CCyan}on your network backup location in order to store and order the backups by day."
-              echo -e "${CCyan}Please note: Use proper notation for the path by using single forward slashes"
-              echo -e "${CCyan}between directories. Example below:"
-              echo -e "${CYellow}(Default = /router/GT-AX6000-Backup)"
-              echo -e "${CClear}"
+              echo -e "${CClear}Current Directory Path: ${CGreen}$BKDIR"; echo -e "${CClear}"
               read -p 'Target Backup Directory Path: ' BKDIR1
               if [ "$BKDIR1" == "" ] || [ -z "$BKDIR1" ]; then BKDIR="/router/GT-AX6000-Backup"; else BKDIR="$BKDIR1"; fi # Using default value on enter keypress
               checkusbexclusion
             ;;
 
             8) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Exclusion Path + File Name                                         ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Would you like to use a Backup Exclusion File Name? This file contains a list of${CClear}"
+              echo -e "${InvGreen} ${CClear} certain files that you want to exclude from the backup, such as your swap file.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${CRed}WARNING:${CClear} If you do not use an Exclusion file with the necessary entries to exlude${CClear}"
+              echo -e "${InvGreen} ${CClear} your swap file (or others), your backup size and time it takes to complete the backup${CClear}"
+              echo -e "${InvGreen} ${CClear} will increase greatly. Examples of what to include in the exlusions.txt file below${CClear}"
+              echo -e "${InvGreen} ${CClear} entered in a simple list format:${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear}${CBlue} myswap.swp${CClear}"
+              echo -e "${InvGreen} ${CClear}${CBlue} entware/var/log/*${CClear}"
+              echo -e "${InvGreen} ${CClear}${CBlue} skynet/skynet.log${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Please note: Use proper notation for the path to this file by using single forward ${CClear}"
+              echo -e "${InvGreen} ${CClear} slashes between directories. Example below:${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (Default = /jffs/addons/backupmon.d/exclusions.txt)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}8. Would you like to use a Backup Exclusion File Name? This file contains a"
-              echo -e "${CCyan}list of certain files that you want to exclude from the backup, such as your"
-              echo -e "${CCyan}swap file."
-              echo ""
-              echo -e "${CYellow}WARNING: If you do not use an Exclusion file with the necessary entries to"
-              echo -e "${CYellow}exlude your swap file (or others), your backup size and time it takes to"
-              echo -e "${CYellow}complete the backup will increase greatly. Examples of what to include in"
-              echo -e "${CYellow}the exlusions.txt file below entered in a simple list format:"
-              echo ""
-              echo -e "${CYellow}myswap.swp"
-              echo -e "${CYellow}entware/var/log/*"
-              echo -e "${CYellow}skynet/skynet.log"
-              echo ""
-              echo -e "${CCyan}Please note: Use proper notation for the path to this file by using single"
-              echo -e "${CCyan}forward slashes between directories. Example below:"
-              echo -e "${CYellow}(Example = /jffs/addons/backupmon.d/exclusions.txt) (Default = Leave Blank)"
-              echo -e "${CClear}"
+              echo -e "${CClear}Current Exclusion File Path: ${CGreen}$EXCLUSION"; echo -e "${CClear}"
               read -p 'Backup Exclusion Path + File Name: ' EXCLUSION1
               if [ "$EXCLUSION1" == "" ] || [ -z "$EXCLUSION1" ]; then EXCLUSION=""; else EXCLUSION="$EXCLUSION1"; fi # Using default value on enter keypress
               if [ "$BACKUPSWAP" == "0" ] && [ "$EXCLUSION" == "" ]; then EXCLUSION="$PFEXCLUSION"; fi
             ;;
 
             9) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Your Swap File?                                                    ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Would you like to back up your Swap File? This file usually ranges in the 1GB, 2GB or${CClear}"
+              echo -e "${InvGreen} ${CClear} 4GB range. It is not a file that is required to be backed up, and may cause issues${CClear}"
+              echo -e "${InvGreen} ${CClear} when restoring backups. Due to the size, it will also substantially increase backup${CClear}"
+              echo -e "${InvGreen} ${CClear} target size and time it takes to run backups.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} NOTE: It is highly recommended to leave this setting DISABLED.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (No=0, Yes=1) (Default = 0)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}9. Would you like to back up your Swap File? This file usually ranges in the"
-              echo -e "${CCyan}1GB, 2GB or 4GB range. It is not a file that is required to be backed up, and"
-              echo -e "${CCyan}may cause issues when restoring backups. Due to the size, it will also"
-              echo -e "${CCyan}substantially increase backup target size and time it takes to run backups."
-              echo -e "${CYellow}NOTE: It is highly recommended to leave this disabled."
-              echo ""
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
-              echo -e "${CClear}"
+              if [ "$BACKUPSWAP" == 0 ]; then BACKUPSWAPFB="No"; else BACKUPSWAPFB="Yes"; fi
+              echo -e "${CClear}Currently backing up Swap File?: ${CGreen}$BACKUPSWAPFB"; echo -e "${CClear}"
               read -p 'Backup Swap? (0/1): ' SWAP1
               if [ "$SWAP1" == "" ] || [ -z "$SWAP1" ]; then BACKUPSWAP=0; else BACKUPSWAP="$SWAP1"; fi # Using default value on enter keypress
-              
+
               if [ "$BACKUPSWAP" == "1" ]; then
-                swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1 
+                swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1
                 sed -i -e '/'$swapname'/d' $EXCLUSION >/dev/null 2>&1
                 sed -i -e '/'$swapname'/d' $SECONDARYEXCLUSION >/dev/null 2>&1
               fi
@@ -656,15 +713,19 @@ vconfig () {
 
             10) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" == "Network" ]; then
+                clear
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - CIFS/SMB Protocol Version                                                 ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What version of the CIFS/SMB protocol would you like to use? This protocol is used by${CClear}"
+                echo -e "${InvGreen} ${CClear} BACKUPMON to connect to other network devices in order to transfer files and backups${CClear}"
+                echo -e "${InvGreen} ${CClear} from source to target. While BACKUPMON supports the latest SMB protocol available${CClear}"
+                echo -e "${InvGreen} ${CClear} (v3.02), you can choose older versions for backwards compatibility purposes, for${CClear}"
+                echo -e "${InvGreen} ${CClear} example, if the target hardware is not able to support a more recent version.${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}10. What version of the CIFS/SMB protocol would you like to use? This protocol"
-                echo -e "${CCyan}is used by BACKUPMON to connect to other network devices in order to transfer"
-                echo -e "${CCyan}files and backups from source to target. While BACKUPMON supports the latest"
-                echo -e "${CCyan}SMB protocol available (v3.02), you can choose older versions for backwards"
-                echo -e "${CCyan}compatibility purposes, for example, if the target hardware is not able to"
-                echo -e "${CCyan}support a more recent version."
-                echo -e "${CYellow}(v2.1=1, v2.0=2, v1.0=3, v3.0=4, v3.02=5) (Default = 1)"
-                echo -e "${CClear}"
+                echo -e "${CClear}Current CIFS/SMB Protocol Version: ${CGreen}$SMBVER"; echo -e "${CClear}"
                 while true; do
                   read -p 'CIFS/SMB Version (1/2/3/4/5)?: ' SMBVER
                     case $SMBVER in
@@ -682,28 +743,41 @@ vconfig () {
 
 
             11) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Frequency                                                          ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} What backup frequency would you like BACKUPMON to run daily backup jobs each day?${CClear}"
+              echo -e "${InvGreen} ${CClear} There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual. Backup${CClear}"
+              echo -e "${InvGreen} ${CClear} folders based on the week, month, year, or perpetual are created under your network${CClear}"
+              echo -e "${InvGreen} ${CClear} share. Explained below:${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}WEEKLY:"
+              echo -e "${InvGreen} ${CClear} 7 different folders for each day of the week are created (ex: Mon, Tue... Sun)."
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}MONTHLY:"
+              echo -e "${InvGreen} ${CClear} 31 different folders for each day are created (ex: 01, 02, 03... 30, 31)."
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}YEARLY:"
+              echo -e "${InvGreen} ${CClear} 365 different folders are created for each day (ex: 001, 002, 003... 364, 365)."
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}PERPETUAL:"
+              echo -e "${InvGreen} ${CClear} A unique backup folder is created each time it runs based on the date-time"
+              echo -e "${InvGreen} ${CClear} (ex: 20230909-084322). NOTE: When using the Perpetual backup frequency option, you"
+              echo -e "${InvGreen} ${CClear} may only use BASIC mode."
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}11. What backup frequency would you like BACKUPMON to run daily backup jobs each"
-              echo -e "${CCyan}day? There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual."
-              echo -e "${CCyan}Backup folders based on the week, month, year, or perpetual are created under"
-              echo -e "${CCyan}your network share. Explained below:"
-              echo ""
-              echo -e "${CYellow}WEEKLY:"
-              echo -e "${CGreen}7 different folders for each day of the week are created (ex: Mon, Tue... Sun)."
-              echo ""
-              echo -e "${CYellow}MONTHLY:"
-              echo -e "${CGreen}31 different folders for each day are created (ex: 01, 02, 03... 30, 31)."
-              echo ""
-              echo -e "${CYellow}YEARLY:"
-              echo -e "${CGreen}365 different folders are created for each day (ex: 001, 002, 003... 364, 365)."
-              echo ""
-              echo -e "${CYellow}PERPETUAL:"
-              echo -e "${CGreen}A unique backup folder is created each time it runs based on the date-time"
-              echo -e "${CGreen}(ex: 20230909-084322). NOTE: When using the Perpetual backup frequency option,"
-              echo -e "${CGreen}you may only use BASIC mode."
-              echo ""
-              echo -e "${CYellow}(Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)"
-              echo -e "${CClear}"
+              if [ "$FREQUENCY" == "W" ]; then
+              	FREQUENCYDP="Weekly"
+              elif [ "$FREQUENCY" == "M" ]; then
+              	FREQUENCYDP="Monthly"
+              elif [ "$FREQUENCY" == "Y" ]; then
+              	FREQUENCYDP="Yearly"
+              elif [ "$FREQUENCY" == "P" ]; then
+              	FREQUENCYDP="Perpetual"
+              fi
+              echo -e "${CClear}Current Backup Frequency: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
               while true; do
                 read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
@@ -717,41 +791,49 @@ vconfig () {
               done
 
               if [ $FREQUENCY == "P" ]; then
+              	echo ""; echo ""
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Purging Perpetual Backups                                                 ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} Would you like to purge perpetual backups after a certain age? This can help trim your${CClear}"
+                echo -e "${InvGreen} ${CClear} backups and reclaim disk space, but also gives you more flexibility on the length of${CClear}"
+                echo -e "${InvGreen} ${CClear} time you can keep your backups. Purging backups can be run manually from the setup${CClear}"
+                echo -e "${InvGreen} ${CClear} menu, and gives you the ability to see which backups will be purged before they are${CClear}"
+                echo -e "${InvGreen} ${CClear} deleted permanently. It will also run automatically when calling BACKUPMON with the${CClear}"
+                echo -e "${InvGreen} ${CClear} '-backup' switch. If you run 'sh backupmon.sh -backup', it will complete a backup,${CClear}"
+                echo -e "${InvGreen} ${CClear} and then run an auto purge based on your criteria. Running 'sh backupmon.sh' without${CClear}"
+                echo -e "${InvGreen} ${CClear} the '-backup' switch will run a normal backup without an auto purge, even if purge is${CClear}"
+                echo -e "${InvGreen} ${CClear} enabled below.${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} PLEASE NOTE: If there are any backups you wish to save permanently, please move these"
+                echo -e "${InvGreen} ${CClear} to a SAFE, separate folder that BACKUPMON does not interact with."
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (No=0, Yes=1) (Default = 0)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}11a. Would you like to purge perpetual backups after a certain age? This can help"
-                echo -e "${CCyan}trim your backups and reclaim disk space, but also gives you more flexibility on"
-                echo -e "${CCyan}the length of time you can keep your backups. Purging backups can be run manually"
-                echo -e "${CCyan}from the setup menu, and gives you the ability to see which backups will be purged"
-                echo -e "${CCyan}before they are deleted permanently. It will also run automatically when calling"
-                echo -e "${CCyan}BACKUPMON with the -backup switch. If you run 'sh backupmon.sh -backup', it will"
-                echo -e "${CCyan}complete a backup, and then run an auto purge based on your criteria. Running"
-                echo -e "${CCyan}'sh backupmon.sh' without the -backup switch will run a normal backup without an"
-                echo -e "${CCyan}auto purge, even if purge is enabled below."
-                echo ""
-                echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
-                echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
-                echo ""
-                echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
-                echo -e "${CClear}"
-                read -p 'Purge Backups? (0/1): ' PURGE1
+                if [ "$PURGE" == "0" ]; then PURGEDP="No"; else PURGEDP="Yes"; fi
+                echo -e "${CClear}Current Purge Perpetual Backups Option?: ${CGreen}$PURGEDP"; echo -e "${CClear}"
+                read -p 'Purge Perpetual Backups? (0/1): ' PURGE1
                 if [ "$PURGE1" == "" ] || [ -z "$PURGE1" ]; then PURGE=0; else PURGE="$PURGE1"; fi # Using default value on enter keypress
-                
+
                 if [ "$PURGE" == "0" ]; then
                   PURGELIMIT=0
                 elif [ "$PURGE" == "1" ]; then
-
+                  echo ""; echo ""
+                  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Keeping Perpetual Backups                                                 ${CClear}"
+                  echo -e "${InvGreen} ${CClear}"
+                  echo -e "${InvGreen} ${CClear} How many days would you like to keep your perpetual backups? Example (in days): 90${CClear}"
+                  echo -e "${InvGreen} ${CClear} This would cause all perpetual backups older than 90 days would be permanently${CClear}"
+                  echo -e "${InvGreen} ${CClear} deleted.${CClear}"
+                  echo -e "${InvGreen} ${CClear}"
+                  echo -e "${InvGreen} ${CClear} PLEASE NOTE: If there are any backups you wish to save permanently, please move${CClear}"
+                  echo -e "${InvGreen} ${CClear} these to a SAFE, separate folder that BACKUPMON does not interact with.${CClear}"
+                  echo -e "${InvGreen} ${CClear}"
+                  echo -e "${InvGreen} ${CClear} (Default = 90)"
+                  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                   echo ""
-                  echo -e "${CCyan}11b. How many days would you like to keep your perpetual backups? Example: 90"
-                  echo -e "${CCyan}Note that all perpetual backups older than 90 days would be permanently deleted."
-                  echo ""
-                  echo -e "${CCyan}PLEASE NOTE: If there are any backups you wish to save permanently, please move"
-                  echo -e "${CCyan}these to a SAFE, separate folder that BACKUPMON does not interact with."
-                  echo ""
-                  echo -e "${CYellow}(Default = 90)"
-                  echo -e "${CClear}"
+                  echo -e "${CClear}Current Perpetual Backups Age?: ${CGreen}$PURGELIMIT"; echo -e "${CClear}"
                   read -p 'Backup Age? (in days): ' PURGELIMIT1
                   if [ "$PURGELIMIT1" == "" ] || [ -z "$PURGELIMIT1" ]; then PURGELIMIT=0; else PURGELIMIT="$PURGELIMIT1"; fi # Using default value on enter keypress
-
                 else
                   PURGE=0
                   PURGELIMIT=0
@@ -761,30 +843,34 @@ vconfig () {
             ;;
 
             12) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Basic vs. Advanced Operations                                             ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} What mode of operation would you like BACKUPMON to run in? You have 2 different${CClear}"
+              echo -e "${InvGreen} ${CClear} choices -- Basic or Advanced. Choose wisely! These are the differences:${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}BASIC:"
+              echo -e "${InvGreen} ${CClear} - Only backs up one backup set per daily folder"
+              echo -e "${InvGreen} ${CClear} - Backup file names have standard names based on jffs and USB drive label names"
+              echo -e "${InvGreen} ${CClear} - Self-prunes the daily backup folders by deleting contents before backing up new set"
+              echo -e "${InvGreen} ${CClear} - Will overwrite daily backups, even if multiple are made on the same day"
+              echo -e "${InvGreen} ${CClear} - Restore more automated, and only required to pick which day to restore from"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}ADVANCED:"
+              echo -e "${InvGreen} ${CClear} - Backs up multiple daily backup sets per daily folder"
+              echo -e "${InvGreen} ${CClear} - Backup file names contain extra unique date and time identifiers"
+              echo -e "${InvGreen} ${CClear} - Keeps all daily backups forever, and no longer self-prunes"
+              echo -e "${InvGreen} ${CClear} - Will not overwrite daily backups, even if multiple are made on the same day"
+              echo -e "${InvGreen} ${CClear} - Restore more tedious, and required to type exact backup file names before restore"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} NOTE: When choosing BASIC mode while using 'Perpetual Frequency', your daily backup${CClear}"
+              echo -e "${InvGreen} ${CClear} folders will not self-prune or overwrite, even if multiple backups are made on the${CClear}"
+              echo -e "${InvGreen} ${CClear} same day.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (Basic-0, Advanced=1) (Default = 0)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}12. What mode of operation would you like BACKUPMON to run in? You have 2 different"
-              echo -e "${CCyan}choices -- Basic or Advanced. Choose wisely! These are the differences:"
-              echo ""
-              echo -e "${CYellow}BASIC:"
-              echo -e "${CGreen}- Only backs up one backup set per daily folder"
-              echo -e "${CGreen}- Backup file names have standard names based on jffs and USB drive label names"
-              echo -e "${CGreen}- Self-prunes the daily backup folders by deleting contents before backing up new set"
-              echo -e "${CGreen}- Will overwrite daily backups, even if multiple are made on the same day"
-              echo -e "${CGreen}- Restore more automated, and only required to pick which day to restore from"
-              echo ""
-              echo -e "${CYellow}ADVANCED:"
-              echo -e "${CGreen}- Backs up multiple daily backup sets per daily folder"
-              echo -e "${CGreen}- Backup file names contain extra unique date and time identifiers"
-              echo -e "${CGreen}- Keeps all daily backups forever, and no longer self-prunes"
-              echo -e "${CGreen}- Will not overwrite daily backups, even if multiple are made on the same day"
-              echo -e "${CGreen}- Restore more tedious, and required to type exact backup file names before restore"
-              echo ""
-              echo -e "${CYellow}NOTE: When choosing BASIC mode while using 'Perpetual Frequency', your daily backup"
-              echo -e "${CYellow}folders will not self-prune or overwrite, even if multiple backups are made on the"
-              echo -e "${CYellow}same day."
-              echo ""
-              echo -e "${CYellow}(Basic-0, Advanced=1) (Default = 0)"
-              echo -e "${CClear}"
+              echo -e "${CClear}Current Operational Mode?: ${CGreen}$MODE"; echo -e "${CClear}"
               while true; do
                 read -p 'Mode (0/1)?: ' MODE1
                   case $MODE1 in
@@ -797,14 +883,20 @@ vconfig () {
             ;;
 
             13) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Scheduled Backups                                                         ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Would you like BACKUPMON to automatically run at a scheduled time each day? Please${CClear}"
+              echo -e "${InvGreen} ${CClear} note: This will place a cru command into your 'services-start' file that is located${CClear}"
+              echo -e "${InvGreen} ${CClear} under your /jffs/scripts folder. Each time your router reboots, this command will${CClear}"
+              echo -e "${InvGreen} ${CClear} automatically be added as a CRON job to run your backup.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (No=0, Yes=1) (Default = 0)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}13. Would you like BACKUPMON to automatically run at a scheduled time each day?"
-              echo -e "${CCyan}Please note: This will place a cru command into your 'services-start' file that"
-              echo -e "${CCyan}is located under your /jffs/scripts folder. Each time your router reboots, this"
-              echo -e "${CCyan}command will automatically be added as a CRON job to run your backup."
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
-              echo -e "${CClear}"
-              read -p 'Schedule BACKUPMON?: ' SCHEDULE1
+              if [ "$SCHEDULE" == "0" ]; then SCHEDULEDP="No"; else SCHEDULEDP="Yes"; fi
+              echo -e "${CClear}Current Scheduler Option: ${CGreen}$SCHEDULEDP"; echo -e "${CClear}"
+              read -p 'Schedule BACKUPMON (0/1)?: ' SCHEDULE1
               if [ "$SCHEDULE1" == "" ] || [ -z "$SCHEDULE1" ]; then SCHEDULE=0; else SCHEDULE="$SCHEDULE1"; fi # Using default value on enter keypress
 
               if [ "$SCHEDULE" == "0" ]; then
@@ -816,28 +908,39 @@ vconfig () {
 
               elif [ "$SCHEDULE" == "1" ]; then
 
+                echo ""; echo ""
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Selecting a Scheduled Time                                                ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} What time would you like BACKUPMON to automatically run each day? Please note: You${CClear}"
+                echo -e "${InvGreen} ${CClear} will be asked for the hours and minutes in separate prompts. Use 24hr format for the${CClear}"
+                echo -e "${InvGreen} ${CClear} hours. (Ex: 17 hrs / 15 min = 17:15 or 5:15pm)${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (Default = 2 hrs / 30 min = 02:30 or 2:30am)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
-                echo -e "${CCyan}12a. What time would you like BACKUPMON to automatically run each day? Please"
-                echo -e "${CCyan}note: You will be asked for the hours and minutes in separate prompts. Use 24hr"
-                echo -e "${CCyan}format for the hours. (Ex: 17 hrs / 15 min = 17:15 or 5:15pm)"
-                echo -e "${CYellow}(Default = 2 hrs / 30 min = 02:30 or 2:30am)"
-                echo -e "${CClear}"
-                read -p 'Schedule HOURS?: ' SCHEDULEHRS1
+                MINS=$(printf "%02.0f\n" $SCHEDULEMIN)
+                echo -e "${CClear}Current Scheduled Time: ${CGreen}$SCHEDULEHRS:$MINS"; echo -e "${CClear}"
+                read -p 'Schedule HOURS (0-24)?: ' SCHEDULEHRS1
                 if [ "$SCHEDULEHRS1" == "" ] || [ -z "$SCHEDULEHRS1" ]; then SCHEDULEHRS=2; else SCHEDULEHRS="$SCHEDULEHRS1"; fi # Using default value on enter keypress
-                read -p 'Schedule MINUTES?: ' SCHEDULEMIN1
+                read -p 'Schedule MINUTES (0-59)?: ' SCHEDULEMIN1
                 if [ "$SCHEDULEMIN1" == "" ] || [ -z "$SCHEDULEMIN1" ]; then SCHEDULEMIN=30; else SCHEDULEMIN="$SCHEDULEMIN1"; fi # Using default value on enter keypress
-                
+
                 if [ "$FREQUENCY" == "P" ]; then
+                  echo ""; echo ""
+                  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup/Purge Functionality                                                ${CClear}"
+                  echo -e "${InvGreen} ${CClear}"
+                  echo -e "${InvGreen} ${CClear} When running a scheduled job each day, would you like BACKUPMON to only run backups,${CClear}"
+                  echo -e "${InvGreen} ${CClear} or would you like it to run backups and have it automatically purge old backups${CClear}"
+                  echo -e "${InvGreen} ${CClear} outside your specified age range immediately following? If you don't want to run${CClear}"
+                  echo -e "${InvGreen} ${CClear} backups with autopurge, you will be responsible for manually running backup purges${CClear}"
+                  echo -e "${InvGreen} ${CClear} using the config menu, or manually from the file system itself. Please note: This ${CClear}"
+                  echo -e "${InvGreen} ${CClear} option is only available when having the Perpetual Backup Frequency selected.${CClear}"
+                  echo -e "${InvGreen} ${CClear}"
+                  echo -e "${InvGreen} ${CClear} (Backup Only=1, Backup + Autopurge=2) (Default = 1)"
+                  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                   echo ""
-                  echo -e "${CCyan}12b. When running a scheduled job each day, would you like BACKUPMON to only run"
-                  echo -e "${CCyan}backups, or would you like it to run backups and have it automatically purge"
-                  echo -e "${CCyan}old backups outside your specified age range immediately following? If you don't"
-                  echo -e "${CCyan}want to run backups with autopurge, you will be responsible for manually running"
-                  echo -e "${CCyan}backup purges using the config menu, or manually from the file system itself."
-                  echo -e "${CCyan}Please note: This option is only available when having the Perpetual Backup"
-                  echo -e "${CCyan}Frequency selected."
-                  echo -e "${CYellow}(Backups Only=1, Backups+Autopurge=2) (Default = 1)"
-                  echo -e "${CClear}"
+                  if [ "$SCHEDULEMODE" == "BackupOnly" ]; then SCHEDULEMODEDP="Backup Only"; else SCHEDULEMODEDP="Backup + Autopurge"; fi
+                  echo -e "${CClear}Current Backup/Purge Option: ${CGreen}$SCHEDULEMODEDP"; echo -e "${CClear}"
                   while true; do
                     read -p 'Backup/Purge Functionality (1/2)?: ' SCHEDULEMODE
                       case $SCHEDULEMODE in
@@ -868,13 +971,13 @@ vconfig () {
                     chmod 755 /jffs/scripts/services-start
                     cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh"
                   fi
-                  
+
                 echo ""
                 echo -e "${CGreen}[Modifiying SERVICES-START file]..."
                 sleep 2
                 echo -e "[Modifying CRON jobs]..."
                 sleep 2
-                
+
                 elif [ "$SCHEDULEMODE" == "BackupAutoPurge" ]; then
                   if [ -f /jffs/scripts/services-start ]; then
 
@@ -894,14 +997,14 @@ vconfig () {
                     chmod 755 /jffs/scripts/services-start
                     cru a RunBackupMon "$SCHEDULEMIN $SCHEDULEHRS * * * sh /jffs/scripts/backupmon.sh -backup"
                   fi
-                
+
                 echo ""
                 echo -e "${CGreen}[Modifiying SERVICES-START file]..."
                 sleep 2
                 echo -e "[Modifying CRON jobs]..."
                 sleep 2
-                
-                fi  
+
+                fi
 
               else
                 SCHEDULE=0
@@ -909,23 +1012,28 @@ vconfig () {
                 SCHEDULEMIN=30
               fi
             ;;
-            
+
             14) # -----------------------------------------------------------------------------------------
+              clear
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - AMTM Email Notifications                                                  ${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Would you like BACKUPMON to send you email notifications on backup success or failure,${CClear}"
+              echo -e "${InvGreen} ${CClear} or both? Please note: This does require that AMTM email has been set up successfully${CClear}"
+              echo -e "${InvGreen} ${CClear} under AMTM -> em (email settings). Once you are able to send and receive test emails,${CClear}"
+              echo -e "${InvGreen} ${CClear} you may utilize this functionality in BACKUPMON. Additionally, this functionality will${CClear}"
+              echo -e "${InvGreen} ${CClear} download an AMTM email interface library courtesy of @Martinski, and will be located${CClear}"
+              echo -e "${InvGreen} ${CClear} under a new common library folder called: /jffs/addons/shared-libs.${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} (No=0, Yes=1) (Default = 0)"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
-              echo -e "${CCyan}14. Would you like BACKUPMON to send you email notifications on backup success"
-              echo -e "${CCyan}or failure, or both? Please note: This does require that AMTM email has been"
-              echo -e "${CCyan}set up successfully under AMTM -> em (email settings). Once you are able to"
-              echo -e "${CCyan}send and receive test emails, you may utilize this functionality in BACKUPMON."
-              echo -e "${CCyan}Additionally, this functionality will download an AMTM email interface library"
-              echo -e "${CCyan}courtesy of @Martinski, and will be located under a new common library folder"
-              echo -e "${CCyan}called: /jffs/addons/shared-libs."
-              echo -e "${CYellow}(No=0, Yes=1) (Default = 0)"
-              echo -e "${CClear}"
-              read -p 'Enable BACKUPMON Email Notifications? (0/1): ' AMTMEMAIL1
+              if [ "$AMTMEMAIL" == "0" ]; then AMTMEMAILDP="No"; else AMTMEMAILDP="Yes"; fi
+              echo -e "${CClear}Current Email Notification Option: ${CGreen}$AMTMEMAILDP"; echo -e "${CClear}"
+              read -p 'Enable BACKUPMON Email Notifications (0/1)?: ' AMTMEMAIL1
               if [ "$AMTMEMAIL1" == "" ] || [ -z "$AMTMEMAIL1" ]; then AMTMEMAIL=0; else AMTMEMAIL="$AMTMEMAIL1"; fi # Using default value on enter keypress
 
               if [ "$AMTMEMAIL" == "1" ]; then
-                
+
                 if [ -f "$CUSTOM_EMAIL_LIBFile" ]
                 then
                   . "$CUSTOM_EMAIL_LIBFile"
@@ -938,7 +1046,7 @@ vconfig () {
                 else
                     _DownloadCEMLibraryFile_ "install"
                 fi
-                
+
                 echo ""
                 read -p 'Email on Successful Backups? (No=0, Yes=1): ' AMTMEMAILSUCCESS1
                 if [ "$AMTMEMAILSUCCESS1" == "" ] || [ -z "$AMTMEMAILSUCCESS1" ]; then AMTMEMAILSUCCESS=0; else AMTMEMAILSUCCESS="$AMTMEMAILSUCCESS1"; fi # Using default value on enter keypress
@@ -961,81 +1069,88 @@ vconfig () {
                   } > "$tmpEMailBodyFile"
 
                   _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
-                  
+
                   echo ""
                   read -rsp $'Press any key to acknowledge...\n' -n1 key
-                
+
                 fi
-                
+
                 #If notifications are off, turn off AMTM Email functionality
                 if [ "$AMTMEMAILSUCCESS" == "0" ] && [ "$AMTMEMAILFAILURE" == "0" ]; then
                   AMTMEMAIL=0
                 fi
-                
+
                else
                 AMTMEMAIL=0
                 AMTMEMAILSUCCESS=0
                 AMTMEMAILFAILURE=0
               fi
-              
+
             ;;
-            
+
             15) # -----------------------------------------------------------------------------------------
             while true; do
               clear
-              logoNM     
-              echo ""
-              echo -e "${CGreen}----------------------------------------------------------------"
-              echo -e "${CGreen}Secondary Backup Configuration Options"
-              echo -e "${CGreen}----------------------------------------------------------------"
-              echo -en "${InvDkGray}${CWhite} 1  ${CClear}${CCyan}: Enabled/Disabled                   : ${CGreen}"
+              DLVersionPF=$(printf "%-8s" $DLVersion)
+              VersionPF=$(printf "%-8s" $Version)
+              if [ "$UpdateNotify" == "0" ]; then
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$VersionPF - Secondary Backup Configuration Options                          ${CClear}"
+              else
+                echo -e "${InvYellow} ${InvDkGray}${CWhite} BACKUPMON -- Update v$VersionPF -> v$DLVersionPF - Secondary Backup Configuration Options   ${CClear}"
+              fi
+              echo -e "${InvGreen} ${CClear}"
+              echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
+              echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of the secondary backup.${CClear}"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+              echo -e "${InvGreen} ${CClear}"
+              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Enabled/Disabled                             : ${CGreen}"
               if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
               if [ "$SECONDARYSTATUS" == "0" ]; then
                 printf "Disabled"; printf "%s\n";
               else printf "Enabled"; printf "%s\n"; fi
-              echo -e "${InvDkGray}${CWhite} 2  ${CClear}${CCyan}: Secondary Target Media Type        : ${CGreen}$SECONDARYBACKUPMEDIA"             
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2) ${CClear} : Secondary Target Media Type                  : ${CGreen}$SECONDARYBACKUPMEDIA"
               if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
                 if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
-                echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Secondary Target Username          : ${CDkGray}$SECONDARYUSER"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Secondary Target Username                    : ${CDkGray}$SECONDARYUSER"
                 if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
-                echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Secondary Target Password (ENC)    : ${CDkGray}$SECONDARYPWD"
-                echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CDkGray}: Secondary Target Path              : N/A"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Secondary Target Password (ENC)              : ${CDkGray}$SECONDARYPWD"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear}${CDkGray} : Secondary Target Path                        : N/A"
               elif [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
                 if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
-                echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CCyan}: Secondary Target Username          : ${CGreen}$SECONDARYUSER"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear} : Secondary Target Username                    : ${CGreen}$SECONDARYUSER"
                 if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
-                echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CCyan}: Secondary Target Password (ENC)    : ${CGreen}$SECONDARYPWD"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear} : Secondary Target Password (ENC)              : ${CGreen}$SECONDARYPWD"
                 if [ -z "$SECONDARYUNC" ]; then
-                  echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+                  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Secondary Target Path                        : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
                 else
                   if [ "$SECONDARYUNCUPDATED" == "True" ]; then
-                    echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
+                    echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Secondary Target Path                        : ${CGreen}"; printf '%s' $SECONDARYUNC; printf "%s\n"
                   else
-                    echo -en "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
+                    echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Secondary Target Path                        : ${CGreen}"; echo $SECONDARYUNC | sed -e 's,\\,\\\\,g'
                   fi
                 fi
               elif [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
                 if [ -z "$SECONDARYUSER" ]; then SECONDARYUSER="admin"; fi
-                echo -e "${InvDkGray}${CWhite} 3  ${CClear}${CDkGray}: Secondary Target Username          : ${CDkGray}$SECONDARYUSER"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Secondary Target Username                    : ${CDkGray}$SECONDARYUSER"
                 if [ -z "$SECONDARYPWD" ]; then SECONDARYPWD="YWRtaW4K"; fi
-                echo -e "${InvDkGray}${CWhite} 4  ${CClear}${CDkGray}: Secondary Target Password (ENC)    : ${CDkGray}$SECONDARYPWD"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Secondary Target Password (ENC)              : ${CDkGray}$SECONDARYPWD"
                 if [ -z "$SECONDARYUNC" ]; then SECONDARYUNC="192.168.50.25:/Backups"; fi
-                echo -e "${InvDkGray}${CWhite} 5  ${CClear}${CCyan}: Secondary Target Path              : ${CGreen}$SECONDARYUNC"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(5) ${CClear} : Secondary Target Path                        : ${CGreen}$SECONDARYUNC"
               fi
               if [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Secondary NFS Mount Options       : ${CGreen}$SECONDARYNFSMOUNTOPT"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Secondary NFS Mount Options                 : ${CGreen}$SECONDARYNFSMOUNTOPT"
               else
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Secondary NFS Mount Options       : ${CDkGray}N/A"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Secondary NFS Mount Options                 : ${CDkGray}N/A"
               fi
               if [ "$SECONDARYUNCDRIVE" == "" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
-                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Secondary Target Drive Mount Point           : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
               else
-                echo -e "${InvDkGray}${CWhite} 6  ${CClear}${CCyan}: Secondary Target Drive Mount Point : ${CGreen}$SECONDARYUNCDRIVE"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Secondary Target Drive Mount Point           : ${CGreen}$SECONDARYUNCDRIVE"
               fi
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
-              echo -e "${InvDkGray}${CWhite} 7  ${CClear}${CCyan}: Secondary Target Directory Path    : ${CGreen}$SECONDARYBKDIR"
-              echo -e "${InvDkGray}${CWhite} 8  ${CClear}${CCyan}: Exclusion File Name                : ${CGreen}$SECONDARYEXCLUSION"
-              echo -en "${InvDkGray}${CWhite} 9  ${CClear}${CCyan}: Backup Frequency?                  : ${CGreen}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Secondary Target Directory Path              : ${CGreen}$SECONDARYBKDIR"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Exclusion File Name                          : ${CGreen}$SECONDARYEXCLUSION"
+              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Frequency?                            : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
                 printf "Weekly"; printf "%s\n";
               elif [ "$SECONDARYFREQUENCY" == "M" ]; then
@@ -1047,27 +1162,27 @@ vconfig () {
               else SECONDARYFREQUENCY="M";
                 printf "Monthly"; printf "%s\n"; fi
               if [ "$SECONDARYFREQUENCY" == "P" ]; then
-                echo -en "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Secondary Backups?          : ${CGreen}"
+                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Secondary Backups?                    : ${CGreen}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
               else
-                echo -en "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Secondary Backups?          : ${CDkGray}"
+                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Secondary Backups?                    : ${CDkGray}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
               fi
               if [ -z $SECONDARYPURGELIMIT ]; then SECONDARYPURGELIMIT=0; fi
               if [ "$SECONDARYFREQUENCY" == "P" ] && [ "$SECONDARYPURGE" == "1" ]; then
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CCyan}-  Purge Older Than (days)           : ${CGreen}$SECONDARYPURGELIMIT"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Older Than (days)                     : ${CGreen}$SECONDARYPURGELIMIT"
               else
-                echo -e "${InvDkGray}${CWhite} |--${CClear}${CDkGray}-  Purge Older Than (days)           : ${CDkGray}$SECONDARYPURGELIMIT"
+                echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Older Than (days)                     : ${CDkGray}$SECONDARYPURGELIMIT"
               fi
               if [ -z "$SECONDARYMODE" ]; then SECONDARYMODE="Basic"; fi
-              echo -e "${InvDkGray}${CWhite} 10 ${CClear}${CCyan}: Backup/Restore Mode                : ${CGreen}$SECONDARYMODE"
-              echo -e "${InvDkGray}${CWhite} |  ${CClear}"
-              echo -e "${InvDkGray}${CWhite} e  ${CClear}${CCyan}: Exit Back to Primary Backup Config"
-              echo -e "${CGreen}----------------------------------------------------------------"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear} : Backup/Restore Mode                          : ${CGreen}$SECONDARYMODE"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}"
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(e) ${CClear} : Exit Back to Primary Backup Config"
+              echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
               printf "Selection: ${CClear}"
               read -r SECONDARYINPUT
@@ -1075,27 +1190,27 @@ vconfig () {
                     1) echo ""
                         read -p 'Secondary Backup Enabled=1, Disabled=0 (0/1?): ' SECONDARYSTATUS
                     ;;
-                    
+
                     2) echo ""; read -p 'Secondary Target Backup Media (Network=1, USB=2, Network-NFS=3): ' SECONDARYBACKUPMEDIA
                         if [ "$SECONDARYBACKUPMEDIA" == "1" ]; then
                           SECONDARYBACKUPMEDIA="Network"
                           SECONDARYUNCDRIVE=""
                           SECONDARYUNC=""
-                        elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then 
+                        elif [ "$SECONDARYBACKUPMEDIA" == "2" ]; then
                           SECONDARYBACKUPMEDIA="USB"
                           SECONDARYUNCDRIVE=""
-                        elif [ "$SECONDARYBACKUPMEDIA" == "3" ]; then 
+                        elif [ "$SECONDARYBACKUPMEDIA" == "3" ]; then
                           SECONDARYBACKUPMEDIA="Network-NFS"
                           SECONDARYUNCDRIVE=""
                           SECONDARYUNC="${CWhite}${InvRed}<-- Action Needed! ${CClear}"
                         else SECONDARYBACKUPMEDIA="Network"
                         fi
                     ;;
-                    
+
                     3) echo ""
                        read -p 'Secondary Username: ' SECONDARYUSER
                     ;;
-                    
+
                     4) echo ""
                        if [ "$SECONDARYPWD" == "admin" ]; then
                          echo -e "Old Secondary Password (Unencoded): admin"
@@ -1105,13 +1220,13 @@ vconfig () {
                        fi
                        echo ""
                        read -rp 'New Secondary Password: ' SECONDARYPWD1
-                       if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then 
+                       if [ "$SECONDARYPWD1" == "" ] || [ -z "$SECONDARYPWD1" ]; then
                          SECONDARYPWD=`echo "admin" | openssl enc -base64 -A`
                        else
                          SECONDARYPWD=`echo $SECONDARYPWD1 | openssl enc -base64 -A`
                        fi
                     ;;
-                    
+
                     5) echo ""
                        if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
                          read -rp 'Secondary Target UNC Path (ex: \\\\192.168.50.25\\Backups ): ' SECONDARYUNC1
@@ -1126,57 +1241,59 @@ vconfig () {
                          SECONDARYNFSMOUNTOPT="$SECONDARYNFSMOUNTOPT1"
                        fi
                     ;;
-                    
+
                     6) echo ""
                        if [ "$SECONDARYBACKUPMEDIA" == "Network" ] || [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
                          read -p 'Secondary Target Mount Point (ex: /tmp/mnt/backups ): ' SECONDARYUNCDRIVE
-                       elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then 
+                       elif [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
                          SECONDARYUSBTARGET="TRUE"
                          _GetMountPoint_ USBmp "Select a Secondary Target USB Backup Drive Mount Point: "
                          read -rsp $'Press any key to acknowledge...\n' -n1 key
                        fi
                        checkusbexclusion
                     ;;
-                    
+
                     7) echo ""
                        read -p 'Secondary Target Dir Path (ex: /router/GT-AX6000-Backup ): ' SECONDARYBKDIR
                        checkusbexclusion
                     ;;
-                    
+
                     8) echo ""
                        read -p 'Secondary Exclusion File Name (ex: /jffs/addons/backupmon.d/exclusions2.txt ): ' SECONDARYEXCLUSION
                        if [ "$BACKUPSWAP" == "0" ] && [ "$SECONDARYEXCLUSION" == "" ]; then
                          SECONDARYEXCLUSION="$PFEXCLUSION"
                        fi
                     ;;
-                    
+
                     9) echo ""
                        read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
                        SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}')
                        SECONDARYPURGE=0
-                       if [ "$SECONDARYFREQUENCY" == "P" ]; then 
+                       if [ "$SECONDARYFREQUENCY" == "P" ]; then
                          SECONDARYMODE="Basic"
+                         echo ""
                          read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE
+                         echo ""
                          read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT
                        else
                          SECONDARYPURGELIMIT=0
                        fi
                     ;;
-                    
+
                     10) echo ""
                         read -p 'Secondary Backup Mode (Basic=0, Advanced=1) (0/1?): ' SECONDARYMODE
                         if [ "$SECONDARYMODE" == "0" ]; then
                           SECONDARYMODE="Basic"
                         elif [ "$SECONDARYMODE" == "1" ]; then
                           SECONDARYMODE="Advanced"
-                        else 
+                        else
                           SECONDARYMODE="Basic"
-                        fi 
-                        if [ "$SECONDARYFREQUENCY" == "P" ]; then 
+                        fi
+                        if [ "$SECONDARYFREQUENCY" == "P" ]; then
                           SECONDARYMODE="Basic"
                         fi
                     ;;
-                    
+
                     [Ee] ) break ;;
                     "") echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
                     *) echo -e "\nError: Please use 1 - 10 or e=Exit\n";;
@@ -1365,7 +1482,7 @@ while true; do
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear} : Test CIFS/SMB Version                        : ${CGreen}$TESTSMBVER"
   else
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7)${CClear}${CDkGray} : Test CIFS/SMB Version                        : N/A"
-  fi  
+  fi
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} | ${CClear}"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(t)${CClear} : Test your Network Backup Connection"
   echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(p)${CClear} : Import your Primary Backup Settings"
@@ -1379,7 +1496,7 @@ while true; do
       case $TESTINPUT in
         1) echo ""
            read -p 'Test Target Media Type (ex: Network=1 / USB=2 / Network-NFS=3) (Choose 1, 2 or 3): ' TESTBACKUPMEDIA
-           if [ "$TESTBACKUPMEDIA" == "1" ]; then 
+           if [ "$TESTBACKUPMEDIA" == "1" ]; then
              TESTBACKUPMEDIA="Network"
              TESTUNC=""
            elif [ "$TESTBACKUPMEDIA" == "2" ]; then
@@ -1388,33 +1505,33 @@ while true; do
            elif [ "$TESTBACKUPMEDIA" == "3" ]; then
              TESTBACKUPMEDIA="Network-NFS"
              TESTUNC="${InvRed}${CWhite}<-- Attention Needed${CClear}"
-           else 
+           else
              TESTBACKUPMEDIA="Network"
            fi
         ;;
-        
+
         2) echo ""
            read -p 'Test Username: ' TESTUSER
         ;;
-        
+
         3) echo ""
            read -rp 'Test Password: ' TESTPWD
         ;;
-        
+
         4) echo ""
-           if [ "$TESTBACKUPMEDIA" == "Network" ]; then 
+           if [ "$TESTBACKUPMEDIA" == "Network" ]; then
              read -rp 'Test Target UNC Path (ex: \\\\192.168.50.25\\Backups ): ' TESTUNC1
-             if [ -z $TESTUNC1 ]; then 
+             if [ -z $TESTUNC1 ]; then
                TESTUNC="\\\\\\\\192.168.50.25\\\\Backups"
-             else 
+             else
                TESTUNC="$TESTUNC1"
              fi
              TESTUNCUPDATED="True"
-           elif [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then 
+           elif [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
              read -rp 'Test Target NFS Path (ex: 192.168.50.25:/BACKUPS ): ' TESTUNC1
-             if [ -z $TESTUNC1 ]; then 
+             if [ -z $TESTUNC1 ]; then
                TESTUNC="192.168.50.25:/BACKUPS"
-             else 
+             else
                TESTUNC="$TESTUNC1"
              fi
              echo ""
@@ -1422,41 +1539,41 @@ while true; do
              read -rp 'NFS Mount Options: ' TESTNFSMOUNTOPT
            fi
         ;;
-        
+
         5) echo ""
-           if [ "$TESTBACKUPMEDIA" == "Network" ] || [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then 
+           if [ "$TESTBACKUPMEDIA" == "Network" ] || [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
            	 read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE
-           elif [ "$TESTBACKUPMEDIA" == "USB" ]; then 
+           elif [ "$TESTBACKUPMEDIA" == "USB" ]; then
              TESTUSBTARGET="TRUE"
              _GetMountPoint_ USBmp "Select a Test Target USB Backup Mount Point: "
              read -rsp $'Press any key to acknowledge...\n' -n1 key
            fi
         ;;
-        
+
         6) echo ""
            read -p 'Test Target Dir Path (ex: /router/test-backup ): ' TESTBKDIR
         ;;
-        
+
         7) echo ""
            echo "Test CIFS/SMB Version (ex: v2.1=1 / v2.0=2 / v1.0=3 / v3.0=4 / v3.02=5)"
            read -p '(Choose 1, 2, 3, 4 or 5): ' TESTSMBVER
-           if [ "$TESTSMBVER" == "1" ]; then 
+           if [ "$TESTSMBVER" == "1" ]; then
              TESTSMBVER="2.1"
-           elif [ "$TESTSMBVER" == "2" ]; then 
+           elif [ "$TESTSMBVER" == "2" ]; then
              TESTSMBVER="2.0"
            elif [ "$TESTSMBVER" == "3" ]; then
              TESTSMBVER="1.0"
-           elif [ "$TESTSMBVER" == "4" ]; then 
+           elif [ "$TESTSMBVER" == "4" ]; then
              TESTSMBVER="3.0"
-           elif [ "$TESTSMBVER" == "5" ]; then 
+           elif [ "$TESTSMBVER" == "5" ]; then
              TESTSMBVER="3.02"
-           else 
+           else
              TESTSMBVER="2.1"
            fi
         ;;
-        
+
         [Ee]) break ;;
-        
+
         [Pp]) TESTUSER=$BTUSERNAME
               TESTPWD=$(echo $BTPASSWORD | openssl enc -d -base64 -A)
               TESTUNC=$UNC
@@ -1466,7 +1583,7 @@ while true; do
               TESTSMBVER=$SMBVER
               TESTNFSMOUNTOPT=$NFSMOUNTOPT
         ;;
-        
+
         [Ss]) TESTUSER=$SECONDARYUSER
               TESTPWD=$(echo $SECONDARYPWD | openssl enc -d -base64 -A)
               TESTUNC=$SECONDARYUNC
@@ -1476,7 +1593,7 @@ while true; do
               TESTSMBVER=$SMBVER
               TESTNFSMOUNTOPT=$SECONDARYNFSMOUNTOPT
         ;;
-        
+
         [Tt])   # Connection test script
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
@@ -1544,7 +1661,7 @@ while true; do
                           fi
                         done
                   fi
-                  
+
                   if [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
                     # Check the build to see if modprobe needs to be called
                     modprobe nfs nfsv3 > /dev/null
@@ -1572,11 +1689,11 @@ while true; do
                           fi
                         done
                   fi
-                    
+
                   if [ "$TESTBACKUPMEDIA" == "USB" ]; then
                   echo -en "${CGreen}STATUS: External test drive (USB) skipping mounting process.${CClear}"; printf "%s\n"
                   fi
-                
+
                 fi
 
                 if [ "$FAILURE" == "TRUE" ]; then
@@ -1607,7 +1724,7 @@ while true; do
                       else
                         echo -e "${CRed}ERROR: Daily Test Backup Subdirectory unable to be created under: ${CYellow}$TESTBKDIR/test${CClear}"
                         read -rsp $'Press any key to acknowledge...\n' -n1 key
-                      fi                   
+                      fi
                     fi
 
                     #include restore instructions in the backup location
@@ -1767,7 +1884,7 @@ checkusbexclusion ()
 
 if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
   BKDIREXCL=$(echo $BKDIR | sed 's/^.\{1\}//')
-  if grep -q $BKDIREXCL $EXCLUSION; then 
+  if grep -q $BKDIREXCL $EXCLUSION; then
     echo ""
     echo -e "${CGreen}SUCCESS: Primary USB Backup Folder already included in TAR Exclusion File${CCLear}"
     sleep 2
@@ -1806,7 +1923,7 @@ fi
 if [ $SECONDARYSTATUS -eq 1 ]; then
   if [ "$EXTDRIVE" == "$SECONDARYUNCDRIVE" ]; then
     SECONDARYBKDIREXCL=$(echo $SECONDARYBKDIR | sed 's/^.\{1\}//')
-    if grep -q $SECONDARYBKDIREXCL $SECONDARYEXCLUSION; then 
+    if grep -q $SECONDARYBKDIREXCL $SECONDARYEXCLUSION; then
       echo ""
       echo -e "${CGreen}SUCCESS: Secondary USB Backup Folder already included in TAR Exclusion File${CCLear}"
       sleep 2
@@ -2107,11 +2224,11 @@ _GetMountPoint_()
    USBTARGET="FALSE"
    SECONDARYUSBTARGET="FALSE"
    TESTUSBTARGET="FALSE"
-   
+
    if [ "$SMBTARGET" == "TRUE" ]; then
      UNCDRIVE=$mounPointPath
    fi
-   
+
    SMBTARGET="FALSE"
 }
 
@@ -2175,7 +2292,7 @@ _GetDefaultMountPoint_()
 _CheckForMountPointAndVolumeLabel_()
 {
    local theLabel  foundLabelOK=false
-   local mounPointDevSD  mounPointPaths  nvramLabels  blkidLabels  
+   local mounPointDevSD  mounPointPaths  nvramLabels  blkidLabels
    local mountPointRegExp="^/dev/sd.* /tmp/mnt/.*"
 
    mounPointDevSD="$(grep -E "$mountPointRegExp" /proc/mounts | awk -F ' ' '{print $1}')"
@@ -2216,8 +2333,8 @@ _DownloadCEMLibraryFile_()
        install) msgStr="Installing" ;;
              *) return 1 ;;
    esac
-   
-   echo -e "${CGreen}STATUS: ${msgStr} the shared library script file to support email notifications...${CClear}" 
+
+   echo -e "${CGreen}STATUS: ${msgStr} the shared library script file to support email notifications...${CClear}"
    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: ${msgStr} the shared library script file to support email notifications..." >> $LOGFILE
 
    mkdir -m 755 -p "$CUSTOM_EMAIL_LIBDir"
@@ -2262,16 +2379,16 @@ _SendEMailNotification_()
        return 1
    fi
    local retCode  emailBodyTitleStr=""
-   
+
    [ $# -gt 3 ] && [ -n "$4" ] && emailBodyTitleStr="$4"
 
    FROM_NAME="$1"
    _SendEMailNotification_CEM_ "$2" "-F=$3" "$emailBodyTitleStr"
    retCode="$?"
-   
+
    if [ "$retCode" -eq 0 ]
    then
-     echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}" 
+     echo -e "${CGreen}STATUS: Email notification was sent successfully [$2].${CClear}"
      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
    else
      echo -e "${CRed}ERROR: Failure to send email notification [Error Code: $retCode][$2].${CClear}"
@@ -2460,11 +2577,11 @@ fi
   if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
-  
+
   if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -2480,7 +2597,7 @@ mountprimary () {
         if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
           modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
         fi
-        
+
         CNT=0
         TRIES=3
           while [ $CNT -lt $TRIES ]; do # Loop through number of tries
@@ -2504,10 +2621,10 @@ mountprimary () {
             fi
           done
       fi
-      
+
       if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
         modprobe nfs nfsv3 > /dev/null
-          
+
         CNT=0
         TRIES=3
           while [ $CNT -lt $TRIES ]; do # Loop through number of tries
@@ -2581,10 +2698,10 @@ mountsecondary () {
             fi
           done
       fi
-  
+
       if [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
         modprobe nfs nfsv3 > /dev/null
-          
+
         CNT=0
         TRIES=3
         while [ $CNT -lt $TRIES ]; do # Loop through number of tries
@@ -2660,7 +2777,7 @@ purgebackups () {
     fi
 
     mountprimary
-    
+
     # If the UNC is successfully mounted, proceed
     if [ -n "`mount | grep $UNCDRIVE`" ]; then
 
@@ -3152,7 +3269,7 @@ vsetup () {
             clear
             testtarget
           ;;
-          
+
           te)
             clear
             DLVersionPF=$(printf "%-8s" $DLVersion)
@@ -3186,7 +3303,7 @@ vsetup () {
                   echo ""
                   _DownloadCEMLibraryFile_ "install"
               fi
-              
+
               cemIsFormatHTML=true
               cemIsVerboseMode=true
               emailBodyTitle="Testing Email Notification"
@@ -3201,22 +3318,22 @@ vsetup () {
 
               echo ""
               read -rsp $'Press any key to acknowledge...\n' -n1 key
-              
+
             fi
           ;;
-          
+
           ep)
             export TERM=linux
             nano +999999 --linenumbers $EXCLUSION
           ;;
-          
+
           es)
             if [ $SECONDARYSTATUS -eq 1 ]; then
               export TERM=linux
               nano +999999 --linenumbers $SECONDARYEXCLUSION
             fi
           ;;
-          
+
           vl)
             echo ""
             vlogs
@@ -3293,14 +3410,14 @@ backup () {
         echo -en "${CGreen}STATUS: External network drive ("; printf "%s" "${UNC}"; echo -en ") mounted successfully under: $UNCDRIVE ${CClear}"; printf "%s\n"
         printf "%s\n" "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External network drive ( ${UNC} ) mounted successfully under: $UNCDRIVE" >> $LOGFILE
       fi
-      
+
       # Create the backup directories and daily directories if they do not exist yet
-      if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then 
-        mkdir -p "${UNCDRIVE}${BKDIR}" 
+      if ! [ -d "${UNCDRIVE}${BKDIR}" ]; then
+        mkdir -p "${UNCDRIVE}${BKDIR}"
         echo -e "${CGreen}STATUS: Backup Directory successfully created."
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Backup Directory successfully created." >> $LOGFILE
       fi
-      
+
       # Create frequency folders by week, month, year or perpetual
       if [ $FREQUENCY == "W" ]; then
         if ! [ -d "${UNCDRIVE}${BKDIR}/${WDAY}" ]
@@ -3370,7 +3487,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
@@ -3386,7 +3503,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3428,7 +3545,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
@@ -3444,7 +3561,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3486,7 +3603,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
@@ -3502,7 +3619,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3544,7 +3661,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-                    
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
@@ -3560,7 +3677,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -3608,13 +3725,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
-            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -3627,7 +3744,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3645,13 +3762,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
-            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -3664,7 +3781,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3682,13 +3799,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
-            timerend=$(date +%s); timertotal=$(( timerend - timerstart )) 
+
+            timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -3701,7 +3818,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -3719,13 +3836,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -3738,7 +3855,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -3766,7 +3883,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -3782,7 +3899,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3824,7 +3941,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -3840,7 +3957,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3882,7 +3999,7 @@ backup () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished backing up ${CYellow}JFFS${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up JFFS to ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -3898,7 +4015,7 @@ backup () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -3946,13 +4063,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -3965,7 +4082,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -3983,13 +4100,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4002,7 +4119,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -4020,13 +4137,13 @@ backup () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished backing up ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished backing up EXT Drive in $timertotal sec to ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4039,7 +4156,7 @@ backup () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -4069,7 +4186,7 @@ backup () {
       nvram show 2>/dev/null > ${UNCDRIVE}${BKDIR}/nvram.txt
       echo -e "${CGreen}STATUS: Finished copying reference ${CYellow}nvram.txt${CGreen} extract to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished copying reference nvram.txt extract to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
-      
+
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
         echo ''
@@ -4168,7 +4285,7 @@ secondary () {
       fi
 
       # Create the secondary backup directories and daily directories if they do not exist yet
-      if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then 
+      if ! [ -d "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" ]; then
         mkdir -p "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}"
         echo -e "${CGreen}STATUS: Secondary Backup Directory successfully created."
         echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary Backup Directory successfully created." >> $LOGFILE
@@ -4243,7 +4360,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
@@ -4259,7 +4376,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -4301,7 +4418,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
@@ -4317,7 +4434,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -4359,7 +4476,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
@@ -4375,7 +4492,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -4417,7 +4534,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
@@ -4433,7 +4550,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}" 
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/jffs.tar.gz" >> $LOGFILE
           fi
 
@@ -4482,13 +4599,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4501,7 +4618,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -4519,13 +4636,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4538,7 +4655,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -4556,13 +4673,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4575,7 +4692,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
 
@@ -4593,13 +4710,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4612,7 +4729,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"  
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -4640,7 +4757,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -4656,7 +4773,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4698,7 +4815,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -4714,7 +4831,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4756,7 +4873,7 @@ secondary () {
             echo -e "\n"
             exit 1
           fi
-          
+
           logger "BACKUPMON INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz"
           echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}JFFS${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of JFFS to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
@@ -4772,7 +4889,7 @@ secondary () {
             echo -e "\n"
             exit 1
           elif [ $TI -eq 0 ]; then
-            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"  
+            echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/jffs-${datelabel}.tar.gz" >> $LOGFILE
           fi
 
@@ -4820,13 +4937,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4839,7 +4956,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -4857,13 +4974,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4876,7 +4993,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
 
@@ -4894,13 +5011,13 @@ secondary () {
               echo -e "\n"
               exit 1
             fi
-            
+
             timerend=$(date +%s); timertotal=$(( timerend - timerstart ))
             logger "BACKUPMON INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz"
             echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}EXT Drive${CGreen} in ${CYellow}$timertotal sec${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished secondary backup of EXT Drive in $timertotal sec to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             sleep 1
-            
+
             #Verify file integrity
             echo -e "${CGreen}STATUS: Starting integrity check of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting integrity check of EXT Drive on $(date)" >> $LOGFILE
@@ -4913,7 +5030,7 @@ secondary () {
               echo -e "\n"
               exit 1
             elif [ $TI -eq 0 ]; then
-              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}" 
+              echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
             fi
           fi
@@ -5123,13 +5240,13 @@ restore () {
               fi
             done
 
-            if [ -z "$BACKUPDATE1" ]; then 
+            if [ -z "$BACKUPDATE1" ]; then
               echo ""
               echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $LOGFILE
               echo ""
               exit 1
-            else 
+            else
               BACKUPDATE=$BACKUPDATE1
             fi
 
@@ -5463,7 +5580,7 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $LOGFILE
               echo ""
               exit 1
-            else 
+            else
               BACKUPDATE=$BACKUPDATE1
             fi
 
@@ -5850,7 +5967,7 @@ checkplaintxtpwds () {
       exit 0
     fi
   fi
-  
+
 }
 
 
@@ -5861,10 +5978,10 @@ excludeswap () {
 
 # First check to see if the swap file exlusion file exists, if not, create it. Thanks to @ScottW for the ideas!
 
-swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1 
+swapname=$(cat /proc/swaps | awk 'NR==2 {print $1}' | sed 's|.*/||') >/dev/null 2>&1
 
 if [ ! -f $PFEXCLUSION ]; then
-  
+
   if [ ! -z $swapname ] || [ $swapname != "" ]; then
     { echo $swapname
     } > $PFEXCLUSION
@@ -5874,15 +5991,15 @@ if [ ! -f $PFEXCLUSION ]; then
   fi
 
 fi
-  
+
 # Check to see if the exclusion file/path has been defined, if not, use the pagefile exclusion file in its place
 
 if [ "$BACKUPSWAP" == "0" ]; then
-  
+
   if [ -z "$EXCLUSION" ] || [ "$EXCLUSION" == "" ]; then
     EXCLUSION="$PFEXCLUSION"
   fi
-  
+
     if [ -z "$SECONDARYEXCLUSION" ] || [ "$SECONDARYEXCLUSION" == "" ]; then
     SECONDARYEXCLUSION="$PFEXCLUSION"
   fi
@@ -5892,11 +6009,11 @@ if [ "$BACKUPSWAP" == "0" ]; then
   if ! grep -q -F "$swapname" $EXCLUSION; then
     echo "$swapname" >> $EXCLUSION
   fi
-  
+
   if ! grep -q -F "$swapname" $SECONDARYEXCLUSION; then
     echo "$swapname" >> $SECONDARYEXCLUSION
   fi
-  
+
 fi
 
 }
@@ -6040,7 +6157,7 @@ if [ "$1" == "-purge" ]
     else
       echo -e "${CGreen}BACKUPMON v$Version ${CRed}-- $UpdateNotify"
     fi
-    
+
     # Determine if the config is local or under /jffs/addons/backupmon.d
     if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
       source $CFGPATH
@@ -6129,8 +6246,8 @@ if [ $FREQUENCY == "W" ]; then FREQEXPANDED="Weekly"; fi
 if [ $FREQUENCY == "M" ]; then FREQEXPANDED="Monthly"; fi
 if [ $FREQUENCY == "Y" ]; then FREQEXPANDED="Yearly"; fi
 if [ $FREQUENCY == "P" ]; then FREQEXPANDED="Perpetual"; fi
-  
-if [ "$BACKUPMEDIA" == "USB" ]; then  
+
+if [ "$BACKUPMEDIA" == "USB" ]; then
   echo -e "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}USB${CWhite} mounted to ${CGreen}${UNCDRIVE}"
 else
   echo -en "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CWhite} mounted to ${CGreen}${UNCDRIVE}"
@@ -6166,7 +6283,7 @@ if [ $SECONDARYSTATUS -eq 1 ]; then
   sendmessage 0 "Secondary Backup completed successfully"
 fi
 
-if [ $PURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then  
+if [ $PURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then
   autopurge             #Run autopurge on primary backups
 fi
 
@@ -6174,7 +6291,7 @@ if [ $SECONDARYPURGE -eq 1 ] && [ "$BSWITCH" == "True" ]; then
   autopurgesecondaries  #Run autopurge on secondary backups
 fi
 
-trimlogs                #Trim the logs
+trimlogs #Trim the logs
 
 BSWITCH="False"
 echo -e "${CClear}"
