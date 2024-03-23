@@ -3227,7 +3227,7 @@ vsetup () {
             LCLVersionPF=$(printf "%-8s" $Version)
             echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
             if [ "$UpdateNotify" == "1" ]; then
-              echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                 ${CClear}"
+              echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                     ${CClear}"
             fi
      
             echo ""
@@ -3248,7 +3248,7 @@ vsetup () {
             LCLVersionPF=$(printf "%-8s" $Version)
             echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
             if [ "$UpdateNotify" == "1" ]; then
-              echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                 ${CClear}"
+              echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                     ${CClear}"
             fi
 
             echo ""
@@ -6168,7 +6168,7 @@ if [ "$1" == "-purge" ]
     LCLVersionPF=$(printf "%-8s" $Version)
     echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
     if [ "$UpdateNotify" == "1" ]; then
-      echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                 ${CClear}"
+      echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                     ${CClear}"
     fi
 
     # Determine if the config is local or under /jffs/addons/backupmon.d
@@ -6244,7 +6244,7 @@ DLVersionPF=$(printf "%-8s" $DLVersion)
 LCLVersionPF=$(printf "%-8s" $Version)
 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
 if [ "$UpdateNotify" == "1" ]; then
-  echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                 ${CClear}"
+  echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                     ${CClear}"
 fi
 
 echo -e "${InvGreen} ${CClear}"
