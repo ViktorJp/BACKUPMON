@@ -110,11 +110,35 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 
 # LogoNM is a function that displays the BACKUPMON script name in a cool ASCII font without menu options
 logoNM () {
-  echo -e "${CYellow}     ____  ___   ________ ____  ______  __  _______  _   __"
-  echo -e "    / __ )/   | / ____/ //_/ / / / __ \/  |/  / __ \/ | / /"
-  echo -e "   / __  / /| |/ /   / ,< / / / / /_/ / /|_/ / / / /  |/ /"
-  echo -e "  / /_/ / ___ / /___/ /| / /_/ / ____/ /  / / /_/ / /|  /"
-  echo -e " /_____/_/  |_\____/_/ |_\____/_/   /_/  /_/\____/_/ |_/ ${CGreen}v$Version${CYellow}${CClear}"
+  clear
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${CDkGray}               ____  ___   ________ ____  ______  __  _______  _   __"
+  echo -e "              / __ )/   | / ____/ //_/ / / / __ \/  |/  / __ \/ | / /"
+  echo -e "             / __  / /| |/ /   / ,< / / / / /_/ / /|_/ / / / /  |/ /"
+  echo -e "            / /_/ / ___ / /___/ /| / /_/ / ____/ /  / / /_/ / /|  /"
+  echo -e "           /_____/_/  |_\____/_/ |_\____/_/   /_/  /_/\____/_/ |_/ v$Version"
+  echo ""
+  echo ""
+  printf "\r                            ${CGreen}    [ INITIALIZING ]     ${CClear}"
+  sleep 2
+  clear
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${CYellow}               ____  ___   ________ ____  ______  __  _______  _   __"
+  echo -e "              / __ )/   | / ____/ //_/ / / / __ \/  |/  / __ \/ | / /"
+  echo -e "             / __  / /| |/ /   / ,< / / / / /_/ / /|_/ / / / /  |/ /"
+  echo -e "            / /_/ / ___ / /___/ /| / /_/ / ____/ /  / / /_/ / /|  /"
+  echo -e "           /_____/_/  |_\____/_/ |_\____/_/   /_/  /_/\____/_/ |_/ v$Version"
+  echo ""
+  echo ""
+  printf "\r                            ${CGreen}[ INITIALIZING ... DONE ]${CClear}"
+  sleep 1
+  printf "\r                            ${CGreen}      [ LOADING... ]     ${CClear}"
+  sleep 2
+  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -6158,6 +6182,7 @@ fi
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
+  	logoNM
     vsetup
 fi
 
