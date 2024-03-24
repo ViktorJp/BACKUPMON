@@ -138,7 +138,7 @@ logoNM () {
   sleep 1
   printf "\r                            ${CGreen}      [ LOADING... ]     ${CClear}"
   sleep 2
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -307,17 +307,17 @@ vconfig () {
 
       DLVersionPF=$(printf "%-8s" $DLVersion)
       LCLVersionPF=$(printf "%-8s" $Version)
-      echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+      echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Primary Backup Configuration Menu                                                ${CClear}"
       if [ "$UpdateNotify" == "1" ]; then
         echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
       fi
-      echo -e "${InvGreen} ${InvDkGray}${CWhite} Primary Backup Configuration Options Menu                                             ${CClear}"
-      
+
       echo -e "${InvGreen} ${CClear}"
       echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
       echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of the primary backup.${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
       echo -e "${InvGreen} ${CClear}"
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : BACKUPMON Version                            : ${CGreen}$Version"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CGreen}$EXTDRIVE"
@@ -1119,12 +1119,11 @@ vconfig () {
               clear
               DLVersionPF=$(printf "%-8s" $DLVersion)
               LCLVersionPF=$(printf "%-8s" $Version)
-              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Secondary Backup Configuration Options Menu                                      ${CClear}"
               if [ "$UpdateNotify" == "1" ]; then
                 echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
               fi
-              echo -e "${InvGreen} ${InvDkGray}${CWhite} Secondary Backup Configuration Options Menu                                           ${CClear}"
-      
+
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to modify certain${CClear}"
               echo -e "${InvGreen} ${CClear} customizable parameters that affect the operation of the secondary backup.${CClear}"
@@ -1463,12 +1462,11 @@ while true; do
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Backup Target Network Connection Tester                                          ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Backup Target Network Connection Tester                                               ${CClear}"
-      
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} The Backup Target Network Connection Tester allows you to play with your connection${CClear}"
   echo -e "${InvGreen} ${CClear} variables, such as your username/password, network UNC path, target directories and${CClear}"
@@ -1799,12 +1797,11 @@ vuninstall () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Uninstall Utility                                                                ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Uninstall Utility                                                                     ${CClear}"
-      
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} The Uninstall Utility allows you to completely remove BACKUPMON from your router.${CClear}"
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1846,12 +1843,11 @@ vupdate () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Update Utility                                                                   ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Update Utility                                                                        ${CClear}"
-      
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} The Update Utility allows you to check for the latest version available, and allows${CClear}"
   echo -e "${InvGreen} ${CClear} you to download and update the script on your router. Should an update not be${CClear}"
@@ -2780,12 +2776,11 @@ purgebackups () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Perpetual Backups Utility                                                  ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Purge Perpetual Backups Utility                                                       ${CClear}"
-     
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} You are about to purge ${CGreen}primary${CClear} backups! FUN! This action is irreversible and${CClear}"
   echo -e "${InvGreen} ${CClear} permanent. But no worries! BACKUPMON will first show you which backups are affected${CClear}"
@@ -2974,12 +2969,11 @@ purgesecondaries () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Secondary Perpetual Backups Utility                                        ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Purge Secondary Perpetual Backups Utility                                             ${CClear}"
-     
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} You are about to purge ${CGreen}secondary${CClear} backups! FUN! This action is irreversible and${CClear}"
   echo -e "${InvGreen} ${CClear} permanent. But no worries! BACKUPMON will first show you which backups are affected${CClear}"
@@ -3193,12 +3187,11 @@ vsetup () {
     clear
     DLVersionPF=$(printf "%-8s" $DLVersion)
     LCLVersionPF=$(printf "%-8s" $Version)
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Main Setup and Operations Menu                                                   ${CClear}"
     if [ "$UpdateNotify" == "1" ]; then
       echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
     fi
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} Main Setup and Operations Menu                                                        ${CClear}"
-     
+
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} Please choose from the various options below, which allow you to perform high level${CClear}"
     echo -e "${InvGreen} ${CClear} actions in the management of the BACKUPMON script.${CClear}"
@@ -3253,7 +3246,7 @@ vsetup () {
             if [ "$UpdateNotify" == "1" ]; then
               echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                                                     ${CClear}"
             fi
-     
+
             echo ""
             echo -e "${CGreen}[Primary Backup Commencing]...          "
             echo ""
@@ -3307,13 +3300,11 @@ vsetup () {
             clear
             DLVersionPF=$(printf "%-8s" $DLVersion)
             LCLVersionPF=$(printf "%-8s" $Version)
-            echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+            echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON AMTM Email Communications Testing Utility                                        ${CClear}"
             if [ "$UpdateNotify" == "1" ]; then
               echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
             fi
-            echo -e "${InvGreen} ${InvDkGray}${CWhite} AMTM Email Communications Testing Utility                                             ${CClear}"
-     
-            
+
             echo -e "${InvGreen} ${CClear}"
             echo -e "${InvGreen} ${CClear} This test assumes that you have AMTM Email set up correctly. If you still need to${CClear}"
             echo -e "${InvGreen} ${CClear} configure this feature, open up AMTM -> (em) to add your email server info, ports,${CClear}"
@@ -5147,12 +5138,11 @@ restore () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - v$LCLVersionPF                                                                 ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Restore Backup Utility                                                           ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} Restore Backup Utility                                                                ${CClear}"
-     
+
   echo -e "${InvGreen} ${CClear}"
   echo -e "${InvGreen} ${CClear} [Restore Backup Commencing]..."
   echo -e "${InvGreen} ${CClear}"
