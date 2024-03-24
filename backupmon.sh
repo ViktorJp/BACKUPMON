@@ -307,7 +307,7 @@ vconfig () {
 
       DLVersionPF=$(printf "%-8s" $DLVersion)
       LCLVersionPF=$(printf "%-8s" $Version)
-      echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Primary Backup Configuration Menu                                                ${CClear}"
+      echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Primary Backup Configuration Menu                                           ${CClear}"
       if [ "$UpdateNotify" == "1" ]; then
         echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
       fi
@@ -1119,7 +1119,7 @@ vconfig () {
               clear
               DLVersionPF=$(printf "%-8s" $DLVersion)
               LCLVersionPF=$(printf "%-8s" $Version)
-              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Secondary Backup Configuration Options Menu                                      ${CClear}"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Secondary Backup Configuration Options Menu                                 ${CClear}"
               if [ "$UpdateNotify" == "1" ]; then
                 echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
               fi
@@ -1462,7 +1462,7 @@ while true; do
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Backup Target Network Connection Tester                                          ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Backup Target Network Connection Tester                                     ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
@@ -1797,7 +1797,7 @@ vuninstall () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Uninstall Utility                                                                ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Uninstall Utility                                                           ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
@@ -1807,6 +1807,7 @@ vuninstall () {
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
   echo ""
   echo -e "${CClear}You are about to uninstall BACKUPMON!  This action is irreversible."
+  echo ""
   echo -e "${CClear}Do you wish to proceed?${CClear}"
   if promptyn "(y/n): "; then
     echo ""
@@ -1843,7 +1844,7 @@ vupdate () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Update Utility                                                                   ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Update Utility                                                              ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
@@ -2776,7 +2777,7 @@ purgebackups () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Perpetual Backups Utility                                                  ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Perpetual Backups Utility                                             ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
@@ -2969,7 +2970,7 @@ purgesecondaries () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Secondary Perpetual Backups Utility                                        ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Secondary Perpetual Backups Utility                                   ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
@@ -3187,7 +3188,7 @@ vsetup () {
     clear
     DLVersionPF=$(printf "%-8s" $DLVersion)
     LCLVersionPF=$(printf "%-8s" $Version)
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Main Setup and Operations Menu                                                   ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Main Setup and Operations Menu                                              ${CClear}"
     if [ "$UpdateNotify" == "1" ]; then
       echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
     fi
@@ -3300,7 +3301,7 @@ vsetup () {
             clear
             DLVersionPF=$(printf "%-8s" $DLVersion)
             LCLVersionPF=$(printf "%-8s" $Version)
-            echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON AMTM Email Communications Testing Utility                                        ${CClear}"
+            echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON AMTM Email Communications Testing Utility                                   ${CClear}"
             if [ "$UpdateNotify" == "1" ]; then
               echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
             fi
@@ -5138,7 +5139,7 @@ restore () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
-  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Restore Backup Utility                                                           ${CClear}"
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Restore Backup Utility                                                      ${CClear}"
   if [ "$UpdateNotify" == "1" ]; then
     echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
   fi
