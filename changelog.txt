@@ -1,15 +1,17 @@
-v1.7.X  - (TBA)
+v1.7.1  - (March 24, 2024)
         - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
-          standard CIFS/SMB methods of transferring data across a network to a network share to safely store
-          your router backups in case of need! All necessary changes to the config menu have been considered
-          in order to handle NFS. When choosing NFS, an additional field will become available that allows
-          you to enter "NFS Mount Options". Understanding that different NFS implementations may require
-          special mount options/switches, this field allows you to customize your connection based on your
-          needs. Also huge thanks to @Martinski for revamping his mount point selector functionality in order
-          to handle USB, CIFS/SMB and NFS mount points if they exist.
+          standard CIFS/SMB methods of transferring data across a network to an NFS network share to safely
+          store your router backups in case of disaster! All necessary changes to the config menu have been
+          considered in order to handle NFS. When choosing NFS, an additional field will become available
+          that allows you to enter optional "NFS Mount Options", understanding that different NFS 
+          implementations may require special mount options/switches, this field allows you to customize your
+          connection based on your needs. Also huge thanks to @Martinski for revamping his mount point
+          selector functionality in order to handle USB, CIFS/SMB and NFS mount points if they exist. Huge
+          shoutout to @smarthome-enthusiast for all the testing he's helped with in getting this NFS
+          functionality over the finishline! :)
         - MINOR: BACKUPMON has been given a complete UI makeover, and is now on par with VPNMON-R3's look and
-          feel. Emphasis has been given on simplifying the design, to account for more screen space and making
-          it more efficient to use.
+          feel. Emphasis has been given on simplifying the UI design, to account for more screen space, less
+          distracting colors, standardizing submenu design, making it more friendly to use across the board.
         - PATCH: Found some variable name mismatches under the restore -> secondary backups logic that was 
           looking at variables for the primary backups. This has been fixed!
 
