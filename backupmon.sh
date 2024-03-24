@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.6.0b8"                                                # Current version
+Version="1.6.0b8"                                               # Current version
 Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -138,7 +138,6 @@ logoNM () {
   sleep 1
   printf "\r                            ${CGreen}      [ LOADING... ]     ${CClear}"
   sleep 2
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -1903,6 +1902,7 @@ vupdate () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
 # This function checks to see if the source and target are the same, that it throws up a warning to add the backup folder
 # to the exclusion file
 
@@ -2208,6 +2208,7 @@ EOT
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-19] ##
 ##----------------------------------------##
@@ -2612,6 +2613,7 @@ fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
 # mountprimary is a function checks for a mounted primary drive, if not, mounts it...
 
 mountprimary () {
@@ -2689,6 +2691,7 @@ mountprimary () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+
 # mountsecondary is a function checks for a mounted secondary drive, if not, mounts it...
 
 mountsecondary () {
