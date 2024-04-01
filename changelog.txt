@@ -1,3 +1,8 @@
+v1.7.2  - (TBA)
+        - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
+          folder and was not deleting these tmp email files if you opted not to receive success or failure
+          emails. Thanks to the keen eye of @ExtremeFiretop, this has now been patched.
+
 v1.7.1  - (March 24, 2024)
         - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
           standard CIFS/SMB methods of transferring data across a network to an NFS network share to safely
