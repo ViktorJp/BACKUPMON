@@ -2,7 +2,7 @@ v1.7.2  - (TBA)
         - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
           folder and was not deleting these tmp email files if you opted not to receive success or failure
           emails. Thanks to the keen eye of @ExtremeFiretop watching his precious disk space slowly but 
-          surely disappearing with unsent emails that weren't deleting, this has now been patched! Also,
+          surely getting eaten up with unsent emails that weren't deleting, this has now been patched! Also,
           huge props to him for testing out the fix in record time!
 
 v1.7.1  - (March 24, 2024)
