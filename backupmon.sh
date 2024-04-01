@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.7.1 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.7.2 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
 # external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
@@ -16,7 +16,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.7.1"                                                 # Current version
+Version="1.7.2"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -2458,155 +2458,154 @@ fi
   tmpEMailBodyFile="/tmp/var/tmp/tmpEMailBody_${scriptFileNTag}.$$.TXT"
 
   #Pick the scenario and send email
-
-  if [ "$2" == "Unable to mount network drive" ]; then
-    emailSubject="FAILURE: Unable to mount network drive"
-    emailBodyTitle="FAILURE: Unable to mount network drive"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to mount the primary network drive.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Unable to mount secondary network drive" ]; then
-    emailSubject="FAILURE: Unable to mount secondary network drive"
-    emailBodyTitle="FAILURE: Unable to mount secondary network drive"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to mount the secondary network drive.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Unable to unmount network drive" ]; then
-    emailSubject="FAILURE: Unable to unmount network drive"
-    emailBodyTitle="FAILURE: Unable to unmount network drive"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the primary network drive.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Unable to unmount secondary network drive" ]; then
-    emailSubject="FAILURE: Unable to unmount secondary network drive"
-    emailBodyTitle="FAILURE: Unable to unmount secondary network drive"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the secondary network drive.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Error creating JFFS tar file" ]; then
-    emailSubject="FAILURE: Error creating JFFS tar file"
-    emailBodyTitle="FAILURE: Error creating JFFS tar file"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the JFFS tar file.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "JFFS tar file integrity failure" ]; then
-    emailSubject="FAILURE: JFFS tar file integrity failure"
-    emailBodyTitle="FAILURE: JFFS tar file integrity failure"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> experienced a JFFS tar file integrity issue.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "NVRAM config export failure" ]; then
-    emailSubject="FAILURE: NVRAM config export failure"
-    emailBodyTitle="FAILURE: NVRAM config export failure"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to export NVRAM config file.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Error creating EXT USB tar file" ]; then
-    emailSubject="FAILURE: Error creating EXT USB tar file"
-    emailBodyTitle="FAILURE: Error creating EXT USB tar file"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the EXT USB tar file.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "EXT USB tar file integrity failure" ]; then
-    emailSubject="FAILURE: EXT USB tar file integrity failure"
-    emailBodyTitle="FAILURE: EXT USB tar file integrity failure"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>FAILURE: BACKUPMON</b> experienced a EXT USB tar file integrity issue.\n"
-    printf "Please check your network environment and configuration.\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Primary Backup completed successfully" ]; then
-    emailSubject="SUCCESS: Primary Backup completed successfully"
-    emailBodyTitle="SUCCESS: Primary Backup completed successfully"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>SUCCESS: BACKUPMON</b> completed a successful primary backup to destination: <b>${BACKUPMEDIA}</b>\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  elif [ "$2" == "Secondary Backup completed successfully" ]; then
-    emailSubject="SUCCESS: Secondary Backup completed successfully"
-    emailBodyTitle="SUCCESS: Secondary Backup completed successfully"
-    {
-    printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-    printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-    printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-    printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-    printf "\n"
-    printf "<b>SUCCESS: BACKUPMON</b> completed a successful secondary backup to destination: <b>${BACKUPMEDIA}</b>\n"
-    printf "\n"
-    } > "$tmpEMailBodyFile"
-  fi
-
-  if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
+  if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
+    if [ "$2" == "Unable to mount network drive" ]; then
+      emailSubject="FAILURE: Unable to mount network drive"
+      emailBodyTitle="FAILURE: Unable to mount network drive"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the primary network drive.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Unable to mount secondary network drive" ]; then
+      emailSubject="FAILURE: Unable to mount secondary network drive"
+      emailBodyTitle="FAILURE: Unable to mount secondary network drive"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the secondary network drive.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Unable to unmount network drive" ]; then
+      emailSubject="FAILURE: Unable to unmount network drive"
+      emailBodyTitle="FAILURE: Unable to unmount network drive"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the primary network drive.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Unable to unmount secondary network drive" ]; then
+      emailSubject="FAILURE: Unable to unmount secondary network drive"
+      emailBodyTitle="FAILURE: Unable to unmount secondary network drive"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to unmount the secondary network drive.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Error creating JFFS tar file" ]; then
+      emailSubject="FAILURE: Error creating JFFS tar file"
+      emailBodyTitle="FAILURE: Error creating JFFS tar file"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the JFFS tar file.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "JFFS tar file integrity failure" ]; then
+      emailSubject="FAILURE: JFFS tar file integrity failure"
+      emailBodyTitle="FAILURE: JFFS tar file integrity failure"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> experienced a JFFS tar file integrity issue.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "NVRAM config export failure" ]; then
+      emailSubject="FAILURE: NVRAM config export failure"
+      emailBodyTitle="FAILURE: NVRAM config export failure"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to export NVRAM config file.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Error creating EXT USB tar file" ]; then
+      emailSubject="FAILURE: Error creating EXT USB tar file"
+      emailBodyTitle="FAILURE: Error creating EXT USB tar file"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to create/write the EXT USB tar file.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "EXT USB tar file integrity failure" ]; then
+      emailSubject="FAILURE: EXT USB tar file integrity failure"
+      emailBodyTitle="FAILURE: EXT USB tar file integrity failure"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> experienced a EXT USB tar file integrity issue.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    fi
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
-
-  if [ "$1" == "1" ] && [ "$AMTMEMAILFAILURE" == "1" ]; then
+  
+  if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
+    if [ "$2" == "Primary Backup completed successfully" ]; then
+      emailSubject="SUCCESS: Primary Backup completed successfully"
+      emailBodyTitle="SUCCESS: Primary Backup completed successfully"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>SUCCESS: BACKUPMON</b> completed a successful primary backup to destination: <b>${BACKUPMEDIA}</b>\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Secondary Backup completed successfully" ]; then
+      emailSubject="SUCCESS: Secondary Backup completed successfully"
+      emailBodyTitle="SUCCESS: Secondary Backup completed successfully"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>SUCCESS: BACKUPMON</b> completed a successful secondary backup to destination: <b>${BACKUPMEDIA}</b>\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    fi
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
 
