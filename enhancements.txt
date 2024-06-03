@@ -1,5 +1,6 @@
 Future Enhancements (Planned)
 -----------------------------
+* Create a log of errors (visortgw), and a notification if errors occurred on screen after backup runs (vibroverbus)
 
 Completed:
 ----------
