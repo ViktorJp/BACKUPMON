@@ -2,8 +2,8 @@ v1.7.4b1- (TBA)
         - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
           BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
           is viewable from the setup/configuration menu using the command "(ve)". It will basically dump any
-          tar-related warnings or errors into this log, in addition to the error messages that BACKUPMON
-          generates.
+          tar-related warnings or any other errors into this log, in addition to the error messages that
+          BACKUPMON generates.
         - PATCH: Should any sort of error occur, you will get visual feedback in various locations: (1) When
           manually running a backup job from the menu, it will display the warning that an error occurred and
           will ask for a keypress to continue. (2) When automatedly running, it will include a warning at the
