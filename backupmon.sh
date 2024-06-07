@@ -1853,7 +1853,7 @@ while true; do
                     # Test tar validation
                     tar -tzf ${TESTUNCDRIVE}${TESTBKDIR}/test/test.tar.gz
                     TVT=$?
-                    if [ $TAT -eq 0 ]; then
+                    if [ $TVT -eq 0 ]; then
                       echo -e "${CGreen}STATUS: Finished validating integrity of ${CYellow}test.tar.gz${CGreen} in ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
                     else
                       echo -e "${CRed}ERROR: Unable to validate integrity of ${CYellow}test.tar.gz${CGreen} in ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
