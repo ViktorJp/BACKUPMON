@@ -10,6 +10,9 @@ v1.7.4b1- (TBA)
           end of the job to let you know something occurred.  (3) When opening BACKUPMON to the setup/
           configuration menu, it will display that an error occurred during the last backup, and to take a
           look at the error log.
+        - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
+          option under the setup/configuration menu. Thought these would be good to add to determine if tar
+          is functional in your environment or backup target.
 
 v1.7.2  - (April 1, 2024)
         - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
