@@ -1840,6 +1840,25 @@ while true; do
                     else
                       echo -e "${CRed}ERROR: Unable to copy ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
                     fi
+                    
+                    # Test tar creation
+                    tar -zvcf ${TESTUNCDRIVE}${TESTBKDIR}/test/test.tar.gz -C / jffs/scripts/backupmon.sh
+                    TAT=$?
+                    if [ $TAT -eq 0 ]; then
+                      echo -e "${CGreen}STATUS: Finished creating ${CYellow}test.tar.gz${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    else
+                      echo -e "${CRed}ERROR: Unable to create ${CYellow}test.tar.gz${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    fi
+                    
+                    # Test tar validation
+                    tar -tzf ${TESTUNCDRIVE}${TESTBKDIR}/test/test.tar.gz
+                    TVT=$?
+                    if [ $TAT -eq 0 ]; then
+                      echo -e "${CGreen}STATUS: Finished validating integrity of ${CYellow}test.tar.gz${CGreen} in ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    else
+                      echo -e "${CRed}ERROR: Unable to validate integrity of ${CYellow}test.tar.gz${CGreen} in ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
+                    fi
+                    
                     echo -e "${CGreen}STATUS: Settling for 10 seconds..."
                     sleep 10
 
@@ -3328,7 +3347,7 @@ vsetup () {
     clear
     DLVersionPF=$(printf "%-8s" $DLVersion)
     LCLVersionPF=$(printf "%-8s" $Version)
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Main Setup and Operations Menu                                              ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF -- Main Setup and Operations Menu                                 ${CClear}"
     if [ "$UpdateNotify" == "1" ]; then
       echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
     fi
