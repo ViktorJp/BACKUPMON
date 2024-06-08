@@ -1,4 +1,4 @@
-v1.7.4b1- (TBA)
+v1.7.4b2- (TBA)
         - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
           BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
           is viewable from the setup/configuration menu using the command "(ve)". It will basically dump any
@@ -13,6 +13,10 @@ v1.7.4b1- (TBA)
         - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
           option under the setup/configuration menu. Thought these would be good to add to determine if tar
           is functional in your environment or backup target.
+        - PATCH: Determined that determining status/errors from tar or nvram commands were no longer working
+          due to the number of pipes being appended to these commands in order to divert errors into the new
+          error log. Implemented a workaround to continue to flag major networking or tar errors that would
+          cause script execution and flag it as a failed backup.
 
 v1.7.2  - (April 1, 2024)
         - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
