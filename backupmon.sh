@@ -111,6 +111,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 # -------------------------------------------------------------------------------------------------------------------------
 
 # LogoNM is a function that displays the BACKUPMON script name in a cool ASCII font without menu options
+
 logoNM () {
   clear
   echo ""
@@ -172,9 +173,10 @@ logoNMexit () {
   printf "\r                            ${CDkGray}      [ GOODBYE... ]     ${CClear}\n\n"
   sleep 1
 }
-# -------------------------------------------------------------------------------------------------------------------------
 
+# -------------------------------------------------------------------------------------------------------------------------
 # Promptyn is a simple function that accepts y/n input
+
 promptyn () {   # No defaults, just y or n
   while true; do
     read -p "[y/n]? " -n 1 -r yn
@@ -187,9 +189,10 @@ promptyn () {   # No defaults, just y or n
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # blackwhite is a simple function that removes all color attributes
+
 blackwhite () {
+
 # Color variables
 CBlack=""
 InvBlack=""
@@ -210,22 +213,21 @@ InvCyan=""
 CWhite=""
 InvWhite=""
 CClear=""
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# teelogger provides an easy way to append logging info to an existing log entry
 
-# teelogger provides an easy way to insert logging info before the tar error message
 teelogger() {
   log=$1
   while read line ; do
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - $line" | tee -a $log
   done
 }
- 
-# -------------------------------------------------------------------------------------------------------------------------
 
+# -------------------------------------------------------------------------------------------------------------------------
 # errorcheck looks for the existence of an error file and provides an on-screen warning about it
+
 errorcheck() {
 
 if [ -f $ERRORFILE ]; then
@@ -236,10 +238,11 @@ if [ -f $ERRORFILE ]; then
   echo -e "${InvRed}${CWhite} Please review error logs from the setup/configuration menu.${CClear}"
   echo ""
 fi
-
 }
 
+# -------------------------------------------------------------------------------------------------------------------------
 # Preparebar and Progressbaroverride is a script that provides a nice progressbar to show script activity
+
 preparebar () {
   # $1 - bar length
   # $2 - bar char
@@ -282,8 +285,8 @@ progressbaroverride () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # updatecheck is a function that downloads the latest update version file, and compares it with what's currently installed
+
 updatecheck () {
 
   # Download the latest version file from the source repository
@@ -307,28 +310,26 @@ updatecheck () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vlogs is a function that calls the nano text editor to view the BACKUPMON log file
+
 vlogs () {
 
 export TERM=linux
 nano +999999 --linenumbers $LOGFILE
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # velogs is a function that calls the nano text editor to view the BACKUPMON error log file
+
 velogs () {
 
 export TERM=linux
 nano +999999 --linenumbers $ERRORLOGFILE
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # Trimlogs is a function that forces the logs down to a certain number of rows to give you some history
+
 trimlogs () {
 
       #trim regular logs
@@ -338,7 +339,7 @@ trimlogs () {
         then
           echo "$(tail -5000 $LOGFILE)" > $LOGFILE
       fi
-      
+
       #trim error logs
       CURRERRLOGSIZE=$(wc -l $ERRORLOGFILE | awk '{ print $1 }' ) # Determine the number of rows in the log
 
@@ -346,12 +347,11 @@ trimlogs () {
         then
           echo "$(tail -5000 $ERRORLOGFILE)" > $ERRORLOGFILE
       fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vconfig is a function that guides you through the various configuration options for backupmon
+
 vconfig () {
 
   if [ -f /jffs/scripts/backupmon.cfg ]; then
@@ -492,7 +492,7 @@ vconfig () {
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$SCHEDULE" == "1" ]; then
-      	MINS=$(printf "%02.0f\n" $SCHEDULEMIN)
+        MINS=$(printf "%02.0f\n" $SCHEDULEMIN)
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Time:                                       : ${CGreen}$SCHEDULEHRS:$MINS"
         echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Scheduled Backup Mode                       : ${CGreen}"
         if [ "$SCHEDULEMODE" == "BackupOnly" ]; then
@@ -869,13 +869,13 @@ vconfig () {
               echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
               echo ""
               if [ "$FREQUENCY" == "W" ]; then
-              	FREQUENCYDP="Weekly"
+                FREQUENCYDP="Weekly"
               elif [ "$FREQUENCY" == "M" ]; then
-              	FREQUENCYDP="Monthly"
+                FREQUENCYDP="Monthly"
               elif [ "$FREQUENCY" == "Y" ]; then
-              	FREQUENCYDP="Yearly"
+                FREQUENCYDP="Yearly"
               elif [ "$FREQUENCY" == "P" ]; then
-              	FREQUENCYDP="Perpetual"
+                FREQUENCYDP="Perpetual"
               fi
               echo -e "${CClear}Current Backup Frequency: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
               while true; do
@@ -891,7 +891,7 @@ vconfig () {
               done
 
               if [ $FREQUENCY == "P" ]; then
-              	echo ""; echo ""
+                echo ""; echo ""
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Purging Perpetual Backups                                                 ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} Would you like to purge perpetual backups after a certain age? This can help trim your${CClear}"
@@ -1515,12 +1515,11 @@ vconfig () {
       vconfig
 
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # testtarget is a function that allows you to play with settings to ensure your configuration works
+
 testtarget () {
 
 TESTUSER="admin"
@@ -1642,7 +1641,7 @@ while true; do
 
         5) echo ""
            if [ "$TESTBACKUPMEDIA" == "Network" ] || [ "$TESTBACKUPMEDIA" == "Network-NFS" ]; then
-           	 read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE
+             read -p 'Test Target Backup Mount Point (ex: /tmp/mnt/testbackups ): ' TESTUNCDRIVE
            elif [ "$TESTBACKUPMEDIA" == "USB" ]; then
              TESTUSBTARGET="TRUE"
              _GetMountPoint_ USBmp "Select a Test Target USB Backup Mount Point: "
@@ -1839,7 +1838,7 @@ while true; do
                     else
                       echo -e "${CRed}ERROR: Unable to copy ${CYellow}testfile.txt${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
                     fi
-                    
+
                     # Test tar creation
                     tar -zvcf ${TESTUNCDRIVE}${TESTBKDIR}/test/test.tar.gz -C / jffs/scripts/backupmon.sh
                     TAT=$?
@@ -1848,7 +1847,7 @@ while true; do
                     else
                       echo -e "${CRed}ERROR: Unable to create ${CYellow}test.tar.gz${CGreen} to ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
                     fi
-                    
+
                     # Test tar validation
                     tar -tzf ${TESTUNCDRIVE}${TESTBKDIR}/test/test.tar.gz
                     TVT=$?
@@ -1857,7 +1856,7 @@ while true; do
                     else
                       echo -e "${CRed}ERROR: Unable to validate integrity of ${CYellow}test.tar.gz${CGreen} in ${CYellow}${TESTUNCDRIVE}${TESTBKDIR}/test${CClear}"
                     fi
-                    
+
                     echo -e "${CGreen}STATUS: Settling for 10 seconds..."
                     sleep 10
 
@@ -1883,8 +1882,8 @@ while true; do
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vuninstall is a function that uninstalls and removes all traces of backupmon from your router...
+
 vuninstall () {
   clear
   DLVersionPF=$(printf "%-8s" $DLVersion)
@@ -1929,8 +1928,8 @@ vuninstall () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vupdate is a function that provides a UI to check for script updates and allows you to install the latest version...
+
 vupdate () {
   updatecheck # Check for the latest version from source repository
   clear
@@ -2007,12 +2006,10 @@ vupdate () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
-# This function checks to see if the source and target are the same, that it throws up a warning to add the backup folder
+# checkusbexclusion checks to see if the source and target are the same, that it throws up a warning to add the backup folder
 # to the exclusion file
 
-checkusbexclusion ()
-{
+checkusbexclusion () {
 
 if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
   BKDIREXCL=$(echo $BKDIR | sed 's/^.\{1\}//')
@@ -2091,14 +2088,12 @@ if [ $SECONDARYSTATUS -eq 1 ]; then
     fi
   fi
 fi
-
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # This amazing function was borrowed from none other than @Martinski... a genius approach to filtering and deleting files/folders
 # $1 = path, $2 = age, $3 = show/delete
+
 _DeleteFileDirAfterNumberOfDays_ ()
 {
    local retCode=1  minNumOfDays=1
@@ -2133,8 +2128,8 @@ _DeleteFileDirAfterNumberOfDays_ ()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # Also coming to you from @Martinski! The following functions provide a mount point picker, slightly modified for my purposes
+
 _GetMountPointSelectionIndex_()
 {
    if [ $# -eq 0 ] || [ -z "$1" ] ; then return 1 ; fi
@@ -2213,10 +2208,10 @@ _GetMountPointSelectionIndex_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-20] ##
 ##----------------------------------------##
+
 _GetMountPointSelection_()
 {
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
@@ -2313,10 +2308,10 @@ EOT
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-19] ##
 ##----------------------------------------##
+
 _GetMountPoint_()
 {
    local NOct="\033[0m"  REDct="\033[0;31m\033[1m"  GRNct="\033[1;32m\033[1m"
@@ -2409,7 +2404,6 @@ _GetDefaultMountPoint_()
 }
 
 #-------------------------------------------------------------------------------------------------------------------------
-
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Mar-03] ##
 ##----------------------------------------##
@@ -2422,6 +2416,7 @@ _GetDefaultMountPoint_()
 # we search for the Volume Labels; if found, we return
 # the first label; otherwise, we return a null string.
 #---------------------------------------------------------#
+
 _CheckForMountPointAndVolumeLabel_()
 {
    local theLabel  foundLabelOK=false
@@ -2448,7 +2443,6 @@ _CheckForMountPointAndVolumeLabel_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 ########################################################################
 # AMTM Email Notification Functionality generously donated by @Martinski!
 #
@@ -2457,7 +2451,6 @@ _CheckForMountPointAndVolumeLabel_()
 # Modified for BACKUPMON Purposes [Viktor Jaep]
 ########################################################################
 
-#-----------------------------------------------------------#
 _DownloadCEMLibraryFile_()
 {
    local msgStr  retCode
@@ -2540,7 +2533,6 @@ _SendEMailNotification_()
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # sendmessage is a function that sends an AMTM email based on success/failure during the backup process
 # $1 = Success/Failure 0/1
 # $2 = Component
@@ -2692,7 +2684,7 @@ fi
     fi
     _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
   fi
-  
+
   if [ "$1" == "0" ] && [ "$AMTMEMAILSUCCESS" == "1" ]; then
     if [ "$2" == "Primary Backup completed successfully" ]; then
       emailSubject="SUCCESS: Primary Backup completed successfully"
@@ -2725,7 +2717,6 @@ fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # flagerror is a function that writes out an error flag file when an error is encountered.
 
 flagerror () {
@@ -2737,7 +2728,6 @@ flagerror () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # mountprimary is a function that checks for a mounted primary drive, if not, mounts it...
 
 mountprimary () {
@@ -2821,7 +2811,6 @@ mountprimary () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # mountsecondary is a function checks for a mounted secondary drive, if not, mounts it...
 
 mountsecondary () {
@@ -2901,12 +2890,11 @@ mountsecondary () {
       fi
 
     fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # purgebackups is a function that allows you to see which backups will be purged before deleting them...
+
 purgebackups () {
 
   if [ "$PURGE" -eq 0 ]; then
@@ -3018,8 +3006,8 @@ purgebackups () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # autopurge is a function that allows you to purge backups throught a commandline switch... if you're daring!
+
 autopurge () {
 
   if [ "$FREQUENCY" != "P" ]; then
@@ -3091,12 +3079,11 @@ autopurge () {
 
     return
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # purgebackups is a function that allows you to see which backups will be purged before deleting them...
+
 purgesecondaries () {
 
   if [ $SECONDARYPURGE -eq 0 ]; then
@@ -3212,8 +3199,8 @@ purgesecondaries () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # autopurgesecondaries is a function that allows you to purge secondary backups throught a commandline switch... if you're daring!
+
 autopurgesecondaries () {
 
   if [ "$SECONDARYFREQUENCY" != "P" ]; then
@@ -3293,28 +3280,28 @@ autopurgesecondaries () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # vsetup is a function that sets up, confiures and allows you to launch backupmon on your router...
+
 vsetup () {
 
   # Check for and add an alias for backupmon
   if ! grep -F "sh /jffs/scripts/backupmon.sh" /jffs/configs/profile.add >/dev/null 2>/dev/null; then
     echo "alias backupmon=\"sh /jffs/scripts/backupmon.sh\" # backupmon" >> /jffs/configs/profile.add
   fi
-  
+
   #Initialize logsfiles
   if [ ! -f $ERRORLOGFILE ]; then
     {
      echo 'BEGIN ERRORLOG ->'
     } > $ERRORLOGFILE
   fi
-  
+
   if [ ! -f $LOGFILE ]; then
     {
      echo 'BEGIN LOG ->'
     } > $LOGFILE
   fi
-  
+
   # Determine if the config is local or under /jffs/addons/backupmon.d
   if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
     source $CFGPATH
@@ -3567,7 +3554,6 @@ vsetup () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # basicjffsnvram routine backs up JFFS and NVRAM in basic mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
@@ -3576,9 +3562,9 @@ basicjffsnvram () {
   freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
 
-	TE="/jffs/addons/backupmon.d/tarexit.txt"
+  TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $EXCLUSION ]; then
-    (tar -zcf ${UNCDRIVE}${BKDIR}/${freqtmp}/jffs.tar.gz -X $EXCLUSION -C /jffs . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null 
+    (tar -zcf ${UNCDRIVE}${BKDIR}/${freqtmp}/jffs.tar.gz -X $EXCLUSION -C /jffs . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
   else
     (tar -zcf ${UNCDRIVE}${BKDIR}/${freqtmp}/jffs.tar.gz -C /jffs . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
   fi
@@ -3644,19 +3630,17 @@ basicjffsnvram () {
   } > ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw.txt
   echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw.txt.${CClear}"
   echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished copying routerfw.txt to ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw.txt" >> $LOGFILE
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # basicextdrv routine backs up ExT Drive in basic mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
 basicextdrv () {
-	
-	freqtmp="$1"
+
+  freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $EXCLUSION ]; then
     (tar -zcf ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}.tar.gz -X $EXCLUSION -C $EXTDRIVE . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -3701,11 +3685,9 @@ basicextdrv () {
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}.tar.gz.${CClear}"
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}.tar.gz" >> $LOGFILE
   fi
-  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # advjffsnvram routine backs up JFFS and NVRAM in advanced mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
@@ -3713,7 +3695,7 @@ advjffsnvram () {
 
   freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   # If a TAR exclusion file exists, use it for the /jffs backup
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $EXCLUSION ]; then
@@ -3783,19 +3765,17 @@ advjffsnvram () {
   } > ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw-${datelabel}.txt
   echo -e "${CGreen}STATUS: Finished copying ${CYellow}routerfw.txt${CGreen} to ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw-${datelabel}.txt.${CClear}"
   echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished copying routerfw.txt to ${UNCDRIVE}${BKDIR}/${freqtmp}/routerfw-${datelabel}.txt" >> $LOGFILE
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
-# advextdrv routine backs up ExT Drive in advanced mode
+# advextdrv routine backs up EXT Drive in advanced mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
 advextdrv () {
 
-	freqtmp="$1"
+  freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $EXCLUSION ]; then
     (tar -zcf ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz -X $EXCLUSION -C $EXTDRIVE . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -3840,11 +3820,9 @@ advextdrv () {
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz" >> $LOGFILE
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # basicsecjffsnvram routine does a secondary backup JFFS and NVRAM in basic mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
@@ -3852,7 +3830,7 @@ basicsecjffsnvram () {
 
   freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $SECONDARYEXCLUSION ]; then
     (tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/jffs.tar.gz -X $SECONDARYEXCLUSION -C /jffs . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -3925,15 +3903,14 @@ basicsecjffsnvram () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # basicsecextdrv routine does a secondary backup of the EXT Drive in basic mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
 basicsecextdrv () {
 
-	freqtmp="$1"
+  freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $SECONDARYEXCLUSION ]; then
     (tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -3981,15 +3958,14 @@ basicsecextdrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # advsecjffsnvram routine does a secondary backup of your JFFS and NVRAM in advanced mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
 advsecjffsnvram () {
 
-	freqtmp="$1"
+  freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $SECONDARYEXCLUSION ]; then
     (tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/jffs-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C /jffs . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -4061,15 +4037,14 @@ advsecjffsnvram () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # advsecextdrv routine does a secondary backup of your EXT Drive in advanced mode
 # $1 = Frequency (WDAY, MDAY, YDAY or PDAY)
 
 advsecextdrv () {
 
-	freqtmp="$1"
+  freqtmp="$1"
   eval freqtmp="\$${freqtmp}"
-  
+
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   if ! [ -z $SECONDARYEXCLUSION ]; then
     (tar -zcf ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz -X $SECONDARYEXCLUSION -C $EXTDRIVE . ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -4117,8 +4092,9 @@ advsecextdrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# Based off original backup routine by @Jeffrey Young showing a great way to connect to an external network location to
+# dump backups to
 
-# backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 backup () {
 
   # Delete last error file
@@ -4240,19 +4216,19 @@ backup () {
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
           echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting backup of EXT Drive on $(date)" >> $LOGFILE
-          
+
           timerstart=$(date +%s)
-          
+
           if [ $FREQUENCY == "W" ]; then
-          	basicextdrv "WDAY"
+            basicextdrv "WDAY"
           elif [ $FREQUENCY == "M" ]; then
-          	basicextdrv "MDAY"
+            basicextdrv "MDAY"
           elif [ $FREQUENCY == "Y" ]; then
-          	basicextdrv "YDAY"
+            basicextdrv "YDAY"
           elif [ $FREQUENCY == "P" ]; then
             basicextdrv "PDAY"
           fi
-          
+
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
           logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
@@ -4262,30 +4238,30 @@ backup () {
       elif [ $MODE == "Advanced" ]; then
 
         datelabel=$(date +"%Y%m%d-%H%M%S")
-        
+
         if [ $FREQUENCY == "W" ]; then
-        	advjffsnvram "WDAY"
+          advjffsnvram "WDAY"
         elif [ $FREQUENCY == "M" ]; then
-        	advjffsnvram "MDAY"
+          advjffsnvram "MDAY"
         elif [ $FREQUENCY == "Y" ]; then
-        	advjffsnvram "YDAY"
+          advjffsnvram "YDAY"
         fi
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
           echo -e "${CGreen}STATUS: Starting backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting backup of EXT Drive on $(date)" >> $LOGFILE
-          
+
           timerstart=$(date +%s)
-          
+
           if [ $FREQUENCY == "W" ]; then
-          	advextdrv "WDAY"
+            advextdrv "WDAY"
           elif [ $FREQUENCY == "M" ]; then
             advextdrv "MDAY"
           elif [ $FREQUENCY == "Y" ]; then
-          	advextdrv "YDAY"
+            advextdrv "YDAY"
           fi
-          
+
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
           logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
@@ -4356,12 +4332,11 @@ backup () {
       exit 1
 
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
+# secodary backup routine to provide an alternate backup using optional different methods and target device
 
-# backup routine by @Jeffrey Young showing a great way to connect to an external network location to dump backups to
 secondary () {
 
   if [ $SECONDARYSTATUS -eq 0 ]; then
@@ -4478,32 +4453,32 @@ secondary () {
       if [ $SECONDARYMODE == "Basic" ]; then
         # If a TAR exclusion file exists, use it for the /jffs backup
         if [ $SECONDARYFREQUENCY == "W" ]; then
-        	basicsecjffsnvram "WDAY"
+          basicsecjffsnvram "WDAY"
         elif [ $SECONDARYFREQUENCY == "M" ]; then
-        	basicsecjffsnvram "MDAY"
+          basicsecjffsnvram "MDAY"
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
-        	basicsecjffsnvram "YDAY"
+          basicsecjffsnvram "YDAY"
         elif [ $SECONDARYFREQUENCY == "P" ]; then
-        	basicsecjffsnvram "PDAY"
+          basicsecjffsnvram "PDAY"
         fi
 
         # If a TAR exclusion file exists, use it for the USB drive backup
         if [ "$EXTLABEL" != "NOTFOUND" ]; then
           echo -e "${CGreen}STATUS: Starting secondary backup of ${CYellow}EXT Drive${CGreen} on $(date). Please stand by...${CClear}"
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting secondary backup of EXT Drive on $(date)" >> $LOGFILE
-          
+
           timerstart=$(date +%s)
-          
+
           if [ $SECONDARYFREQUENCY == "W" ]; then
-          	basicsecextdrv "WDAY"
+            basicsecextdrv "WDAY"
           elif [ $SECONDARYFREQUENCY == "M" ]; then
-          	basicsecextdrv "MDAY"
+            basicsecextdrv "MDAY"
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
-          	basicsecextdrv "YDAY"
+            basicsecextdrv "YDAY"
           elif [ $SECONDARYFREQUENCY == "P" ]; then
-          	basicsecextdrv "PDAY"
+            basicsecextdrv "PDAY"
           fi
-          
+
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
           logger "BACKUPMON WARNING: External USB drive not found. Skipping backup."
@@ -4515,11 +4490,11 @@ secondary () {
         datelabel=$(date +"%Y%m%d-%H%M%S")
         # If a TAR exclusion file exists, use it for the /jffs backup
         if [ $SECONDARYFREQUENCY == "W" ]; then
-        	advsecjffsnvram "WDAY"
+          advsecjffsnvram "WDAY"
         elif [ $SECONDARYFREQUENCY == "M" ]; then
-        	advsecjffsnvram "MDAY"
+          advsecjffsnvram "MDAY"
         elif [ $SECONDARYFREQUENCY == "Y" ]; then
-        	advsecjffsnvram "YDAY"
+          advsecjffsnvram "YDAY"
         fi
 
         # If a TAR exclusion file exists, use it for the USB drive backup
@@ -4528,11 +4503,11 @@ secondary () {
           echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Starting secondary backup of EXT Drive on $(date)" >> $LOGFILE
           timerstart=$(date +%s)
           if [ $SECONDARYFREQUENCY == "W" ]; then
-          	advsecextdrv "WDAY"
+            advsecextdrv "WDAY"
           elif [ $SECONDARYFREQUENCY == "M" ]; then
-          	advsecextdrv "MDAY"
+            advsecextdrv "MDAY"
           elif [ $SECONDARYFREQUENCY == "Y" ]; then
-          	advsecextdrv "YDAY"
+            advsecextdrv "YDAY"
           fi
         else
           echo -e "${CYellow}WARNING: External USB drive not found. Skipping backup."
@@ -4604,12 +4579,11 @@ secondary () {
       exit 1
 
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # restore function is a routine that allows you to pick a backup to be restored
+
 restore () {
 
   clear
@@ -4867,7 +4841,7 @@ restore () {
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
               echo ""
             fi
-            
+
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
@@ -4935,7 +4909,7 @@ restore () {
             # Run the TAR commands to restore backups to their original locations
             echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
-            
+
             TE="/jffs/addons/backupmon.d/tarexit.txt"
             (tar -xzf ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
             TEresult=$(cat $TE)
@@ -4946,7 +4920,7 @@ restore () {
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
               echo ""
             fi
-            
+
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
@@ -5066,8 +5040,6 @@ restore () {
       then lsFlags="-letd"
       else lsFlags="-lertd"
       fi
-      #ls $lsFlags ${UNCDRIVE}${BKDIR}/*/ | \
-      #awk -F ' ' '{printf "%s %s %2d %s %s %s\n",$6,$7,$8,$9,$10,$11}'
       ## Modified by Viktor Jaep for color [2024-Mar-15] ##
       ls $lsFlags ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/*/ | \
       awk -F ' ' '{printf "%s %s %2d %s %s",$6,$7,$8,$9,$10} { printf " \033[1;34m"$11" \033[0m\n";}'
@@ -5420,12 +5392,11 @@ restore () {
     fi
 
   fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # unmountdrv is a function to gracefully unmount the drive, and retry for up to 30 seconds
+
 unmountdrv () {
 
   if [ "$BACKUPMEDIA" == "USB" ]; then
@@ -5462,8 +5433,8 @@ unmountdrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # unmountsecondarydrv is a function to gracefully unmount the secondary drive, and retry for up to 30 seconds
+
 unmountsecondarydrv () {
 
   if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
@@ -5500,8 +5471,8 @@ unmountsecondarydrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # unmountdrv is a function to gracefully unmount the drive, and retry for up to 30 seconds
+
 unmounttestdrv () {
 
   if [ "$TESTBACKUPMEDIA" == "USB" ]; then
@@ -5530,8 +5501,8 @@ unmounttestdrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-
 # checkplaintxtpwds is a function to check if old plaintext pwds are still in use due to change to new base64 pwd storage change
+
 checkplaintxtpwds () {
 
   #Check to see if old conflicting variable names are being used
@@ -5576,13 +5547,11 @@ checkplaintxtpwds () {
       exit 0
     fi
   fi
-
 }
 
-
 # -------------------------------------------------------------------------------------------------------------------------
-
 # excludeswap is a function to write a swap file exlusion file, or to add to an existing exlusions file
+
 excludeswap () {
 
 # First check to see if the swap file exlusion file exists, if not, create it. Thanks to @ScottW for the ideas!
@@ -5626,7 +5595,6 @@ if [ "$BACKUPSWAP" == "0" ]; then
   fi
 
 fi
-
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5759,7 +5727,7 @@ fi
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
-  	logoNM
+    logoNM
     vsetup
 fi
 
