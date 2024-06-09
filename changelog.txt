@@ -1,6 +1,6 @@
 v1.8.4  - (June 9, 2024)
         - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
-          versitile functions out of them. This shaved over 90K off the size of the file by eliminating over
+          versatile functions out of them. This shaved over 90K off the size of the file by eliminating over
           1100 lines of code. BACKUPMON is now leaner, meaner, and more efficient! ;)
         - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
           BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
