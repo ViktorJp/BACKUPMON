@@ -524,7 +524,7 @@ vconfig () {
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}${CDkGray}--  On Failure?                                 : ${CDkGray}No"
       fi
 
-      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Secondary Backup Config Options              : ${CGreen}$SECONDARY"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Secondary Backup Config Options              : ${CGreen}"
       if [ "$SECONDARYSTATUS" != "0" ] && [ "$SECONDARYSTATUS" != "1" ]; then SECONDARYSTATUS=0; fi
       if [ "$SECONDARYSTATUS" == "0" ]; then
         printf "Disabled"; printf "%s\n";
@@ -5857,8 +5857,16 @@ else
   echo -en "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CWhite} mounted to ${CGreen}${UNCDRIVE}"
 fi
 echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BKDIR}"
-echo -e "${InvGreen} ${CClear}${CWhite} Frequency: ${CGreen}$FREQEXPANDED"
-echo -e "${InvGreen} ${CClear}${CWhite} Mode: ${CGreen}$MODE"
+echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Frequency: ${CGreen}$FREQEXPANDED"
+echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
+if [ "$SECONDARYSTATUS" == "1" ]; then
+	if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
+  if [ $SECONDARYFREQUENCY == "M" ]; then SECFREQEXPANDED="Monthly"; fi
+  if [ $SECONDARYFREQUENCY == "Y" ]; then SECFREQEXPANDED="Yearly"; fi
+  if [ $SECONDARYFREQUENCY == "P" ]; then SECFREQEXPANDED="Perpetual"; fi
+  echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Frequency: ${CGreen}$SECFREQEXPANDED"
+  echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Mode: ${CGreen}$SECONDARYMODE"
+fi
 echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
 echo ""
 
