@@ -1696,7 +1696,7 @@ while true; do
         [Tt])   # Connection test script
                 if [ "$TESTUNCUPDATED" == "True" ]; then TESTUNC=$(echo -e "$TESTUNC"); fi
                 echo ""
-                echo -e "${CCyan}Messages:${CClear}"
+                echo -e "${CWhite}Messages:${CClear}"
 
                 # Ping target to see if it's reachable
                 FAILURE="FALSE"
@@ -2933,7 +2933,7 @@ purgebackups () {
   if promptyn "(y/n): "; then
 
     echo ""
-    echo -e "\n${CCyan}Messages:${CClear}"
+    echo -e "\n${CWhite}Messages:${CClear}"
 
     # Create the local backup drive mount directory
     if ! [ -d $UNCDRIVE ]; then
@@ -3041,7 +3041,7 @@ autopurge () {
   echo ""
   echo -e "${CGreen}[Auto Purge Primary Backups Commencing]..."
   echo ""
-  echo -e "${CCyan}Messages:${CClear}"
+  echo -e "${CWhite}Messages:${CClear}"
 
   # Create the local backup drive mount directory
   if ! [ -d $UNCDRIVE ]; then
@@ -3127,7 +3127,7 @@ purgesecondaries () {
   if promptyn "(y/n): "; then
 
     echo ""
-    echo -e "\n${CCyan}Messages:${CClear}"
+    echo -e "\n${CWhite}Messages:${CClear}"
 
     # Create the local backup drive mount directory
     if ! [ -d $SECONDARYUNCDRIVE ]; then
@@ -3239,7 +3239,7 @@ autopurgesecondaries () {
   echo ""
   echo -e "${CGreen}[Auto Purge Secondary Backups Commencing]..."
   echo ""
-  echo -e "${CCyan}Messages:${CClear}"
+  echo -e "${CWhite}Messages:${CClear}"
 
   # Create the local backup drive mount directory
   if ! [ -d $SECONDARYUNCDRIVE ]; then
@@ -3418,7 +3418,7 @@ vsetup () {
             echo ""
             echo -e "${CGreen}[Primary Backup Commencing]...          "
             echo ""
-            echo -e "${CCyan}Messages:${CClear}"
+            echo -e "${CWhite}Messages:${CClear}"
             backup
             sendmessage 0 "Primary Backup completed successfully"
             secondary               #Run secondary backups
@@ -4366,7 +4366,7 @@ secondary () {
   echo ""
   echo -e "${CGreen}[Secondary Backup Commencing]..."
   echo ""
-  echo -e "${CCyan}Messages:${CClear}"
+  echo -e "${CWhite}Messages:${CClear}"
 
   # Check to see if a local backup drive mount is available, if not, create one.
   if ! [ -d $SECONDARYUNCDRIVE ]; then
@@ -4643,7 +4643,7 @@ restore () {
     SOURCE="Primary"
   fi
 
-  echo -e "${CCyan}Messages:${CClear}"
+  echo -e "${CWhite}Messages:${CClear}"
 
   if [ "$SOURCE" == "Primary" ]; then
 
@@ -5877,7 +5877,7 @@ fi
 # Run a normal backup
 echo -e "${CGreen}[Primary Backup Commencing]...          "
 echo ""
-echo -e "${CCyan}Messages:${CClear}"
+echo -e "${CWhite}Messages:${CClear}"
 
 checkplaintxtpwds       #Check for plaintext passwords
 backup                  #Run primary backups
