@@ -1,4 +1,4 @@
-v1.7.4b2- (TBA)
+v1.8.4  - (June 9, 2024)
         - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
           versitile functions out of them. This shaved over 90K off the size of the file by eliminating over
           1100 lines of code. BACKUPMON is now leaner, meaner, and more efficient! ;)
