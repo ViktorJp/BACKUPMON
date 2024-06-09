@@ -1,24 +1,23 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON v1.8.4 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.7.4b3 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
-# BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS,
-# NVRAM and external USB drive environment. By creating a network share off a NAS, server, or other device, BACKUPMON can
-# point to your location of choice, and perform a daily backup to this mounted drive. To perform daily, unattended backups,
-# simply schedule a daily job through BACKUPMON, which will automatically get added to your CRON schedule. During a
-# situation of need, where a backup would need to be restored  after a catastrophic event with either your router or
-# attached USB storage, simply copy the backupmon.sh + backupmon.cfg files over to a newly formatted /jffs/scripts folder,
-# ensuring that your external USB storage was formatted with the same exact name (how-to's are all retrievable from the
-# instructions.txt in your backup folder), and perform the restore by running the "backupmon.sh -restore" command,
-# selecting the backup you want to use, and going through the prompts to complete the restoration of both your /jffs, NVRAM
-# and external USB drive environments.
+# BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS and
+# external USB drive environments. By creating a network share off a NAS, server, or other device, BACKUPMON can point to
+# this location, and perform a daily backup to this mounted drive. To perform daily, unattended backups, simply add a
+# statement to your cron schedule, and launch backupmon.sh at any time you wish. During a situation of need to restore a
+# backup after a catastrophic event with either your router or attached USB storage, simply copy the backupmon.sh & .cfg
+# files over to a newly formatted /jffs/scripts folder, ensuring that your external USB storage was formatted with the same
+# exact name (which is retrievable from the instructions.txt in your backup folder), and perform the restore by running the
+# "backupmon.sh -restore" command, selecting the backup you want to use, and going through the prompts to complete the
+# restoration of both your /jffs and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.4"                                                 # Current version
-Beta=0                                                          # Beta release Y/N
+Version="1.7.4b3"                                               # Current version
+Beta=1                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 LOGFILE="/jffs/addons/backupmon.d/backupmon.log"                # Path to the local logfile

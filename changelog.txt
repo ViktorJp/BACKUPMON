@@ -1,3 +1,26 @@
+v1.8.4  - (June 9, 2024)
+        - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
+          versatile functions out of them. This shaved over 90K off the size of the file by eliminating over
+          1100 lines of code. BACKUPMON is now leaner, meaner, and more efficient! ;)
+        - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
+          BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
+          is viewable from the setup/configuration menu using the command "(ve)". It will basically dump any
+          tar-related warnings or any other errors into this log, in addition to the error messages that
+          BACKUPMON generates.
+        - PATCH: Should any sort of error occur, you will get visual feedback in various locations: (1) When
+          manually running a backup job from the menu, it will display the warning that an error occurred and
+          will ask for a keypress to continue. (2) When automatedly running, it will include a warning at the
+          end of the job to let you know something occurred.  (3) When opening BACKUPMON to the setup/
+          configuration menu, it will display that an error occurred during the last backup, and to take a
+          look at the error log.
+        - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
+          option under the setup/configuration menu. Thought these would be good to add to determine if tar
+          is functional in your environment or backup target.
+        - PATCH: Determined that determining status/errors from tar or nvram commands were no longer working
+          due to the number of pipes being appended to these commands in order to divert errors into the new
+          error log. Implemented a workaround to continue to flag major networking or tar errors that would
+          cause script execution and flag it as a failed backup.
+
 v1.7.2  - (April 1, 2024)
         - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
           folder and was not deleting these tmp email files if you opted not to receive success or failure
