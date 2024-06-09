@@ -1974,6 +1974,7 @@ vupdate () {
           flagerror
           echo ""
           read -rsp $'Press any key to exit BACKUPMON...\n' -n1 key
+          echo -e "${CClear}"
           exit 0
         fi
       else
@@ -1989,12 +1990,25 @@ vupdate () {
         echo ""
         echo -e "\n${CClear}Downloading BACKUPMON ${CGreen}v$DLVersion${CClear}"
         curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
-        echo ""
-        echo -e "${CGreen}Download successful!${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
-        echo ""
-        read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
-        exec /jffs/scripts/backupmon.sh -setup
+        DLsuccess=$?
+        if [ "$DLsuccess" -eq 0 ]; then
+          echo ""
+          echo -e "${CGreen}Download successful!${CClear}"
+          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully downloaded and installed BACKUPMON v$DLVersion" >> $LOGFILE
+          echo ""
+          read -rsp $'Press any key to restart BACKUPMON...\n' -n1 key
+          exec /jffs/scripts/backupmon.sh -setup
+        else
+          echo ""
+          echo -e "${CRed}Download unsuccessful! Please exit to investigate issues.${CClear}"
+          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $LOGFILE
+          echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $ERRORLOGFILE
+          flagerror
+          echo ""
+          read -rsp $'Press any key to exit BACKUPMON...\n' -n1 key
+          echo -e "${CClear}"
+          exit 0
+        fi
       else
         echo ""
         echo ""
@@ -2717,7 +2731,7 @@ fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# flagerror is a function that writes out an error flag file when an error is encountered.
+# flagerror is a function that writes out an error flag file with a date/time when an error is encountered.
 
 flagerror () {
 
@@ -2761,7 +2775,7 @@ mountprimary () {
                 flagerror
                 sendmessage 1 "Unable to mount network drive"
                 errorcheck
-                echo -e "\n"
+                echo -e "${CClear}\n"
                 exit 1
               fi
             fi
@@ -2794,7 +2808,7 @@ mountprimary () {
                 flagerror
                 sendmessage 1 "Unable to mount network drive"
                 errorcheck
-                echo -e "\n"
+                echo -e "${CClear}\n"
                 exit 1
               fi
             fi
@@ -2844,7 +2858,7 @@ mountsecondary () {
                 flagerror
                 sendmessage 1 "Unable to mount secondary network drive"
                 errorcheck
-                echo -e "\n"
+                echo -e "${CClear}\n"
                 exit 1
               fi
             fi
@@ -2877,7 +2891,7 @@ mountsecondary () {
               flagerror
               sendmessage 1 "Unable to mount secondary network drive"
               errorcheck
-              echo -e "\n"
+              echo -e "${CClear}\n"
               exit 1
             fi
           fi
@@ -3016,6 +3030,7 @@ autopurge () {
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual backups are not configured. Please check your configuration." >> $ERRORLOGFILE
     flagerror
     errorcheck
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3209,6 +3224,7 @@ autopurgesecondaries () {
     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual secondary backups are not configured. Please check your configuration." >> $ERRORLOGFILE
     flagerror
     errorcheck
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3344,7 +3360,7 @@ vsetup () {
       errordate=$(date -d @${errordate})
       echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Backup Errors and Warnings]                                                          ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last backup on $errordate.  "
+      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate.  "
       echo -e "${InvGreen} ${CClear}${InvRed}${CWhite}          Please review error logs (ve) at your earliest convenience.                  "
       echo -e "${InvGreen} ${CClear}"
     fi
@@ -3577,7 +3593,7 @@ basicjffsnvram () {
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3597,7 +3613,7 @@ basicjffsnvram () {
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/jffs.tar.gz.${CClear}"
@@ -3616,7 +3632,7 @@ basicjffsnvram () {
     flagerror
     sendmessage 1 "NVRAM config export failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $NSresult -eq 0 ]; then
     logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.cfg"
@@ -3656,7 +3672,7 @@ basicextdrv () {
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3679,7 +3695,7 @@ basicextdrv () {
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}.tar.gz.${CClear}"
@@ -3712,7 +3728,7 @@ advjffsnvram () {
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3732,7 +3748,7 @@ advjffsnvram () {
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/jffs-${datelabel}.tar.gz.${CClear}"
@@ -3751,7 +3767,7 @@ advjffsnvram () {
     flagerror
     sendmessage 1 "NVRAM config export failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $NSresult -eq 0 ]; then
     logger "BACKUPMON INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.cfg"
@@ -3791,7 +3807,7 @@ advextdrv () {
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3814,7 +3830,7 @@ advextdrv () {
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for ${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
@@ -3846,7 +3862,7 @@ basicsecjffsnvram () {
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3866,7 +3882,7 @@ basicsecjffsnvram () {
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/jffs.tar.gz.${CClear}"
@@ -3885,7 +3901,7 @@ basicsecjffsnvram () {
     flagerror
     sendmessage 1 "NVRAM config export failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $NSresult -eq 0 ]; then
     logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.cfg"
@@ -3926,7 +3942,7 @@ basicsecextdrv () {
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -3949,7 +3965,7 @@ basicsecextdrv () {
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}.tar.gz.${CClear}"
@@ -3981,7 +3997,7 @@ advsecjffsnvram () {
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -4001,7 +4017,7 @@ advsecjffsnvram () {
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/jffs-${datelabel}.tar.gz.${CClear}"
@@ -4020,7 +4036,7 @@ advsecjffsnvram () {
     flagerror
     sendmessage 1 "NVRAM config export failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $NSresult -eq 0 ]; then
     logger "BACKUPMON INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.cfg"
@@ -4060,7 +4076,7 @@ advsecextdrv () {
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   fi
 
@@ -4083,7 +4099,7 @@ advsecextdrv () {
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
-    echo -e "\n"
+    echo -e "${CClear}\n"
     exit 1
   elif [ $TIresult -eq 0 ]; then
     echo -e "${CGreen}STATUS: Finished integrity check for secondary ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.${CClear}"
@@ -4328,7 +4344,7 @@ backup () {
       flagerror
       sendmessage 1 "Unable to mount network drive"
       errorcheck
-      echo -e "\n"
+      echo -e "${CClear}\n"
       exit 1
 
   fi
@@ -4575,7 +4591,7 @@ secondary () {
       flagerror
       sendmessage 1 "Unable to mount network drive"
       errorcheck
-      echo -e "\n"
+      echo -e "${CClear}\n"
       exit 1
 
   fi
@@ -4723,6 +4739,7 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
               flagerror
               errorcheck
+              echo -e "${CClear}\n"
               exit 1
             else
               BACKUPDATE=$BACKUPDATE1
@@ -4787,6 +4804,7 @@ restore () {
               echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
               echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
             else
+              echo -e "${CClear}\n"
               exit 0
             fi
           fi
@@ -4812,6 +4830,7 @@ restore () {
               echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
               echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
             else
+              echo -e "${CClear}\n"
               exit 0
             fi
           fi
@@ -5105,6 +5124,7 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
               flagerror
               errorcheck
+              echo -e "${CClear}\n"
               exit 1
             else
               BACKUPDATE=$BACKUPDATE1
@@ -5169,6 +5189,7 @@ restore () {
               echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
               echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
             else
+              echo -e "${CClear}\n"
               exit 0
             fi
           fi
@@ -5194,6 +5215,7 @@ restore () {
               echo -e "${CYellow}WARNING: This may have disastrous effects on the operation and stabiliity of your router.${CClear}"
               echo -e "${CYellow}WARNING: By continuing, you accept full responsibility for these actions.${CClear}"
             else
+              echo -e "${CClear}\n"
               exit 0
             fi
           fi
@@ -5424,7 +5446,7 @@ unmountdrv () {
             flagerror
             sendmessage 1 "Unable to unmount network drive"
             errorcheck
-            echo -e "\n"
+            echo -e "${CClear}\n"
             exit 1
           fi
         fi
@@ -5462,7 +5484,7 @@ unmountsecondarydrv () {
             flagerror
             sendmessage 1 "Unable to unmount secondary network drive"
             errorcheck
-            echo -e "\n"
+            echo -e "${CClear}\n"
             exit 1
           fi
         fi
@@ -5794,7 +5816,7 @@ if [ "$1" == "-noswitch" ]
     else
       clear
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-      echo -e "${CClear}"
+      echo -e "${CClear}\n"
       exit 1
     fi
     checkplaintxtpwds
