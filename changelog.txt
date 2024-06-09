@@ -16,7 +16,7 @@ v1.8.4  - (June 9, 2024)
         - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
           option under the setup/configuration menu. Thought these would be good to add to determine if tar
           is functional in your environment or backup target.
-        - PATCH: Determined that determining status/errors from tar or nvram commands were no longer working
+        - PATCH: Determined that importing status/errors from tar or nvram commands were no longer working
           due to the number of pipes being appended to these commands in order to divert errors into the new
           error log. Implemented a workaround to continue to flag major networking or tar errors that would
           cause script execution and flag it as a failed backup.
