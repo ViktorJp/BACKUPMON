@@ -5564,6 +5564,7 @@ checkplaintxtpwds () {
       echo ""
       read -rsp $'Press any key to enter setup menu...\n' -n1 key
       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
       flagerror
       vsetup
       exit 0
