@@ -1,9 +1,9 @@
 v1.8.5  - (June 21, 2024)
         - MINOR: Added a tweak to the config menu that will now display a RED <-- Action Needed! arrow in
           place of the "Source EXT USB Drive Mount Point" entry if the default sample mount point name is
-          still in use (ie. /tmp/mnt/usbdrive). Thanks to @Gen10 for running into this issue, and figuring
-          out that backup failures were happening because this mount point had not been changed yet. Here's
-          hoping this visual indicator will help
+          still in use (ie. "/tmp/mnt/<selectusbdrive>"). Thanks to @Gen10 for running into this issue, and
+          figuring out that backup failures were happening because this mount point had not been changed yet.
+          The default entry written to the config file is now "/tmp/mnt/<selectusbdrive>".
 
 v1.8.4  - (June 9, 2024)
         - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
