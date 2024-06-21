@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON v1.8.4 heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS,
 # NVRAM and external USB drive environment. By creating a network share off a NAS, server, or other device, BACKUPMON can
@@ -17,13 +17,13 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.5"                                                 # Current version
+Version="1.8.4"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
 LOGFILE="/jffs/addons/backupmon.d/backupmon.log"                # Path to the local logfile
 ERRORLOGFILE="/jffs/addons/backupmon.d/backupmonerrors.log"     # Path to the local errors logfile
-ERRORFILE="/jffs/addons/backupmon.d/errors.txt"                 # Path to the local error flag file
+ERRORFILE="/jffs/addons/backupmon.d/errors.txt"                  # Path to the local error flag file
 PFEXCLUSION="/jffs/addons/backupmon.d/pfexclusion.txt"          # Path to pagefile exclusion file
 WDAY="$(date +%a)"                                              # Current day # of the week
 MDAY="$(date +%d)"                                              # Current day # of the month
@@ -395,15 +395,9 @@ vconfig () {
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : BACKUPMON Version                            : ${CGreen}$Version"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
-      
-      if [ "$EXTDRIVE" == "/tmp/mnt/<selectusbdrive>" ]; then
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
-      else
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CGreen}$EXTDRIVE"
-      fi
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CGreen}$EXTDRIVE"
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2) ${CClear} : Backup Target Media Type                     : ${CGreen}$BACKUPMEDIA"
-      
       if [ "$BACKUPMEDIA" == "USB" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Backup Target Username                       : ${CDkGray}$BTUSERNAME"
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Backup Target Password (ENC)                 : ${CDkGray}$BTPASSWORD"
@@ -1485,7 +1479,7 @@ vconfig () {
         echo 'UNC="\\\\192.168.50.25\\Backups"'
         echo 'NFSMOUNTOPT=""'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
-        echo 'EXTDRIVE="/tmp/mnt/<selectusbdrive>"'
+        echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
         echo 'EXTLABEL="usbdrive"'
         echo 'BKDIR="/router/GT-AX6000-Backup"'
         echo 'BACKUPMEDIA="Network"'

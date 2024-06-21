@@ -1,9 +1,10 @@
 Future Enhancements (Planned)
 -----------------------------
-* Create a log of errors (visortgw), and a notification if errors occurred on screen after backup runs (vibroverbus)
 
 Completed:
 ----------
+* change the default name of the /tmp/mnt/usbdrive so that it's easier to identify that it has not been changed. Perhaps red arrow?
+* Create a log of errors (visortgw), and a notification if errors occurred on screen after backup runs (vibroverbus)
 * Possibility of supporting NFS in addition to CIFS/SMB
 * Edit exclusion file wth nano under setup menu
 * logic to see if source and target are same with USB being active, seeing if exclusion for backup folder exists, if not give warning and option to add
