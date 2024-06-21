@@ -396,7 +396,7 @@ vconfig () {
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
       
-      if [ "$EXTDRIVE" == "/tmp/mnt/usbdrive" ]; then
+      if [ "$EXTDRIVE" == "/tmp/mnt/<selectusbdrive>" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
       else
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CGreen}$EXTDRIVE"
@@ -1485,7 +1485,7 @@ vconfig () {
         echo 'UNC="\\\\192.168.50.25\\Backups"'
         echo 'NFSMOUNTOPT=""'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
-        echo 'EXTDRIVE="/tmp/mnt/usbdrive"'
+        echo 'EXTDRIVE="/tmp/mnt/<selectusbdrive>"'
         echo 'EXTLABEL="usbdrive"'
         echo 'BKDIR="/router/GT-AX6000-Backup"'
         echo 'BACKUPMEDIA="Network"'
