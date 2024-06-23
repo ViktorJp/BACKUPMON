@@ -1,5 +1,6 @@
 Future Enhancements (Planned)
 -----------------------------
+* Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 
 Completed:
 ----------
