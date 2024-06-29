@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.6"                                                 # Current version
+Version="1.8.7"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -395,7 +395,7 @@ vconfig () {
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : BACKUPMON Version                            : ${CGreen}$Version"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
-      
+
       if [ "$EXTDRIVE" == "/tmp/mnt/<selectusbdrive>" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
       else
@@ -403,7 +403,7 @@ vconfig () {
       fi
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2) ${CClear} : Backup Target Media Type                     : ${CGreen}$BACKUPMEDIA"
-      
+
       if [ "$BACKUPMEDIA" == "USB" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Backup Target Username                       : ${CDkGray}$BTUSERNAME"
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Backup Target Password (ENC)                 : ${CDkGray}$BTPASSWORD"
@@ -1738,6 +1738,13 @@ while true; do
                   echo -e "${CGreen}INFO: External test drive mount point exists. Found under: ${CYellow}$TESTUNCDRIVE ${CClear}"
                 fi
 
+                # Check to see if UNC or UNCDRIVE are present, if not, error out.
+                if [ -z "$TESTUNC" ] || [ -z "$TESTUNCDRIVE" ]; then
+                  echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+                  read -rsp $'Press any key to acknowledge...\n' -n1 key
+                  break
+                fi
+
                 # If everything successfully was created, proceed
                 if ! mount | grep $TESTUNCDRIVE > /dev/null 2>&1; then
 
@@ -1746,7 +1753,7 @@ while true; do
                     if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
                       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
                     fi
-                    
+
                     # For BE-class router compatibility on 3006
                     if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
                       modprobe cifs > /dev/null
@@ -2807,7 +2814,7 @@ mountprimary () {
         if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
           modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
         fi
-        
+
         # For BE-class router compatibility on 3006
         if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
           modprobe cifs > /dev/null
@@ -2908,7 +2915,7 @@ mountsecondary () {
         if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
           modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
         fi
-        
+
         # For BE-class router compatibility on 3006
         if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
           modprobe cifs > /dev/null
@@ -5936,7 +5943,7 @@ echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BK
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
 if [ "$SECONDARYSTATUS" == "1" ]; then
-	if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
+  if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
   if [ $SECONDARYFREQUENCY == "M" ]; then SECFREQEXPANDED="Monthly"; fi
   if [ $SECONDARYFREQUENCY == "Y" ]; then SECFREQEXPANDED="Yearly"; fi
   if [ $SECONDARYFREQUENCY == "P" ]; then SECFREQEXPANDED="Perpetual"; fi
