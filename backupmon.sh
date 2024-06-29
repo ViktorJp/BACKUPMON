@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.5"                                                 # Current version
+Version="1.8.6"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -2603,6 +2603,34 @@ fi
       printf "Please check your network environment and configuration.\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Unable to mount network drive - UNC/DRIVE values missing" ]; then
+      emailSubject="FAILURE: Unable to mount network drive - UNC or UNCDRIVE values missing"
+      emailBodyTitle="FAILURE: Unable to mount network drive - UNC or UNCDRIVE values missing"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the primary network drive.\n"
+      printf "Your UNC or UNCDRIVE values appear to be missing.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
+    elif [ "$2" == "Unable to mount network drive - Secondary UNC/DRIVE values missing" ]; then
+      emailSubject="FAILURE: Unable to mount network drive - Secondary UNC or UNCDRIVE values missing"
+      emailBodyTitle="FAILURE: Unable to mount network drive - Secondary UNC or UNCDRIVE values missing"
+      {
+      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
+      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
+      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
+      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
+      printf "\n"
+      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the secondary network drive.\n"
+      printf "Your secondary UNC or UNCDRIVE values appear to be missing.\n"
+      printf "Please check your network environment and configuration.\n"
+      printf "\n"
+      } > "$tmpEMailBodyFile"
     elif [ "$2" == "Unable to mount secondary network drive" ]; then
       emailSubject="FAILURE: Unable to mount secondary network drive"
       emailBodyTitle="FAILURE: Unable to mount secondary network drive"
@@ -2758,6 +2786,19 @@ flagerror () {
 
 mountprimary () {
 
+    # Check to see if UNC or UNCDRIVE are present, if not, error out.
+    if [ -z "$UNC" ] || [ -z "$UNCDRIVE" ]; then
+      echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+      logger "BACKUPMON ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+      flagerror
+      sendmessage 1 "Unable to mount network drive - UNC/DRIVE values missing"
+      errorcheck
+      echo -e "${CClear}\n"
+      exit 1
+    fi
+
     # If everything successfully was created, proceed
     if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
@@ -2845,6 +2886,19 @@ mountprimary () {
 # mountsecondary is a function checks for a mounted secondary drive, if not, mounts it...
 
 mountsecondary () {
+
+    # Check to see if SECONDARYUNC or SECONDARYUNCDRIVE are present, if not, error out.
+    if [ -z "$SECONDARYUNC" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
+      echo -e "${CRed}ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+      logger "BACKUPMON ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+      flagerror
+      sendmessage 1 "Unable to mount network drive - Secondary UNC/DRIVE values missing"
+      errorcheck
+      echo -e "${CClear}\n"
+      exit 1
+    fi
 
     # If everything successfully was created, proceed
     if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
@@ -3382,7 +3436,7 @@ vsetup () {
       errordate=$(date -d @${errordate})
       echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Backup Errors and Warnings]                                                          ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate.  "
+      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate. "
       echo -e "${InvGreen} ${CClear}${InvRed}${CWhite}          Please review error logs (ve) at your earliest convenience.                  "
       echo -e "${InvGreen} ${CClear}"
     fi
