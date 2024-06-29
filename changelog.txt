@@ -1,5 +1,16 @@
+v1.8.7  - (June 29, 2024)
+        - PATCH: In further compliance with the 3006 firmware and the new BE devices, @visortgw wisely
+          noted that a "modprobe cifs" might just fix everything... and it sure did. Thanks for that! As of
+          BACKUPMON v1.8.7, you should have full CIFS functionality on the 3006 level firmware. Also, thanks
+          to @RMerlin for adding the CIFS libraries back in and making BACKUPMON functional again. ;)
+        - PATCH: In further troubleshooting BACKUPMON on 3006 with his beefy GT-BE98_Pro, @ExtremeFiretop
+          came across a bug that allowed backups to run if the UNC path was blank, but the drive had been
+          manually mounted in the background. BACKUPMON will now come to a halt if it finds UNC or UNCDRIVE
+          values being blank. Thanks for the heads-up and the testing. A free bug bounty BACKUPMON swag shirt
+          is on its way to you!! (LOL jk)
+
 v1.8.5  - (June 21, 2024)
-        - MINOR: Added a tweak to the config menu that will now display a RED <-- Action Needed! arrow in
+        - PATCH: Added a tweak to the config menu that will now display a RED <-- Action Needed! arrow in
           place of the "Source EXT USB Drive Mount Point" entry if the default sample mount point name is
           still in use (ie. "/tmp/mnt/<selectusbdrive>"). Thanks to @Gen10 for running into this issue, and
           figuring out that backup failures were happening because this mount point had not been changed yet.
