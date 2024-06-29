@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.7"                                                 # Current version
+Version="1.8.5"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -395,7 +395,7 @@ vconfig () {
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : BACKUPMON Version                            : ${CGreen}$Version"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Model                          : ${CGreen}$ROUTERMODEL"
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}    ${CClear} : Source Router Firmware/Build                 : ${CGreen}$FWBUILD"
-
+      
       if [ "$EXTDRIVE" == "/tmp/mnt/<selectusbdrive>" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(1) ${CClear} : Source EXT USB Drive Mount Point             : ${CWhite}${InvRed}<-- Action Needed! ${CClear}"
       else
@@ -403,7 +403,7 @@ vconfig () {
       fi
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(2) ${CClear} : Backup Target Media Type                     : ${CGreen}$BACKUPMEDIA"
-
+      
       if [ "$BACKUPMEDIA" == "USB" ]; then
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(3) ${CClear}${CDkGray} : Backup Target Username                       : ${CDkGray}$BTUSERNAME"
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(4) ${CClear}${CDkGray} : Backup Target Password (ENC)                 : ${CDkGray}$BTPASSWORD"
@@ -1738,13 +1738,6 @@ while true; do
                   echo -e "${CGreen}INFO: External test drive mount point exists. Found under: ${CYellow}$TESTUNCDRIVE ${CClear}"
                 fi
 
-                # Check to see if UNC or UNCDRIVE are present, if not, error out.
-                if [ -z "$TESTUNC" ] || [ -z "$TESTUNCDRIVE" ]; then
-                  echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-                  read -rsp $'Press any key to acknowledge...\n' -n1 key
-                  break
-                fi
-
                 # If everything successfully was created, proceed
                 if ! mount | grep $TESTUNCDRIVE > /dev/null 2>&1; then
 
@@ -1752,11 +1745,6 @@ while true; do
                     # Check the build to see if modprobe needs to be called
                     if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
                       modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-                    fi
-
-                    # For BE-class router compatibility on 3006
-                    if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
-                      modprobe cifs > /dev/null
                     fi
 
                       CNT=0
@@ -2610,34 +2598,6 @@ fi
       printf "Please check your network environment and configuration.\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
-    elif [ "$2" == "Unable to mount network drive - UNC/DRIVE values missing" ]; then
-      emailSubject="FAILURE: Unable to mount network drive - UNC or UNCDRIVE values missing"
-      emailBodyTitle="FAILURE: Unable to mount network drive - UNC or UNCDRIVE values missing"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-      printf "\n"
-      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the primary network drive.\n"
-      printf "Your UNC or UNCDRIVE values appear to be missing.\n"
-      printf "Please check your network environment and configuration.\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
-    elif [ "$2" == "Unable to mount network drive - Secondary UNC/DRIVE values missing" ]; then
-      emailSubject="FAILURE: Unable to mount network drive - Secondary UNC or UNCDRIVE values missing"
-      emailBodyTitle="FAILURE: Unable to mount network drive - Secondary UNC or UNCDRIVE values missing"
-      {
-      printf "<b>Date/Time:</b> $(date +'%b %d %Y %X')\n"
-      printf "<b>Asus Router Model:</b> ${ROUTERMODEL}\n"
-      printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
-      printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
-      printf "\n"
-      printf "<b>FAILURE: BACKUPMON</b> was unable to mount the secondary network drive.\n"
-      printf "Your secondary UNC or UNCDRIVE values appear to be missing.\n"
-      printf "Please check your network environment and configuration.\n"
-      printf "\n"
-      } > "$tmpEMailBodyFile"
     elif [ "$2" == "Unable to mount secondary network drive" ]; then
       emailSubject="FAILURE: Unable to mount secondary network drive"
       emailBodyTitle="FAILURE: Unable to mount secondary network drive"
@@ -2793,19 +2753,6 @@ flagerror () {
 
 mountprimary () {
 
-    # Check to see if UNC or UNCDRIVE are present, if not, error out.
-    if [ -z "$UNC" ] || [ -z "$UNCDRIVE" ]; then
-      echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-      logger "BACKUPMON ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!"
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
-      flagerror
-      sendmessage 1 "Unable to mount network drive - UNC/DRIVE values missing"
-      errorcheck
-      echo -e "${CClear}\n"
-      exit 1
-    fi
-
     # If everything successfully was created, proceed
     if ! mount | grep $UNCDRIVE > /dev/null 2>&1; then
 
@@ -2813,11 +2760,6 @@ mountprimary () {
         # Check the build to see if modprobe needs to be called
         if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
           modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-        fi
-
-        # For BE-class router compatibility on 3006
-        if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
-          modprobe cifs > /dev/null
         fi
 
         CNT=0
@@ -2894,19 +2836,6 @@ mountprimary () {
 
 mountsecondary () {
 
-    # Check to see if SECONDARYUNC or SECONDARYUNCDRIVE are present, if not, error out.
-    if [ -z "$SECONDARYUNC" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
-      echo -e "${CRed}ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-      logger "BACKUPMON ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!"
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
-      flagerror
-      sendmessage 1 "Unable to mount network drive - Secondary UNC/DRIVE values missing"
-      errorcheck
-      echo -e "${CClear}\n"
-      exit 1
-    fi
-
     # If everything successfully was created, proceed
     if ! mount | grep $SECONDARYUNCDRIVE > /dev/null 2>&1; then
 
@@ -2914,11 +2843,6 @@ mountsecondary () {
         # Check the build to see if modprobe needs to be called
         if [ $(find /lib -name md4.ko | wc -l) -gt 0 ]; then
           modprobe md4 > /dev/null    # Required now by some 388.x firmware for mounting remote drives
-        fi
-
-        # For BE-class router compatibility on 3006
-        if [ $(find /lib -name cifs.ko | wc -l) -gt 0 ]; then
-          modprobe cifs > /dev/null
         fi
 
         CNT=0
@@ -3443,7 +3367,7 @@ vsetup () {
       errordate=$(date -d @${errordate})
       echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Backup Errors and Warnings]                                                          ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate. "
+      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate.  "
       echo -e "${InvGreen} ${CClear}${InvRed}${CWhite}          Please review error logs (ve) at your earliest convenience.                  "
       echo -e "${InvGreen} ${CClear}"
     fi
@@ -5943,7 +5867,7 @@ echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BK
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Frequency: ${CGreen}$FREQEXPANDED"
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
 if [ "$SECONDARYSTATUS" == "1" ]; then
-  if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
+	if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
   if [ $SECONDARYFREQUENCY == "M" ]; then SECFREQEXPANDED="Monthly"; fi
   if [ $SECONDARYFREQUENCY == "Y" ]; then SECFREQEXPANDED="Yearly"; fi
   if [ $SECONDARYFREQUENCY == "P" ]; then SECFREQEXPANDED="Perpetual"; fi
