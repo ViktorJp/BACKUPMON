@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.8"                                                 # Current version
+Version="1.8.7"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1739,12 +1739,10 @@ while true; do
                 fi
 
                 # Check to see if UNC or UNCDRIVE are present, if not, error out.
-                if [ "$TESTBACKUPMEDIA" != "USB" ]; then
-                  if [ -z "$TESTUNC" ] || [ -z "$TESTUNCDRIVE" ]; then
-                    echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-                    read -rsp $'Press any key to acknowledge...\n' -n1 key
-                    break
-                  fi
+                if [ -z "$TESTUNC" ] || [ -z "$TESTUNCDRIVE" ]; then
+                  echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+                  read -rsp $'Press any key to acknowledge...\n' -n1 key
+                  break
                 fi
 
                 # If everything successfully was created, proceed
@@ -2796,18 +2794,16 @@ flagerror () {
 mountprimary () {
 
     # Check to see if UNC or UNCDRIVE are present, if not, error out.
-    if [ "$BACKUPMEDIA" != "USB" ]; then
-      if [ -z "$UNC" ] || [ -z "$UNCDRIVE" ]; then
-        echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-        logger "BACKUPMON ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
-        flagerror
-        sendmessage 1 "Unable to mount network drive - UNC/DRIVE values missing"
-        errorcheck
-        echo -e "${CClear}\n"
-        exit 1
-      fi
+    if [ -z "$UNC" ] || [ -z "$UNCDRIVE" ]; then
+      echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+      logger "BACKUPMON ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+      flagerror
+      sendmessage 1 "Unable to mount network drive - UNC/DRIVE values missing"
+      errorcheck
+      echo -e "${CClear}\n"
+      exit 1
     fi
 
     # If everything successfully was created, proceed
@@ -2899,18 +2895,16 @@ mountprimary () {
 mountsecondary () {
 
     # Check to see if SECONDARYUNC or SECONDARYUNCDRIVE are present, if not, error out.
-    if [ "$SECONDARYBACKUPMEDIA" != "USB" ]; then
-      if [ -z "$SECONDARYUNC" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
-        echo -e "${CRed}ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values are missing. Exiting.${CClear}"
-        logger "BACKUPMON ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!"
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
-        flagerror
-        sendmessage 1 "Unable to mount network drive - Secondary UNC/DRIVE values missing"
-        errorcheck
-        echo -e "${CClear}\n"
-        exit 1
-      fi
+    if [ -z "$SECONDARYUNC" ] || [ -z "$SECONDARYUNCDRIVE" ]; then
+      echo -e "${CRed}ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values are missing. Exiting.${CClear}"
+      logger "BACKUPMON ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+      flagerror
+      sendmessage 1 "Unable to mount network drive - Secondary UNC/DRIVE values missing"
+      errorcheck
+      echo -e "${CClear}\n"
+      exit 1
     fi
 
     # If everything successfully was created, proceed

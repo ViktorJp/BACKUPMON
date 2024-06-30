@@ -1,3 +1,9 @@
+v1.8.8  - (June 30, 2024)
+        - PATCH: Looks like my last update didn't take into consideration the folks using BACKUPMON to back
+          up their environment to their local USB drive. Thanks much to @Just Started for reporting this! 
+          New logic added to only consider erroring out on blank UNC/UNCDRIVE values when the backup media
+          type is NOT a USB target.
+
 v1.8.7  - (June 29, 2024)
         - PATCH: In further compliance with the 3006 firmware and the new BE devices, @visortgw wisely
           noted that a "modprobe cifs" might just fix everything... and it sure did. Thanks for that! As of
