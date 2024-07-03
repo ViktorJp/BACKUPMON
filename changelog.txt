@@ -1,3 +1,16 @@
+v1.8.10 - (July 2, 2024)
+        - PATCH: Based on a good suggestion by @visortgw, a secondary-only backup option was added. This
+          was prompted when possible issues could arise where you might be unable to back up to your primary
+          backup target, upon which BACKUPMON would exit in an error state by default. Now, a "-secondary"
+          switch has been added that simply runs a secondary backup (without any purges). Example usage:
+          "backupmon -secondary". As always, you can hit "backupmon -h" or "backupmon -help" for a full list
+          of commands.
+        - PATCH: @vibroverbus made a good observation on some inconsistencies in the y/n prompts within the
+          script compared to other scripts such as AMTM. It seems the function I'm using would automatically
+          accept the y or n keypress and keep running without needing to hit enter. This function has now
+          been changed so you can you change your mind after typing y or n, and lets you correct yourself
+          before needing to manually hit the enter key now.
+
 v1.8.8  - (June 30, 2024)
         - PATCH: Looks like my last update didn't take into consideration the folks using BACKUPMON to back
           up their environment to their local USB drive. Thanks much to @Just Started for reporting this! 

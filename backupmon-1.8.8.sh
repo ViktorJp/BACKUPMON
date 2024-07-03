@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.10"                                                # Current version
+Version="1.8.8"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -180,8 +180,8 @@ logoNMexit () {
 
 promptyn () {   # No defaults, just y or n
   while true; do
-    read -p '[y/n]? ' YESNO
-      case "$YESNO" in
+    read -p "[y/n]? " -n 1 -r yn
+      case "${yn}" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
         * ) echo -e "\nPlease answer y or n.";;
@@ -3114,11 +3114,13 @@ purgebackups () {
 autopurge () {
 
   if [ "$FREQUENCY" != "P" ]; then
-    echo -e "${CYellow}INFO: Perpetual secondary backups are not configured. Autopurge skipping secondary backups.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Perpetual backups are not configured. Autopurge skipping primary backups." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Perpetual backups are not configured. Autopurge skipping primary backups." >> $ERRORLOGFILE
-    sleep 3
-    return
+    echo -e "${CRed}ERROR: Perpetual backups are not configured. Please check your configuration. Exiting.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual backups are not configured. Please check your configuration." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual backups are not configured. Please check your configuration." >> $ERRORLOGFILE
+    flagerror
+    errorcheck
+    echo -e "${CClear}\n"
+    exit 1
   fi
 
   if [ "$PURGE" -eq 0 ]; then
@@ -3306,11 +3308,13 @@ purgesecondaries () {
 autopurgesecondaries () {
 
   if [ "$SECONDARYFREQUENCY" != "P" ]; then
-    echo -e "${CYellow}INFO: Perpetual secondary backups are not configured. Autopurge skipping secondary backups.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Perpetual secondary backups are not configured. Autopurge skipping secondary backups." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Perpetual secondary backups are not configured. Autopurge skipping secondary backups." >> $ERRORLOGFILE
-    sleep 3
-    return
+    echo -e "${CRed}ERROR: Perpetual secondary backups are not configured. Please check your configuration. Exiting.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual secondary backups are not configured. Please check your configuration." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Perpetual secondary backups are not configured. Please check your configuration." >> $ERRORLOGFILE
+    flagerror
+    errorcheck
+    echo -e "${CClear}\n"
+    exit 1
   fi
 
   if [ $SECONDARYPURGE -eq 0 ]; then
@@ -5765,7 +5769,7 @@ if [ $# -eq 0 ]
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-purge" ] || [ "$1" == "-secondary" ]
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-purge" ]
   then
     clear
   else
@@ -5792,14 +5796,12 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo " backupmon -backup"
   echo " backupmon -restore"
   echo " backupmon -purge"
-  echo " backupmon -secondary"
   echo ""
   echo "  -h | -help (this output)"
   echo "  -setup (displays the setup menu)"
   echo "  -backup (runs the normal backup procedures)"
   echo "  -restore (initiates the restore procedures)"
   echo "  -purge (auto purges perpetual backup folders)"
-  echo "  -secondary (runs only the secondary backup)"
   echo ""
   echo -e "${CClear}"
   exit 0
@@ -5956,32 +5958,6 @@ if [ "$SECONDARYSTATUS" == "1" ]; then
 fi
 echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
 echo ""
-
-# Check to see if the secondary-only backup is supposed to run
-if [ "$1" == "-secondary" ]
-	then
-		# Determine if the config is local or under /jffs/addons/backupmon.d
-    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-      source $CFGPATH
-    elif [ -f /jffs/scripts/backupmon.cfg ]; then
-      source /jffs/scripts/backupmon.cfg
-      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-    else
-      clear
-      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-      echo -e "${CClear}\n"
-      exit 1
-    fi
-    checkplaintxtpwds
-		secondary               #Run secondary backups
-    if [ $SECONDARYSTATUS -eq 1 ]; then
-      sendmessage 0 "Secondary Backup completed successfully"
-    fi
-    trimlogs #Trim the logs
-    errorcheck #See if an error file exists and display it
-    echo -e "${CClear}"
-    exit 0
-fi
 
 # If the -backup switch is used then bypass the counter for immediate backup
 if [ "$BSWITCH" == "False" ]; then
