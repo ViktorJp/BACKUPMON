@@ -5911,6 +5911,23 @@ if [ "$1" == "-noswitch" ]
     BSWITCH="False"
 fi
 
+# Check to see if the secondary-only backup is supposed to run
+if [ "$1" == "-secondary" ]
+	then
+		# Determine if the config is local or under /jffs/addons/backupmon.d
+    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+      source $CFGPATH
+    elif [ -f /jffs/scripts/backupmon.cfg ]; then
+      source /jffs/scripts/backupmon.cfg
+      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+    else
+      clear
+      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
+      echo -e "${CClear}\n"
+      exit 1
+    fi
+fi
+
 # Check for the Swap File Exclusion
 if [ "$BACKUPSWAP" == "0" ]; then
   excludeswap
@@ -5960,18 +5977,6 @@ echo ""
 # Check to see if the secondary-only backup is supposed to run
 if [ "$1" == "-secondary" ]
 	then
-		# Determine if the config is local or under /jffs/addons/backupmon.d
-    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-      source $CFGPATH
-    elif [ -f /jffs/scripts/backupmon.cfg ]; then
-      source /jffs/scripts/backupmon.cfg
-      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-    else
-      clear
-      echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
-      echo -e "${CClear}\n"
-      exit 1
-    fi
     checkplaintxtpwds
 		secondary               #Run secondary backups
     if [ $SECONDARYSTATUS -eq 1 ]; then
