@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.14"                                                # Current version
+Version="1.8.10"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -39,7 +39,6 @@ USBTARGET="FALSE"                                               # Tracking switc
 SMBTARGET="FALSE"                                               # Tracking switch
 SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
 TESTUSBTARGET="FALSE"                                           # Tracking switch
-SECONDARYSWITCH="False"                                         # Tracking switch
 
 # Default Config variables
 BTUSERNAME="admin"
@@ -236,7 +235,7 @@ if [ -f $ERRORFILE ]; then
   echo ""
   errordate=$(cat $ERRORFILE | awk 'NR==2 {print $1}') >/dev/null 2>&1
   errordate=$(date -d @${errordate})
-  echo -e "${InvRed}${CWhite} WARNING: Errors were detected during last backup on $errordate.${CClear}"
+  echo -e "${InvRed}${CWhite} WARNING: Errors were encountered during last backup on $errordate.${CClear}"
   echo -e "${InvRed}${CWhite} Please review error logs from the setup/configuration menu.${CClear}"
   echo ""
 fi
@@ -2771,7 +2770,7 @@ fi
       printf "<b>Firmware/Build Number:</b> ${FWBUILD}\n"
       printf "<b>EXT USB Drive Label Name:</b> ${EXTLABEL}\n"
       printf "\n"
-      printf "<b>SUCCESS: BACKUPMON</b> completed a successful secondary backup to destination: <b>${SECONDARYBACKUPMEDIA}</b>\n"
+      printf "<b>SUCCESS: BACKUPMON</b> completed a successful secondary backup to destination: <b>${BACKUPMEDIA}</b>\n"
       printf "\n"
       } > "$tmpEMailBodyFile"
     fi
@@ -3425,15 +3424,6 @@ vsetup () {
     source $CFGPATH
   fi
 
-  tzone=$(date +%Z)
-  tzonechars=$(echo ${#tzone})
-
-  if [ $tzonechars = 1 ]; then tzspaces="      ";
-  elif [ $tzonechars = 2 ]; then tzspaces="     ";
-  elif [ $tzonechars = 3 ]; then tzspaces="    ";
-  elif [ $tzonechars = 4 ]; then tzspaces="   ";
-  elif [ $tzonechars = 5 ]; then tzspaces="  "; fi
-
   updatecheck
 
   while true; do
@@ -3455,7 +3445,7 @@ vsetup () {
       errordate=$(date -d @${errordate})
       echo -e "${InvGreen} ${CClear}${InvDkGray}${CWhite} [Backup Errors and Warnings]                                                          ${CClear}"
       echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
-      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were detected during last runtime on $errordate.$tzspaces"
+      echo -e "${InvGreen} ${CClear}${InvRed}${CWhite} WARNING: Errors were encountered during last runtime on $errordate. "
       echo -e "${InvGreen} ${CClear}${InvRed}${CWhite}          Please review error logs (ve) at your earliest convenience.                  "
       echo -e "${InvGreen} ${CClear}"
     fi
@@ -4451,14 +4441,7 @@ backup () {
 secondary () {
 
   if [ $SECONDARYSTATUS -eq 0 ]; then
-    if [ "$SECONDARYSWITCH" == "False" ]; then
-      return
-    fi
-  fi
-
-  if [ "$SECONDARYSWITCH" == "True" ]; then
-      # Delete last error file
-      rm -f $ERRORFILE
+    return
   fi
 
   # Set Error flag to false
@@ -5930,8 +5913,8 @@ fi
 
 # Check to see if the secondary-only backup is supposed to run
 if [ "$1" == "-secondary" ]
-  then
-    # Determine if the config is local or under /jffs/addons/backupmon.d
+	then
+		# Determine if the config is local or under /jffs/addons/backupmon.d
     if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
       source $CFGPATH
     elif [ -f /jffs/scripts/backupmon.cfg ]; then
@@ -5993,11 +5976,12 @@ echo ""
 
 # Check to see if the secondary-only backup is supposed to run
 if [ "$1" == "-secondary" ]
-  then
-    SECONDARYSWITCH="True"
+	then
     checkplaintxtpwds
-    secondary               #Run secondary backups
-    sendmessage 0 "Secondary Backup completed successfully"
+		secondary               #Run secondary backups
+    if [ $SECONDARYSTATUS -eq 1 ]; then
+      sendmessage 0 "Secondary Backup completed successfully"
+    fi
     trimlogs #Trim the logs
     errorcheck #See if an error file exists and display it
     echo -e "${CClear}"
