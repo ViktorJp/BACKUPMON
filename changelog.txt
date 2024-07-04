@@ -1,3 +1,17 @@
+v1.8.14 - (July 4, 2024)
+        - PATCH: Continuing with the enhancements of the -secondary switch, suggestion from @visortgw was
+          to be able to force a secondary backup (using the -secondary switch), even if the secondary backup
+          is marked as disabled in the config menu.
+        - PATCH: Running a -secondary switch backup apparently did not delete the error flag and would
+          continue showing the error warning in the setup menu and on screen. When running a -secondary
+          switch-based backup will now remove the error flag so you start with a clean slate next time. Also
+          thanks to @visortgw for this suggestion!
+        - PATCH: Nice catch by @JimbobJay, when a secondary backup successfully completed, it was referencing
+          the incorrect backup media (network/usb), and was using the primary media type. This has now also
+          been fixed. Thank you!
+        - PATCH: General cleanup and spacing logic added for the error flag message on the setup menu that
+          now takes into consideration the different timezone name lenghts so that spacing looks correct.
+
 v1.8.10 - (July 2, 2024)
         - PATCH: Based on a good suggestion by @visortgw, a secondary-only backup option was added. This
           was prompted when possible issues could arise where you might be unable to back up to your primary
