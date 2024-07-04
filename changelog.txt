@@ -10,7 +10,7 @@ v1.8.14 - (July 4, 2024)
           the incorrect backup media (network/usb), and was using the primary media type. This has now also
           been fixed. Thank you!
         - PATCH: General cleanup and spacing logic added for the error flag message on the setup menu that
-          now takes into consideration the different timezone name lenghts so that spacing looks correct.
+          now takes into consideration the different timezone name lengths so that spacing looks correct.
 
 v1.8.10 - (July 2, 2024)
         - PATCH: Based on a good suggestion by @visortgw, a secondary-only backup option was added. This
