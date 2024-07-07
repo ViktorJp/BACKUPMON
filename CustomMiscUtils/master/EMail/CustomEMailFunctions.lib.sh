@@ -8,6 +8,7 @@
 #
 # Creation Date: 2020-Jun-11 [Martinski W.]
 # Last Modified: 2024-Jun-04 [Martinski W.]
+# Emergency Mod: 2024-Jul-07 [ViktorJp] (Temp Host Repo/github issues)
 ######################################################################
 
 if [ -z "${_LIB_CustomEMailFunctions_SHELL_:+xSETx}" ]
@@ -19,7 +20,7 @@ CEM_LIB_VERSION="0.9.19"
 CEM_TXT_VERFILE="cemVersion.txt"
 
 CEM_LIB_SCRIPT_TAG="master"
-CEM_LIB_SCRIPT_URL="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEM_LIB_SCRIPT_TAG}/EMail"
+CEM_LIB_SCRIPT_URL="https://raw.githubusercontent.com/ViktorJp/BACKUPMON/main/CustomMiscUtils/${CEM_LIB_SCRIPT_TAG}/EMail"
 
 if [ -z "${cemIsVerboseMode:+xSETx}" ]
 then cemIsVerboseMode=true ; fi
