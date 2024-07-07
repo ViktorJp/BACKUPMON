@@ -1,3 +1,10 @@
+v1.8.15 - (July 7, 2024)
+        - PATCH: Implemented a workaround to continue providing AMTM email capabilities due to the shared
+          library source being hosted under @Martinski's github repo becoming unavailable. This should only
+          affect new installs, as having existing functionality in place should continue working as normal.
+          Will work with Martinki to move this back over to his repo when it becomes available again.
+          Thanks to @JimBobJay for bringing this to our attention!
+
 v1.8.14 - (July 4, 2024)
         - PATCH: Continuing with the enhancements of the -secondary switch, suggestion from @visortgw was
           to be able to force a secondary backup (using the -secondary switch), even if the secondary backup

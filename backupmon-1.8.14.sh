@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.15"                                                # Current version
+Version="1.8.14"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -79,7 +79,7 @@ SECONDARYPURGELIMIT=0
 readonly scriptFileName="${0##*/}"
 readonly scriptFileNTag="${scriptFileName%.*}"
 readonly CEM_LIB_TAG="master"
-readonly CEM_LIB_URL="https://raw.githubusercontent.com/ViktorJp/BACKUPMON/main/CustomMiscUtils/${CEM_LIB_TAG}/EMail"
+readonly CEM_LIB_URL="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEM_LIB_TAG}/EMail"
 readonly CUSTOM_EMAIL_LIBDir="/jffs/addons/shared-libs"
 readonly CUSTOM_EMAIL_LIBName="CustomEMailFunctions.lib.sh"
 readonly CUSTOM_EMAIL_LIBFile="${CUSTOM_EMAIL_LIBDir}/$CUSTOM_EMAIL_LIBName"
