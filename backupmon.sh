@@ -2570,7 +2570,7 @@ _DownloadCEMLibraryScript_()
    if [ ! -d "$1" ]
    then
        printf "\n**ERROR**: Directory Path [$1] *NOT* FOUND.\n"
-       return 0
+       return 1
    fi
 
    "$doDL_IsVerboseMode" && \
@@ -2591,6 +2591,7 @@ _DownloadCEMLibraryScript_()
 ##-------------------------------------##
 _CheckForCustomEmailLibraryScript_()
 {
+   local retCode=0
    local doDL_LibScriptMsge=""
    local doDL_LibScriptFlag=false
    local doDL_IsVerboseMode=true
@@ -2607,16 +2608,23 @@ _CheckForCustomEmailLibraryScript_()
        if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
            _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$1"
        then
+           retCode=1
            doDL_LibScriptFlag=true
            doDL_LibScriptMsge=update
        fi
    else
+       retCode=1
        doDL_LibScriptFlag=true
        doDL_LibScriptMsge=install
    fi
 
-   "$doDL_LibScriptFlag" && \
-   _DownloadCEMLibraryScript_ "$CEMAIL_LIB_LOCAL_DIR" "$doDL_LibScriptMsge"
+   if "$doDL_LibScriptFlag"
+   then
+       _DownloadCEMLibraryScript_ "$CEMAIL_LIB_LOCAL_DIR" "$doDL_LibScriptMsge"
+       retCode="$?"
+   fi
+
+   return "$retCode"
 }
 
 #-----------------------------------------------------------#
