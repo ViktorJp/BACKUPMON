@@ -2518,7 +2518,7 @@ OFF_DownloadCEMLibraryFile_OFF()
 # not available for any reason.
 #
 # Creation Date: 2024-Jul-09 [Martinski W.]
-# Last Modified: 2024-Jul-09 [Martinski W.]
+# Last Modified: 2024-Jul-10 [Martinski W.]
 ########################################################################
 
 ##-------------------------------------##
@@ -2537,17 +2537,18 @@ _DownloadCEMLibraryScript_()
       if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] ; then return 1 ; fi
 
       curl -LSs --retry 4 --retry-delay 5 --retry-connrefused \
-           "${1}/$CEMAIL_LIB_FILE_NAME" -o "$CEMAIL_LIB_FILE_PATH"
+           "${1}/$CEMAIL_LIB_FILE_NAME" -o "$libScriptFileDL"
 
-      if [ ! -s "$CEMAIL_LIB_FILE_PATH" ] || \
-         grep -Eiq "^404: Not Found" "$CEMAIL_LIB_FILE_PATH"
+      if [ ! -s "$libScriptFileDL" ] || \
+         grep -Eiq "^404: Not Found" "$libScriptFileDL"
       then
-          [ -s "$CEMAIL_LIB_FILE_PATH" ] && { echo ; cat "$CEMAIL_LIB_FILE_PATH" ; }
-          rm -f "$CEMAIL_LIB_FILE_PATH"
+          [ -s "$libScriptFileDL" ] && { echo ; cat "$libScriptFileDL" ; }
+          rm -f "$libScriptFileDL"
           printf "\n**ERROR**: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
           [ "$2" -lt "$urlDLMax" ] && printf "Trying again with a different URL...\n"
           return 1
       else
+          mv -f "$libScriptFileDL" "$CEMAIL_LIB_FILE_PATH"
           chmod 755 "$CEMAIL_LIB_FILE_PATH"
           . "$CEMAIL_LIB_FILE_PATH"
           [ "$2" -gt 1 ] && echo
@@ -2560,6 +2561,8 @@ _DownloadCEMLibraryScript_()
    }
 
    local msgStr1  msgStr2  retCode  urlDLCount  urlDLMax
+   local libScriptFileDL="${CEMAIL_LIB_FILE_PATH}.DL"
+
    case "$2" in
         update) msgStr1="Updating" ; msgStr2="updated" ;;
        install) msgStr1="Installing" ; msgStr2="installed" ;;
@@ -2586,27 +2589,36 @@ _DownloadCEMLibraryScript_()
    return "$retCode"
 }
 
-##-------------------------------------##
-## Added by Martinski W. [2024-Jul-09] ##
-##-------------------------------------##
+##----------------------------------------##
+## Modified by Martinski W. [2024-Jul-10] ##
+##----------------------------------------##
 _CheckForCustomEmailLibraryScript_()
 {
-   local retCode=0
    local doDL_LibScriptMsge=""
    local doDL_LibScriptFlag=false
    local doDL_IsVerboseMode=true
+   local retCode=0  quietArg=""  doUpdateCheck=false
 
-   if [ $# -gt 0 ] && [ "$1" = "-quiet" ]
-   then doDL_IsVerboseMode=false
-   else doDL_IsVerboseMode=true
-   fi
+   for PARAM in "$@"
+   do
+      case $PARAM in
+          "-quiet")
+              quietArg="$PARAM"
+              doDL_IsVerboseMode=false
+              ;;
+          "-versionCheck")
+              doUpdateCheck=true
+              ;;
+          *) ;; #IGNORED#
+      esac
+   done
 
-   if [ -f "$CEMAIL_LIB_FILE_PATH" ]
+   if [ -s "$CEMAIL_LIB_FILE_PATH" ]
    then
        . "$CEMAIL_LIB_FILE_PATH"
-
        if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-           _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$@"
+          { "$doUpdateCheck" && \
+            _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$quietArg" ; }
        then
            retCode=1
            doDL_LibScriptFlag=true
@@ -5799,10 +5811,25 @@ fi
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-09] ##
+## Modified by Martinski W. [2024-Jul-10] ##
 ##----------------------------------------##
-# Load, install or update the shared custom email library script #
-_CheckForCustomEmailLibraryScript_ -quiet
+#-----------------------------------------------------------------#
+# Check, install or update the shared Custom Email Library Script #
+# OPTIONAL Parameters: 
+# To indicate verbosity mode: "-quiet" | "-verbose"
+# To do version update check: "-versionCheck" | "-noVersCheck"
+#
+# NOTE:
+# Under normal operations we don't do a "version check" since we
+# just want to do backups. However, when calling the script with
+# "checkupdate" or "forceupdate" argument, a "version check" can
+# be performed and update both script files as needed.
+# EXAMPLE CALL:
+# _CheckForCustomEmailLibraryScript_ -versionCheck -verbose
+#-----------------------------------------------------------------#
+
+# Call for normal, unattended backup operations #
+_CheckForCustomEmailLibraryScript_ -noVersCheck -quiet
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Begin Main Program
