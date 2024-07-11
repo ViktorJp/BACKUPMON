@@ -2606,7 +2606,7 @@ _CheckForCustomEmailLibraryScript_()
        . "$CEMAIL_LIB_FILE_PATH"
 
        if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-           _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$1"
+           _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$@"
        then
            retCode=1
            doDL_LibScriptFlag=true
