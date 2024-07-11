@@ -5943,6 +5943,7 @@ fi
 if [ "$1" = "-checkupdate" ]
 then
     _CheckForCustomEmailLibraryScript_ -versionCheck -verbose
+    exit 0
 fi
 
 # Check to see if a second command is being passed to remove color
