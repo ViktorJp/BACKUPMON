@@ -5822,14 +5822,18 @@ fi
 # NOTE:
 # Under normal operations we don't do a "version check" since we
 # just want to do backups. However, when calling the script with
-# "checkupdate" or "forceupdate" argument, a "version check" can
-# be performed and update both script files as needed.
-# EXAMPLE CALL:
-# _CheckForCustomEmailLibraryScript_ -versionCheck -verbose
+# "-checkupdate" [or "-forceupdate"?] option, a "version check"
+# could be performed and update the scripts as needed.
 #-----------------------------------------------------------------#
 
-# Call for normal, unattended backup operations #
-_CheckForCustomEmailLibraryScript_ -noVersCheck -quiet
+cemailQuietArg="-quiet"
+cemailCheckArg="-noVersCheck"
+if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
+then
+    cemailQuietArg="-verbose"
+    cemailCheckArg="-versionCheck"
+fi
+_CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Begin Main Program
@@ -5891,10 +5895,12 @@ if [ $# -eq 0 ]
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-purge" ] || [ "$1" == "-secondary" ]
-  then
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || \
+   [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || \
+   [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ]
+then
     clear
-  else
+else
     clear
     echo ""
     echo " BACKUPMON v$Version"
@@ -5929,6 +5935,14 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo ""
   echo -e "${CClear}"
   exit 0
+fi
+
+##-------------------------------------##
+## Added by Martinski W. [2024-Jul-10] ##
+##-------------------------------------##
+if [ "$1" = "-checkupdate" ]
+then
+    _CheckForCustomEmailLibraryScript_ -versionCheck -verbose
 fi
 
 # Check to see if a second command is being passed to remove color
