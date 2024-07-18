@@ -2518,12 +2518,12 @@ OFF_DownloadCEMLibraryFile_OFF()
 # not available for any reason.
 #
 # Creation Date: 2024-Jul-09 [Martinski W.]
-# Last Modified: 2024-Jul-10 [Martinski W.]
+# Last Modified: 2024-Jul-17 [Martinski W.]
 ########################################################################
 
-##-------------------------------------##
-## Added by Martinski W. [2024-Jul-09] ##
-##-------------------------------------##
+##----------------------------------------##
+## Modified by Martinski W. [2024-Jul-17] ##
+##----------------------------------------##
 _DownloadCEMLibraryScript_()
 {
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]
@@ -2542,18 +2542,21 @@ _DownloadCEMLibraryScript_()
       if [ ! -s "$libScriptFileDL" ] || \
          grep -Eiq "^404: Not Found" "$libScriptFileDL"
       then
-          [ -s "$libScriptFileDL" ] && { echo ; cat "$libScriptFileDL" ; }
+          if [ "$2" -eq "$urlDLMax" ] || "$cemIsVerboseMode" || "$doDL_ShowErrorMsgs"
+          then
+              [ -s "$libScriptFileDL" ] && { echo ; cat "$libScriptFileDL" ; }
+              printf "\n**ERROR**: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
+              [ "$2" -lt "$urlDLMax" ] && printf "Trying again with a different URL...\n"
+          fi
           rm -f "$libScriptFileDL"
-          printf "\n**ERROR**: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
-          [ "$2" -lt "$urlDLMax" ] && printf "Trying again with a different URL...\n"
           return 1
       else
           mv -f "$libScriptFileDL" "$CEMAIL_LIB_FILE_PATH"
           chmod 755 "$CEMAIL_LIB_FILE_PATH"
           . "$CEMAIL_LIB_FILE_PATH"
-          [ "$2" -gt 1 ] && echo
-          if [ "$2" -gt 1 ] || "$doDL_IsVerboseMode"
+          if "$cemIsVerboseMode" || { [ "$2" -gt 1 ] && "$doDL_ShowErrorMsgs" ; }
           then
+              [ "$2" -gt 1 ] && echo
               printf "The email library script file [$CEMAIL_LIB_FILE_NAME] was ${msgStr2}.\n"
           fi
           return 0
@@ -2576,7 +2579,7 @@ _DownloadCEMLibraryScript_()
        return 1
    fi
 
-   "$doDL_IsVerboseMode" && \
+   "$cemIsVerboseMode" && \
    printf "\n${msgStr1} the shared library script file to support email notifications...\n"
 
    retCode=1 ; urlDLCount=0 ; urlDLMax=3
@@ -2590,13 +2593,13 @@ _DownloadCEMLibraryScript_()
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-10] ##
+## Modified by Martinski W. [2024-Jul-17] ##
 ##----------------------------------------##
 _CheckForCustomEmailLibraryScript_()
 {
    local doDL_LibScriptMsge=""
    local doDL_LibScriptFlag=false
-   local doDL_IsVerboseMode=true
+   local doDL_ShowErrorMsgs=true
    local retCode=0  quietArg=""  doUpdateCheck=false
 
    for PARAM in "$@"
@@ -2604,7 +2607,15 @@ _CheckForCustomEmailLibraryScript_()
       case $PARAM in
           "-quiet")
               quietArg="$PARAM"
-              doDL_IsVerboseMode=false
+              cemIsVerboseMode=false
+              ;;
+          "-veryquiet")
+              quietArg="$PARAM"
+              cemIsVerboseMode=false
+              doDL_ShowErrorMsgs=false
+              ;;
+          "-verbose")
+              cemIsVerboseMode=true
               ;;
           "-versionCheck")
               doUpdateCheck=true
@@ -5811,26 +5822,25 @@ fi
 }
 
 ##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-10] ##
+## Modified by Martinski W. [2024-Jul-17] ##
 ##----------------------------------------##
 #-----------------------------------------------------------------#
 # Check, install or update the shared Custom Email Library Script #
 # OPTIONAL Parameters: 
-# To indicate verbosity mode: "-quiet" | "-verbose"
+# To indicate verbosity mode: "-verbose" | "-quiet" | "-veryquiet"
 # To do version update check: "-versionCheck" | "-noVersCheck"
 #
 # NOTE:
-# Under normal operations we don't do a "version check" since we
-# just want to do backups. However, when calling the script with
-# "-checkupdate" [or "-forceupdate"?] option, a "version check"
-# could be performed and update the scripts as needed.
+# When calling the script with the "-checkupdate" parameter [or 
+# perhaps "-forceupdate"?], a "version check" is performed to 
+# update the script if/when needed.
 #-----------------------------------------------------------------#
 
-cemailQuietArg="-quiet"
-cemailCheckArg="-noVersCheck"
+cemailQuietArg="-veryquiet"
+cemailCheckArg="-versionCheck"
 if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
 then
-    cemailQuietArg="-verbose"
+    cemailQuietArg="-quiet"
     cemailCheckArg="-versionCheck"
 fi
 _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
