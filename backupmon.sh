@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.16"                                                # Current version
+Version="1.8.17"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -472,7 +472,7 @@ vconfig () {
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear}${CDkGray} : Backup CIFS/SMB Version                      : ${CDkGray}$SMBVER"
       fi
 
-      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Backup Frequency                             : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Backup Retention                             : ${CGreen}"
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -857,9 +857,9 @@ vconfig () {
 
             11) # -----------------------------------------------------------------------------------------
               clear
-              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Frequency                                                          ${CClear}"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Retention                                                          ${CClear}"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} What backup frequency would you like BACKUPMON to run daily backup jobs each day?${CClear}"
+              echo -e "${InvGreen} ${CClear} What backup retention would you like BACKUPMON to use for daily backup jobs each day?${CClear}"
               echo -e "${InvGreen} ${CClear} There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual. Backup${CClear}"
               echo -e "${InvGreen} ${CClear} folders based on the week, month, year, or perpetual are created under your network${CClear}"
               echo -e "${InvGreen} ${CClear} share. Explained below:${CClear}"
@@ -890,9 +890,9 @@ vconfig () {
               elif [ "$FREQUENCY" == "P" ]; then
                 FREQUENCYDP="Perpetual"
               fi
-              echo -e "${CClear}Current Backup Frequency: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
+              echo -e "${CClear}Current Backup Retention: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
               while true; do
-                read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
+                read -p 'Retention (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
                     [Ww] ) FREQUENCY="W"; PURGE=0; PURGELIMIT=0; break ;;
                     [Mm] ) FREQUENCY="M"; PURGE=0; PURGELIMIT=0; break ;;
@@ -976,7 +976,7 @@ vconfig () {
               echo -e "${InvGreen} ${CClear} - Will not overwrite daily backups, even if multiple are made on the same day"
               echo -e "${InvGreen} ${CClear} - Restore more tedious, and required to type exact backup file names before restore"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} NOTE: When choosing BASIC mode while using 'Perpetual Frequency', your daily backup${CClear}"
+              echo -e "${InvGreen} ${CClear} NOTE: When choosing BASIC mode while using 'Perpetual Retention', your daily backup${CClear}"
               echo -e "${InvGreen} ${CClear} folders will not self-prune or overwrite, even if multiple backups are made on the${CClear}"
               echo -e "${InvGreen} ${CClear} same day.${CClear}"
               echo -e "${InvGreen} ${CClear}"
@@ -1047,7 +1047,7 @@ vconfig () {
                   echo -e "${InvGreen} ${CClear} outside your specified age range immediately following? If you don't want to run${CClear}"
                   echo -e "${InvGreen} ${CClear} backups with autopurge, you will be responsible for manually running backup purges${CClear}"
                   echo -e "${InvGreen} ${CClear} using the config menu, or manually from the file system itself. Please note: This ${CClear}"
-                  echo -e "${InvGreen} ${CClear} option is only available when having the Perpetual Backup Frequency selected.${CClear}"
+                  echo -e "${InvGreen} ${CClear} option is only available when having the Perpetual Backup Retention selected.${CClear}"
                   echo -e "${InvGreen} ${CClear}"
                   echo -e "${InvGreen} ${CClear} (Backup Only=1, Backup + Autopurge=2) (Default = 1)"
                   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1157,6 +1157,15 @@ vconfig () {
                 echo -e "Would you like to send a TEST email from BACKUPMON?"
                 if promptyn "(y/n): "; then
 
+                  cemailQuietArg="-verbose"
+                  cemailCheckArg="-versionCheck"
+                  if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
+                  then
+                      cemailQuietArg="-verbose"
+                      cemailCheckArg="-versionCheck"
+                  fi
+                  _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
+
                   echo ""
                   cemIsFormatHTML=true
                   cemIsVerboseMode=true  ## true OR false ##
@@ -1250,7 +1259,7 @@ vconfig () {
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Secondary Target Directory Path              : ${CGreen}$SECONDARYBKDIR"
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Exclusion File Name                          : ${CGreen}$SECONDARYEXCLUSION"
-              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Frequency?                            : ${CGreen}"
+              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Retention                             : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
                 printf "Weekly"; printf "%s\n";
               elif [ "$SECONDARYFREQUENCY" == "M" ]; then
@@ -1366,7 +1375,7 @@ vconfig () {
                     ;;
 
                     9) echo ""
-                       read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
+                       read -p 'Secondary Backup Retention (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
                        SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}')
                        SECONDARYPURGE=0
                        if [ "$SECONDARYFREQUENCY" == "P" ]; then
@@ -2514,7 +2523,7 @@ OFF_DownloadCEMLibraryFile_OFF()
 
 ########################################################################
 # New code that enables checking multiple website URLs to download
-# the Custom Email Library Script, just in case the first URL is 
+# the Custom Email Library Script, just in case the first URL is
 # not available for any reason.
 #
 # Creation Date: 2024-Jul-09 [Martinski W.]
@@ -5826,13 +5835,13 @@ fi
 ##----------------------------------------##
 #-----------------------------------------------------------------#
 # Check, install or update the shared Custom Email Library Script #
-# OPTIONAL Parameters: 
+# OPTIONAL Parameters:
 # To indicate verbosity mode: "-verbose" | "-quiet" | "-veryquiet"
 # To do version update check: "-versionCheck" | "-noVersCheck"
 #
 # NOTE:
-# When calling the script with the "-checkupdate" parameter [or 
-# perhaps "-forceupdate"?], a "version check" is performed to 
+# When calling the script with the "-checkupdate" parameter [or
+# perhaps "-forceupdate"?], a "version check" is performed to
 # update the script if/when needed.
 #-----------------------------------------------------------------#
 
