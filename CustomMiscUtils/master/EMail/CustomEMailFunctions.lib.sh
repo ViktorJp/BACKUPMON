@@ -7,8 +7,7 @@
 # email notifications using AMTM email configuration file.
 #
 # Creation Date: 2020-Jun-11 [Martinski W.]
-# Last Modified: 2024-Jun-04 [Martinski W.]
-# Emergency Mod: 2024-Jul-07 [ViktorJp] (Temp Host Repo/github issues)
+# Last Modified: 2024-Jul-08 [Martinski W.]
 ######################################################################
 
 if [ -z "${_LIB_CustomEMailFunctions_SHELL_:+xSETx}" ]
@@ -16,11 +15,12 @@ then _LIB_CustomEMailFunctions_SHELL_=0
 else return 0
 fi
 
-CEM_LIB_VERSION="0.9.19"
+CEM_LIB_VERSION="0.9.21"
 CEM_TXT_VERFILE="cemVersion.txt"
 
-CEM_LIB_SCRIPT_TAG="master"
-CEM_LIB_SCRIPT_URL="https://raw.githubusercontent.com/ViktorJp/BACKUPMON/main/CustomMiscUtils/${CEM_LIB_SCRIPT_TAG}/EMail"
+CEM_LIB_REPO_BRANCH="master"
+CEM_LIB_SCRIPT_URL1="https://raw.githubusercontent.com/MartinSkyW/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
+CEM_LIB_SCRIPT_URL2="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
 
 if [ -z "${cemIsVerboseMode:+xSETx}" ]
 then cemIsVerboseMode=true ; fi
@@ -100,6 +100,12 @@ _LogMsg_CEM_()
 #-----------------------------------------------------------#
 _CheckLibraryUpdates_CEM_()
 {
+   if [ $# -eq 0 ] || [ -z "$1" ]
+   then
+       _PrintMsg_CEM_ "\n**ERROR**: NO parameter given for directory path.\n"
+       return 1
+   fi
+
    _VersionStrToNum_()
    {
       if [ $# -eq 0 ] || [ -z "$1" ] ; then echo 0 ; return 1 ; fi
@@ -110,11 +116,33 @@ _CheckLibraryUpdates_CEM_()
       verNum="$(echo "$verNum" | sed 's/^0*//')"
       echo "$verNum" ; return 0
    }
-   if [ $# -eq 0 ] || [ -z "$1" ]
-   then
-       _PrintMsg_CEM_ "\n**ERROR**: NO parameter given for directory path.\n"
-       return 1
-   fi
+
+   _DownloadLibVersionFile_()
+   {
+      if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] ; then return 1 ; fi
+
+      curl -LSs --retry 4 --retry-delay 5 --retry-connrefused \
+           "${1}/$CEM_TXT_VERFILE" -o "$theVersTextFile"
+
+      if [ ! -s "$theVersTextFile" ] || \
+         grep -Eiq "^404: Not Found" "$theVersTextFile"
+      then
+          [ -s "$theVersTextFile" ] && { echo ; cat "$theVersTextFile" ; }
+          rm -f "$theVersTextFile"
+          _PrintMsg_CEM_ "\n**WARNING**: Unable to download the version file [$CEM_TXT_VERFILE]\n"
+          [ "$2" -lt "$urlDLMax" ] && _PrintMsg_CEM_ "Trying again with a different URL...\n"
+          return 1
+      else
+          [ "$2" -gt 1 ] && echo
+          if [ "$2" -gt 1 ] || { "$cemIsVerboseMode" && "$showMsg" ; }
+          then
+              _PrintMsg_CEM_ "The library version file [$CEM_TXT_VERFILE] was downloaded.\n"
+          fi
+          return 0
+      fi
+   }
+
+   mkdir -m 755 -p "$1"
    if [ ! -d "$1" ]
    then
        _PrintMsg_CEM_ "\n**ERROR**: Directory Path [$1] *NOT* FOUND.\n"
@@ -122,23 +150,23 @@ _CheckLibraryUpdates_CEM_()
    fi
    local theVersTextFile="${1}/$CEM_TXT_VERFILE"
    local libraryVerNum  dlFileVersNum  dlFileVersStr
-   local showMsg  retCode
+   local showMsg  retCode  urlDLCount  urlDLMax
 
    if [ $# -gt 1 ] && echo "$2" | grep -qE "^[-]?quiet$"
    then showMsg=false ; else showMsg=true ; fi
 
    "$cemIsVerboseMode" && "$showMsg" && \
-   _PrintMsg_CEM_ "\nChecking for shared library script updates..."
+   _PrintMsg_CEM_ "\nChecking for shared email library script updates...\n"
 
-   curl -LSs --retry 4 --retry-delay 5 --retry-connrefused \
-   "${CEM_LIB_SCRIPT_URL}/$CEM_TXT_VERFILE" -o "$theVersTextFile"
+   retCode=1 ; urlDLCount=0 ; urlDLMax=2
+   for cemLibScriptURL in "$CEM_LIB_SCRIPT_URL1" "$CEM_LIB_SCRIPT_URL2"
+   do
+       urlDLCount="$((urlDLCount + 1))"
+       if _DownloadLibVersionFile_ "$cemLibScriptURL"  "$urlDLCount"
+       then retCode=0 ; break ; fi
+   done
+   [ "$retCode" -ne 0 ] && return "$retCode"
 
-   if [ ! -s "$theVersTextFile" ] || grep -iq "404: Not Found" "$theVersTextFile"
-   then
-       rm -f "$theVersTextFile"
-       _PrintMsg_CEM_ "\n**ERROR**: Could not download the version file [$CEM_TXT_VERFILE]\n"
-       return 1
-   fi
    chmod 666 "$theVersTextFile"
    dlFileVersStr="$(cat "$theVersTextFile")"
 
@@ -149,12 +177,12 @@ _CheckLibraryUpdates_CEM_()
    then
        retCode=1
        "$cemIsVerboseMode" && "$showMsg" && \
-       _PrintMsg_CEM_ "\nDone.\n"
+       _PrintMsg_CEM_ "Update check done.\n"
    else
        _DoReInit_CEM_
        retCode=0
        "$cemIsVerboseMode" && "$showMsg" && \
-       _PrintMsg_CEM_ "\nNew library version update [$dlFileVersStr] available.\n"
+       _PrintMsg_CEM_ "New email library script version [$dlFileVersStr] is available.\n"
    fi
 
    rm -f "$theVersTextFile"

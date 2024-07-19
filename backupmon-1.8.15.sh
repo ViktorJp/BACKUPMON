@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.17"                                                # Current version
+Version="1.8.15"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -75,19 +75,14 @@ SECONDARYMODE="Basic"
 SECONDARYPURGE=0
 SECONDARYPURGELIMIT=0
 
-##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-09] ##
-##----------------------------------------##
-# Custom Email Library Script Variables #
+#AMTM Email Notification Variables
 readonly scriptFileName="${0##*/}"
 readonly scriptFileNTag="${scriptFileName%.*}"
-readonly CEMAIL_LIB_BRANCH="master"
-readonly CEMAIL_LIB_URL1="https://raw.githubusercontent.com/MartinSkyW/CustomMiscUtils/${CEMAIL_LIB_BRANCH}/EMail"
-readonly CEMAIL_LIB_URL2="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEMAIL_LIB_BRANCH}/EMail"
-readonly CEMAIL_LIB_URL3="https://raw.githubusercontent.com/ViktorJp/BACKUPMON/main/CustomMiscUtils/${CEMAIL_LIB_BRANCH}/EMail"
-readonly CEMAIL_LIB_LOCAL_DIR="/jffs/addons/shared-libs"
-readonly CEMAIL_LIB_FILE_NAME="CustomEMailFunctions.lib.sh"
-readonly CEMAIL_LIB_FILE_PATH="${CEMAIL_LIB_LOCAL_DIR}/$CEMAIL_LIB_FILE_NAME"
+readonly CEM_LIB_TAG="master"
+readonly CEM_LIB_URL="https://raw.githubusercontent.com/ViktorJp/BACKUPMON/main/CustomMiscUtils/${CEM_LIB_TAG}/EMail"
+readonly CUSTOM_EMAIL_LIBDir="/jffs/addons/shared-libs"
+readonly CUSTOM_EMAIL_LIBName="CustomEMailFunctions.lib.sh"
+readonly CUSTOM_EMAIL_LIBFile="${CUSTOM_EMAIL_LIBDir}/$CUSTOM_EMAIL_LIBName"
 
 # Color variables
 CBlack="\e[1;30m"
@@ -472,7 +467,7 @@ vconfig () {
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(10)${CClear}${CDkGray} : Backup CIFS/SMB Version                      : ${CDkGray}$SMBVER"
       fi
 
-      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Backup Retention                             : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(11)${CClear} : Backup Frequency                             : ${CGreen}"
       if [ "$FREQUENCY" == "W" ]; then
         printf "Weekly"; printf "%s\n";
       elif [ "$FREQUENCY" == "M" ]; then
@@ -857,9 +852,9 @@ vconfig () {
 
             11) # -----------------------------------------------------------------------------------------
               clear
-              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Retention                                                          ${CClear}"
+              echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Frequency                                                          ${CClear}"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} What backup retention would you like BACKUPMON to use for daily backup jobs each day?${CClear}"
+              echo -e "${InvGreen} ${CClear} What backup frequency would you like BACKUPMON to run daily backup jobs each day?${CClear}"
               echo -e "${InvGreen} ${CClear} There are 4 different choices -- Weekly, Monthly, Yearly and Perpetual. Backup${CClear}"
               echo -e "${InvGreen} ${CClear} folders based on the week, month, year, or perpetual are created under your network${CClear}"
               echo -e "${InvGreen} ${CClear} share. Explained below:${CClear}"
@@ -890,9 +885,9 @@ vconfig () {
               elif [ "$FREQUENCY" == "P" ]; then
                 FREQUENCYDP="Perpetual"
               fi
-              echo -e "${CClear}Current Backup Retention: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
+              echo -e "${CClear}Current Backup Frequency: ${CGreen}$FREQUENCYDP"; echo -e "${CClear}"
               while true; do
-                read -p 'Retention (W/M/Y/P)?: ' FREQUENCY
+                read -p 'Frequency (W/M/Y/P)?: ' FREQUENCY
                   case $FREQUENCY in
                     [Ww] ) FREQUENCY="W"; PURGE=0; PURGELIMIT=0; break ;;
                     [Mm] ) FREQUENCY="M"; PURGE=0; PURGELIMIT=0; break ;;
@@ -976,7 +971,7 @@ vconfig () {
               echo -e "${InvGreen} ${CClear} - Will not overwrite daily backups, even if multiple are made on the same day"
               echo -e "${InvGreen} ${CClear} - Restore more tedious, and required to type exact backup file names before restore"
               echo -e "${InvGreen} ${CClear}"
-              echo -e "${InvGreen} ${CClear} NOTE: When choosing BASIC mode while using 'Perpetual Retention', your daily backup${CClear}"
+              echo -e "${InvGreen} ${CClear} NOTE: When choosing BASIC mode while using 'Perpetual Frequency', your daily backup${CClear}"
               echo -e "${InvGreen} ${CClear} folders will not self-prune or overwrite, even if multiple backups are made on the${CClear}"
               echo -e "${InvGreen} ${CClear} same day.${CClear}"
               echo -e "${InvGreen} ${CClear}"
@@ -1047,7 +1042,7 @@ vconfig () {
                   echo -e "${InvGreen} ${CClear} outside your specified age range immediately following? If you don't want to run${CClear}"
                   echo -e "${InvGreen} ${CClear} backups with autopurge, you will be responsible for manually running backup purges${CClear}"
                   echo -e "${InvGreen} ${CClear} using the config menu, or manually from the file system itself. Please note: This ${CClear}"
-                  echo -e "${InvGreen} ${CClear} option is only available when having the Perpetual Backup Retention selected.${CClear}"
+                  echo -e "${InvGreen} ${CClear} option is only available when having the Perpetual Backup Frequency selected.${CClear}"
                   echo -e "${InvGreen} ${CClear}"
                   echo -e "${InvGreen} ${CClear} (Backup Only=1, Backup + Autopurge=2) (Default = 1)"
                   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
@@ -1145,8 +1140,21 @@ vconfig () {
               read -p 'Enable BACKUPMON Email Notifications (0/1)?: ' AMTMEMAIL1
               if [ "$AMTMEMAIL1" == "" ] || [ -z "$AMTMEMAIL1" ]; then AMTMEMAIL=0; else AMTMEMAIL="$AMTMEMAIL1"; fi # Using default value on enter keypress
 
-              if [ "$AMTMEMAIL" == "1" ]
-              then
+              if [ "$AMTMEMAIL" == "1" ]; then
+
+                if [ -f "$CUSTOM_EMAIL_LIBFile" ]
+                then
+                  . "$CUSTOM_EMAIL_LIBFile"
+
+                  if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+                  then
+                    _DownloadCEMLibraryFile_ "update"
+                  fi
+                else
+                    _DownloadCEMLibraryFile_ "install"
+                fi
+
                 echo ""
                 read -p 'Email on Successful Backups? (No=0, Yes=1): ' AMTMEMAILSUCCESS1
                 if [ "$AMTMEMAILSUCCESS1" == "" ] || [ -z "$AMTMEMAILSUCCESS1" ]; then AMTMEMAILSUCCESS=0; else AMTMEMAILSUCCESS="$AMTMEMAILSUCCESS1"; fi # Using default value on enter keypress
@@ -1156,15 +1164,6 @@ vconfig () {
                 echo ""
                 echo -e "Would you like to send a TEST email from BACKUPMON?"
                 if promptyn "(y/n): "; then
-
-                  cemailQuietArg="-verbose"
-                  cemailCheckArg="-versionCheck"
-                  if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
-                  then
-                      cemailQuietArg="-verbose"
-                      cemailCheckArg="-versionCheck"
-                  fi
-                  _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 
                   echo ""
                   cemIsFormatHTML=true
@@ -1259,7 +1258,7 @@ vconfig () {
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="/router/GT-AX6000-Backup"; fi
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Secondary Target Directory Path              : ${CGreen}$SECONDARYBKDIR"
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Exclusion File Name                          : ${CGreen}$SECONDARYEXCLUSION"
-              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Retention                             : ${CGreen}"
+              echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(9) ${CClear} : Backup Frequency?                            : ${CGreen}"
               if [ "$SECONDARYFREQUENCY" == "W" ]; then
                 printf "Weekly"; printf "%s\n";
               elif [ "$SECONDARYFREQUENCY" == "M" ]; then
@@ -1375,7 +1374,7 @@ vconfig () {
                     ;;
 
                     9) echo ""
-                       read -p 'Secondary Backup Retention (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
+                       read -p 'Secondary Backup Frequency (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (W/M/Y/P?): ' SECONDARYFREQUENCY
                        SECONDARYFREQUENCY=$(echo "$SECONDARYFREQUENCY" | awk '{print toupper($0)}')
                        SECONDARYPURGE=0
                        if [ "$SECONDARYFREQUENCY" == "P" ]; then
@@ -2487,8 +2486,8 @@ _CheckForMountPointAndVolumeLabel_()
 # Last Modified: 2024-Feb-07 [Martinski W.]
 # Modified for BACKUPMON Purposes [Viktor Jaep]
 ########################################################################
-# This function is NO longer called #
-OFF_DownloadCEMLibraryFile_OFF()
+
+_DownloadCEMLibraryFile_()
 {
    local msgStr  retCode
    case "$1" in
@@ -2500,162 +2499,24 @@ OFF_DownloadCEMLibraryFile_OFF()
    echo -e "${CGreen}STATUS: ${msgStr} the shared library script file to support email notifications...${CClear}"
    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: ${msgStr} the shared library script file to support email notifications..." >> $LOGFILE
 
-   mkdir -m 755 -p "$CEMAIL_LIB_LOCAL_DIR"
+   mkdir -m 755 -p "$CUSTOM_EMAIL_LIBDir"
    curl -kLSs --retry 3 --retry-delay 5 --retry-connrefused \
-   "${CEMAIL_LIB_URL3}/$CEMAIL_LIB_FILE_NAME" -o "$CEMAIL_LIB_FILE_PATH"
+   "${CEM_LIB_URL}/$CUSTOM_EMAIL_LIBName" -o "$CUSTOM_EMAIL_LIBFile"
    curlCode="$?"
 
-   if [ "$curlCode" -eq 0 ] && [ -f "$CEMAIL_LIB_FILE_PATH" ]
+   if [ "$curlCode" -eq 0 ] && [ -f "$CUSTOM_EMAIL_LIBFile" ]
    then
        retCode=0
-       chmod 755 "$CEMAIL_LIB_FILE_PATH"
-       . "$CEMAIL_LIB_FILE_PATH"
+       chmod 755 "$CUSTOM_EMAIL_LIBFile"
+       . "$CUSTOM_EMAIL_LIBFile"
        #printf "\nDone.\n"
    else
        retCode=1
-       echo -e "${CRed}ERROR: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME].${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $LOGFILE
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $ERRORLOGFILE
+       echo -e "${CRed}ERROR: Unable to download the shared library script file [$CUSTOM_EMAIL_LIBName].${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CUSTOM_EMAIL_LIBName]." >> $LOGFILE
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CUSTOM_EMAIL_LIBName]." >> $ERRORLOGFILE
        flagerror
    fi
-   return "$retCode"
-}
-
-########################################################################
-# New code that enables checking multiple website URLs to download
-# the Custom Email Library Script, just in case the first URL is
-# not available for any reason.
-#
-# Creation Date: 2024-Jul-09 [Martinski W.]
-# Last Modified: 2024-Jul-17 [Martinski W.]
-########################################################################
-
-##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-17] ##
-##----------------------------------------##
-_DownloadCEMLibraryScript_()
-{
-   if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]
-   then
-       printf "\n**ERROR**: NO parameters were provided to download library file.\n"
-       return 1
-   fi
-
-   _DownloadLibScriptFile_()
-   {
-      if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] ; then return 1 ; fi
-
-      curl -LSs --retry 4 --retry-delay 5 --retry-connrefused \
-           "${1}/$CEMAIL_LIB_FILE_NAME" -o "$libScriptFileDL"
-
-      if [ ! -s "$libScriptFileDL" ] || \
-         grep -Eiq "^404: Not Found" "$libScriptFileDL"
-      then
-          if [ "$2" -eq "$urlDLMax" ] || "$cemIsVerboseMode" || "$doDL_ShowErrorMsgs"
-          then
-              [ -s "$libScriptFileDL" ] && { echo ; cat "$libScriptFileDL" ; }
-              printf "\n**ERROR**: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
-              [ "$2" -lt "$urlDLMax" ] && printf "Trying again with a different URL...\n"
-          fi
-          rm -f "$libScriptFileDL"
-          return 1
-      else
-          mv -f "$libScriptFileDL" "$CEMAIL_LIB_FILE_PATH"
-          chmod 755 "$CEMAIL_LIB_FILE_PATH"
-          . "$CEMAIL_LIB_FILE_PATH"
-          if "$cemIsVerboseMode" || { [ "$2" -gt 1 ] && "$doDL_ShowErrorMsgs" ; }
-          then
-              [ "$2" -gt 1 ] && echo
-              printf "The email library script file [$CEMAIL_LIB_FILE_NAME] was ${msgStr2}.\n"
-          fi
-          return 0
-      fi
-   }
-
-   local msgStr1  msgStr2  retCode  urlDLCount  urlDLMax
-   local libScriptFileDL="${CEMAIL_LIB_FILE_PATH}.DL"
-
-   case "$2" in
-        update) msgStr1="Updating" ; msgStr2="updated" ;;
-       install) msgStr1="Installing" ; msgStr2="installed" ;;
-             *) return 1 ;;
-   esac
-
-   mkdir -m 755 -p "$1"
-   if [ ! -d "$1" ]
-   then
-       printf "\n**ERROR**: Directory Path [$1] *NOT* FOUND.\n"
-       return 1
-   fi
-
-   "$cemIsVerboseMode" && \
-   printf "\n${msgStr1} the shared library script file to support email notifications...\n"
-
-   retCode=1 ; urlDLCount=0 ; urlDLMax=3
-   for cemLibScriptURL in "$CEMAIL_LIB_URL1" "$CEMAIL_LIB_URL2" "$CEMAIL_LIB_URL3"
-   do
-       urlDLCount="$((urlDLCount + 1))"
-       if _DownloadLibScriptFile_ "$cemLibScriptURL" "$urlDLCount"
-       then retCode=0 ; break ; fi
-   done
-   return "$retCode"
-}
-
-##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-17] ##
-##----------------------------------------##
-_CheckForCustomEmailLibraryScript_()
-{
-   local doDL_LibScriptMsge=""
-   local doDL_LibScriptFlag=false
-   local doDL_ShowErrorMsgs=true
-   local retCode=0  quietArg=""  doUpdateCheck=false
-
-   for PARAM in "$@"
-   do
-      case $PARAM in
-          "-quiet")
-              quietArg="$PARAM"
-              cemIsVerboseMode=false
-              ;;
-          "-veryquiet")
-              quietArg="$PARAM"
-              cemIsVerboseMode=false
-              doDL_ShowErrorMsgs=false
-              ;;
-          "-verbose")
-              cemIsVerboseMode=true
-              ;;
-          "-versionCheck")
-              doUpdateCheck=true
-              ;;
-          *) ;; #IGNORED#
-      esac
-   done
-
-   if [ -s "$CEMAIL_LIB_FILE_PATH" ]
-   then
-       . "$CEMAIL_LIB_FILE_PATH"
-       if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
-          { "$doUpdateCheck" && \
-            _CheckLibraryUpdates_CEM_ "$CEMAIL_LIB_LOCAL_DIR" "$quietArg" ; }
-       then
-           retCode=1
-           doDL_LibScriptFlag=true
-           doDL_LibScriptMsge=update
-       fi
-   else
-       retCode=1
-       doDL_LibScriptFlag=true
-       doDL_LibScriptMsge=install
-   fi
-
-   if "$doDL_LibScriptFlag"
-   then
-       _DownloadCEMLibraryScript_ "$CEMAIL_LIB_LOCAL_DIR" "$doDL_LibScriptMsge"
-       retCode="$?"
-   fi
-
    return "$retCode"
 }
 
@@ -2667,11 +2528,12 @@ _CheckForCustomEmailLibraryScript_()
 #-----------------------------------------------------------#
 _SendEMailNotification_()
 {
+
    if [ -z "${amtmIsEMailConfigFileEnabled:+xSETx}" ]
    then
-       echo -e "${CRed}ERROR: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND.${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $LOGFILE
-       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $ERRORLOGFILE
+       echo -e "${CRed}ERROR: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND.${CClear}"
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> $LOGFILE
+       echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Email library script [$CUSTOM_EMAIL_LIBFile] *NOT* FOUND." >> $ERRORLOGFILE
        flagerror
        return 1
    fi
@@ -2713,9 +2575,23 @@ _SendEMailNotification_()
 
 sendmessage () {
 
-  #If AMTM email functionality is disabled, return back to the function call
-  if [ "$AMTMEMAIL" == "0" ]; then
-     return
+#If AMTM email functionality is disabled, return back to the function call
+if [ "$AMTMEMAIL" == "0" ]; then
+  return
+fi
+
+  #Load, install or update the shared AMTM Email integration library
+  if [ -f "$CUSTOM_EMAIL_LIBFile" ]
+  then
+    . "$CUSTOM_EMAIL_LIBFile"
+
+    if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+      _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+    then
+      _DownloadCEMLibraryFile_ "update"
+    fi
+  else
+      _DownloadCEMLibraryFile_ "install"
   fi
 
   cemIsFormatHTML=true
@@ -3705,6 +3581,22 @@ vsetup () {
             echo -e "Would you like to send a TEST email from BACKUPMON?"
             if promptyn "(y/n): "; then
               echo ""
+
+              if [ -f "$CUSTOM_EMAIL_LIBFile" ]
+                then
+                  . "$CUSTOM_EMAIL_LIBFile"
+
+                  if [ -z "${CEM_LIB_VERSION:+xSETx}" ] || \
+                    _CheckLibraryUpdates_CEM_ "$CUSTOM_EMAIL_LIBDir" quiet
+                  then
+                    echo ""
+                    _DownloadCEMLibraryFile_ "update"
+                  fi
+                else
+                  echo ""
+                  _DownloadCEMLibraryFile_ "install"
+              fi
+
               cemIsFormatHTML=true
               cemIsVerboseMode=true
               emailBodyTitle="Testing Email Notification"
@@ -5830,30 +5722,6 @@ if [ "$BACKUPSWAP" == "0" ]; then
 fi
 }
 
-##----------------------------------------##
-## Modified by Martinski W. [2024-Jul-17] ##
-##----------------------------------------##
-#-----------------------------------------------------------------#
-# Check, install or update the shared Custom Email Library Script #
-# OPTIONAL Parameters:
-# To indicate verbosity mode: "-verbose" | "-quiet" | "-veryquiet"
-# To do version update check: "-versionCheck" | "-noVersCheck"
-#
-# NOTE:
-# When calling the script with the "-checkupdate" parameter [or
-# perhaps "-forceupdate"?], a "version check" is performed to
-# update the script if/when needed.
-#-----------------------------------------------------------------#
-
-cemailQuietArg="-veryquiet"
-cemailCheckArg="-versionCheck"
-if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
-then
-    cemailQuietArg="-quiet"
-    cemailCheckArg="-versionCheck"
-fi
-_CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
-
 # -------------------------------------------------------------------------------------------------------------------------
 # Begin Main Program
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5914,12 +5782,10 @@ if [ $# -eq 0 ]
 fi
 
 # Check and see if an invalid commandline option is being used
-if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || \
-   [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || \
-   [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ]
-then
+if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || [ "$1" == "-purge" ] || [ "$1" == "-secondary" ]
+  then
     clear
-else
+  else
     clear
     echo ""
     echo " BACKUPMON v$Version"
@@ -5954,15 +5820,6 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ]
   echo ""
   echo -e "${CClear}"
   exit 0
-fi
-
-##-------------------------------------##
-## Added by Martinski W. [2024-Jul-10] ##
-##-------------------------------------##
-if [ "$1" = "-checkupdate" ]
-then
-    _CheckForCustomEmailLibraryScript_ -versionCheck -verbose
-    exit 0
 fi
 
 # Check to see if a second command is being passed to remove color

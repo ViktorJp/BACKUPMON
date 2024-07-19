@@ -1,3 +1,15 @@
+v1.8.17 - (July 18, 2024)
+        - PATCH: With many thanks to @Martinski, he helped develop a new methodology to build in more
+          redudancy should we ever face another situation like this again, where the shared email libary
+          file location becomes unavailable. In this latest mod, he has built in the capability of using
+          three distinct file location URLs that the script will use to find and download the latest 
+          version. HUGE THANK YOU for supporting this, @Martinski! :)
+        - PATCH: Based on some feedback and to reduce confusion, I have renamed "Backup Frequency" to
+          "Backup Retention". Thanks to @visortgw and @ExtremeFiretop for the suggestions. The word
+          "retention" word makes much more sense, since we're talking about what kinds of folders we're
+          leaving behind, and how long they will be around (ie. weekly, monthly, yearly, or perpetual
+          backups each day).
+
 v1.8.15 - (July 7, 2024)
         - PATCH: Implemented a workaround to continue providing AMTM email capabilities due to the shared
           library source being hosted under @Martinski's github repo becoming unavailable. This should only
