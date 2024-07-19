@@ -1,5 +1,5 @@
 # BACKUPMON v1.8.18
-![image](https://github.com/user-attachments/assets/9e41f509-43cb-460b-94f8-5d87b2bde254)
+![image](https://github.com/user-attachments/assets/aaa613a4-5453-433b-af47-b209ce65e9b3)
 
 **First off** -- HUGE thanks to @Jeffrey Young for sharing his original backup script. His script is the main engine of BACKUPMON, and all credit goes to him! BACKUPMON is simply a wrapper around Jeff's backup script functionality, adding easy-to-use menus, more status feedback, and the ability to launch a restore based on your previous backups. Also, big thanks to @Martinski for his many contributions as well as his extremely helpful AMTM email library script, and huge props to @visortgw for contributing to the backup methodologies thread with his scripts and wisdom!
 
