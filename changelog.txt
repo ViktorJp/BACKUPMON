@@ -1,3 +1,10 @@
+v1.8.18 - (July 19, 2024)
+        - PATCH: Small change to the way Shared Email Library updates are being handled. On startup, the
+          script will check if AMTM email is enabled before checking for updates, just to prevent this
+          feature from downloading if not being used. Secondarily, when enabling this feature under the
+          config menu, it will download and check for updates before it asks if you want to send a quick
+          test email to ensure AMTM is configured correctly.
+
 v1.8.17 - (July 18, 2024)
         - PATCH: With many thanks to @Martinski, he helped develop a new methodology to build in more
           redundancy should we ever face another situation like this again, where the shared email library
