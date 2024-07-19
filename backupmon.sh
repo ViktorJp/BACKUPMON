@@ -482,7 +482,7 @@ vconfig () {
       elif [ "$FREQUENCY" == "P" ]; then
         printf "Perpetual"; printf "%s\n"; fi
       if [ "$FREQUENCY" == "P" ]; then
-        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Backups?                              : ${CGreen}"
+        echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Backups                               : ${CGreen}"
         if [ "$PURGE" == "0" ]; then
           printf "No"; printf "%s\n";
         elif [ "$PURGE" == "1" ]; then
@@ -494,13 +494,13 @@ vconfig () {
           printf $PURGELIMIT; printf "%s\n";
         fi
       else
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Backups?                              : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Backups                               : ${CDkGray}No"
         echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge older than (days)                     : ${CDkGray}N/A"
       fi
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(12)${CClear} : Backup/Restore Mode                          : ${CGreen}$MODE"
 
-      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Schedule Backups?                            : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(13)${CClear} : Schedule Backups                             : ${CGreen}"
       if [ "$SCHEDULE" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
@@ -522,19 +522,19 @@ vconfig () {
           printf "Backup + Autopurge"; printf "%s\n"; fi
       fi
 
-      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : AMTM Email Notifications?                    : ${CGreen}"
+      echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(14)${CClear} : AMTM Email Notifications                     : ${CGreen}"
       if [ "$AMTMEMAIL" == "0" ]; then
         printf "No"; printf "%s\n";
       else printf "Yes"; printf "%s\n"; fi
       if [ "$AMTMEMAILSUCCESS" == "1" ]; then
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Success?                                 : ${CGreen}Yes"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Success                                  : ${CGreen}Yes"
       else
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  On Success?                                 : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  On Success                                  : ${CDkGray}No"
       fi
       if [ "$AMTMEMAILFAILURE" == "1" ]; then
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Failure?                                 : ${CGreen}Yes"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  On Failure                                  : ${CGreen}Yes"
       else
-        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}${CDkGray}--  On Failure?                                 : ${CDkGray}No"
+        echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |  ${CClear}${CDkGray}--  On Failure                                  : ${CDkGray}No"
       fi
 
       echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(15)${CClear} : Secondary Backup Config Options              : ${CGreen}"
@@ -1271,12 +1271,12 @@ vconfig () {
               else SECONDARYFREQUENCY="M";
                 printf "Monthly"; printf "%s\n"; fi
               if [ "$SECONDARYFREQUENCY" == "P" ]; then
-                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Secondary Backups?                    : ${CGreen}"
+                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Purge Secondary Backups                     : ${CGreen}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
               else
-                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Secondary Backups?                    : ${CDkGray}"
+                echo -en "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}${CDkGray}--  Purge Secondary Backups                     : ${CDkGray}"
                 if [ "$SECONDARYPURGE" == "0" ]; then
                   printf "No"; printf "%s\n";
                 else printf "Yes"; printf "%s\n"; fi
@@ -1483,7 +1483,7 @@ vconfig () {
 
       #Create a new config file with default values to get it to a basic running state
       { echo 'BTUSERNAME="admin"'
-        echo 'BTPASSWORD="admin"'
+        echo 'BTPASSWORD="YWRtaW4K"'
         echo 'UNC="\\\\192.168.50.25\\Backups"'
         echo 'NFSMOUNTOPT=""'
         echo 'UNCDRIVE="/tmp/mnt/backups"'
@@ -1507,7 +1507,7 @@ vconfig () {
         echo 'AMTMEMAILFAILURE=0'
         echo 'SECONDARYSTATUS=0'
         echo 'SECONDARYUSER="admin"'
-        echo 'SECONDARYPWD="admin"'
+        echo 'SECONDARYPWD="YWRtaW4K"'
         echo 'SECONDARYUNC="\\\\192.168.50.25\\SecondaryBackups"'
         echo 'SECONDARYNFSMOUNTOPT=""'
         echo 'SECONDARYUNCDRIVE="/tmp/mnt/secondarybackups"'
@@ -3543,11 +3543,11 @@ vsetup () {
   fi
 
   #Check to see if old conflicting variable names are being used
-  if [ ! -z "$USERNAME" ]; then
-    sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-    sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-    source $CFGPATH
-  fi
+  #if [ ! -z "$USERNAME" ]; then
+  #  sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  source $CFGPATH
+  #fi
 
   tzone=$(date +%Z)
   tzonechars=$(echo ${#tzone})
@@ -5738,11 +5738,11 @@ unmounttestdrv () {
 checkplaintxtpwds () {
 
   #Check to see if old conflicting variable names are being used
-  if [ ! -z "$USERNAME" ]; then
-    sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-    sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-    source $CFGPATH
-  fi
+  #if [ ! -z "$USERNAME" ]; then
+  #  sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  source $CFGPATH
+  #fi
 
   #echo $PASSWORD | base64 -d > /dev/null 2>&1
   echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
