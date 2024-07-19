@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.18"                                                # Current version
+Version="1.8.17"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1154,21 +1154,17 @@ vconfig () {
                 read -p 'Email on Backup Failures? (No=0, Yes=1): ' AMTMEMAILFAILURE1
                 if [ "$AMTMEMAILFAILURE1" == "" ] || [ -z "$AMTMEMAILFAILURE1" ]; then AMTMEMAILFAILURE=0; else AMTMEMAILFAILURE="$AMTMEMAILFAILURE1"; fi # Using default value on enter keypress
                 echo ""
-                
-                #Install @Martinski's shared email library
-                echo -e "${CClear}Installing Shared Email Library Components..."
-                cemailQuietArg="-verbose"
-                cemailCheckArg="-versionCheck"
-                if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
-                then
-                    cemailQuietArg="-verbose"
-                    cemailCheckArg="-versionCheck"
-                fi
-                _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
-                echo ""
-                
                 echo -e "Would you like to send a TEST email from BACKUPMON?"
                 if promptyn "(y/n): "; then
+
+                  cemailQuietArg="-verbose"
+                  cemailCheckArg="-versionCheck"
+                  if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
+                  then
+                      cemailQuietArg="-verbose"
+                      cemailCheckArg="-versionCheck"
+                  fi
+                  _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 
                   echo ""
                   cemIsFormatHTML=true
@@ -5849,16 +5845,14 @@ fi
 # update the script if/when needed.
 #-----------------------------------------------------------------#
 
-if [ $AMTMEMAIL -eq 1 ]; then
-	cemailQuietArg="-veryquiet"
-	cemailCheckArg="-versionCheck"
-	if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
-	then
-	    cemailQuietArg="-verbose"
-	    cemailCheckArg="-versionCheck"
-	fi
-	_CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
+cemailQuietArg="-veryquiet"
+cemailCheckArg="-versionCheck"
+if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
+then
+    cemailQuietArg="-quiet"
+    cemailCheckArg="-versionCheck"
 fi
+_CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Begin Main Program
