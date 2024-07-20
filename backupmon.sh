@@ -875,7 +875,7 @@ vconfig () {
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}PERPETUAL:"
               echo -e "${InvGreen} ${CClear} A unique backup folder is created each time it runs based on the date-time"
-              echo -e "${InvGreen} ${CClear} (ex: 20230909-084322). NOTE: When using the Perpetual backup frequency option, you"
+              echo -e "${InvGreen} ${CClear} (ex: 20230909-084322). NOTE: When using the Perpetual backup retention option, you"
               echo -e "${InvGreen} ${CClear} may only use BASIC mode."
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} (Weekly=W, Monthly=M, Yearly=Y, Perpetual=P) (Default = M)"
@@ -6127,14 +6127,14 @@ else
   echo -en "${InvGreen} ${CClear}${CWhite} Backing up to ${CGreen}"; printf "%s" "${UNC}"; echo -e "${CWhite} mounted to ${CGreen}${UNCDRIVE}"
 fi
 echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BKDIR}"
-echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Frequency: ${CGreen}$FREQEXPANDED"
+echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Retention: ${CGreen}$FREQEXPANDED"
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
 if [ "$SECONDARYSTATUS" == "1" ]; then
   if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
   if [ $SECONDARYFREQUENCY == "M" ]; then SECFREQEXPANDED="Monthly"; fi
   if [ $SECONDARYFREQUENCY == "Y" ]; then SECFREQEXPANDED="Yearly"; fi
   if [ $SECONDARYFREQUENCY == "P" ]; then SECFREQEXPANDED="Perpetual"; fi
-  echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Frequency: ${CGreen}$SECFREQEXPANDED"
+  echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Retention: ${CGreen}$SECFREQEXPANDED"
   echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Mode: ${CGreen}$SECONDARYMODE"
 fi
 echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
