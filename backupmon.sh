@@ -1154,7 +1154,7 @@ vconfig () {
                 read -p 'Email on Backup Failures? (No=0, Yes=1): ' AMTMEMAILFAILURE1
                 if [ "$AMTMEMAILFAILURE1" == "" ] || [ -z "$AMTMEMAILFAILURE1" ]; then AMTMEMAILFAILURE=0; else AMTMEMAILFAILURE="$AMTMEMAILFAILURE1"; fi # Using default value on enter keypress
                 echo ""
-                
+
                 #Install @Martinski's shared email library
                 echo -e "${CClear}Installing Shared Email Library Components..."
                 cemailQuietArg="-verbose"
@@ -1166,7 +1166,7 @@ vconfig () {
                 fi
                 _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
                 echo ""
-                
+
                 echo -e "Would you like to send a TEST email from BACKUPMON?"
                 if promptyn "(y/n): "; then
 
@@ -5718,13 +5718,6 @@ unmounttestdrv () {
 
 checkplaintxtpwds () {
 
-  #Check to see if old conflicting variable names are being used
-  #if [ ! -z "$USERNAME" ]; then
-  #  sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-  #  sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
-  #  source $CFGPATH
-  #fi
-
   #echo $PASSWORD | base64 -d > /dev/null 2>&1
   echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
   PRI="$?"
@@ -5842,7 +5835,7 @@ if [ $AMTMEMAIL -eq 1 ]; then
   fi
   _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 fi
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5989,23 +5982,23 @@ fi
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
-  	
-  	# Determine if the config is local or under /jffs/addons/backupmon.d
-	  if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-	    source $CFGPATH
-	  elif [ -f /jffs/scripts/backupmon.cfg ]; then
-	    source /jffs/scripts/backupmon.cfg
-	    cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-	  else
-	    clear
-	    echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
-	    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
-	    sleep 3
-	    vconfig
-	  fi
-	  
-	  checklibupdate
-	  updatecheck
+
+    # Determine if the config is local or under /jffs/addons/backupmon.d
+    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+      source $CFGPATH
+    elif [ -f /jffs/scripts/backupmon.cfg ]; then
+      source /jffs/scripts/backupmon.cfg
+      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+    else
+      clear
+      echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
+      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
+      sleep 3
+      vconfig
+    fi
+
+    checklibupdate
+    updatecheck
     logoNM
     vsetup
 fi
