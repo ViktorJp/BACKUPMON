@@ -7,7 +7,7 @@
 # email notifications using AMTM email configuration file.
 #
 # Creation Date: 2020-Jun-11 [Martinski W.]
-# Last Modified: 2024-Jul-08 [Martinski W.]
+# Last Modified: 2024-Jul-17 [Martinski W.]
 ######################################################################
 
 if [ -z "${_LIB_CustomEMailFunctions_SHELL_:+xSETx}" ]
@@ -15,12 +15,12 @@ then _LIB_CustomEMailFunctions_SHELL_=0
 else return 0
 fi
 
-CEM_LIB_VERSION="0.9.21"
+CEM_LIB_VERSION="0.9.22"
 CEM_TXT_VERFILE="cemVersion.txt"
 
 CEM_LIB_REPO_BRANCH="master"
-CEM_LIB_SCRIPT_URL1="https://raw.githubusercontent.com/MartinSkyW/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
-CEM_LIB_SCRIPT_URL2="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
+CEM_LIB_SCRIPT_URL2="https://raw.githubusercontent.com/MartinSkyW/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
+CEM_LIB_SCRIPT_URL1="https://raw.githubusercontent.com/Martinski4GitHub/CustomMiscUtils/${CEM_LIB_REPO_BRANCH}/EMail"
 
 if [ -z "${cemIsVerboseMode:+xSETx}" ]
 then cemIsVerboseMode=true ; fi
@@ -127,16 +127,19 @@ _CheckLibraryUpdates_CEM_()
       if [ ! -s "$theVersTextFile" ] || \
          grep -Eiq "^404: Not Found" "$theVersTextFile"
       then
-          [ -s "$theVersTextFile" ] && { echo ; cat "$theVersTextFile" ; }
+          if [ "$2" -eq "$urlDLMax" ] || "$showAllMsgs" || "$showWarnings"
+          then
+              [ -s "$theVersTextFile" ] && { echo ; cat "$theVersTextFile" ; }
+              _PrintMsg_CEM_ "\n**WARNING**: Unable to download the version file [$CEM_TXT_VERFILE]\n"
+              [ "$2" -lt "$urlDLMax" ] && _PrintMsg_CEM_ "Trying again with a different URL...\n"
+          fi
           rm -f "$theVersTextFile"
-          _PrintMsg_CEM_ "\n**WARNING**: Unable to download the version file [$CEM_TXT_VERFILE]\n"
-          [ "$2" -lt "$urlDLMax" ] && _PrintMsg_CEM_ "Trying again with a different URL...\n"
           return 1
       else
-          [ "$2" -gt 1 ] && echo
-          if [ "$2" -gt 1 ] || { "$cemIsVerboseMode" && "$showMsg" ; }
+          if "$showAllMsgs" || { [ "$2" -gt 1 ] && "$showWarnings" ; }
           then
-              _PrintMsg_CEM_ "The library version file [$CEM_TXT_VERFILE] was downloaded.\n"
+              [ "$2" -gt 1 ] && echo
+              _PrintMsg_CEM_ "The email library version file [$CEM_TXT_VERFILE] was downloaded.\n"
           fi
           return 0
       fi
@@ -150,13 +153,20 @@ _CheckLibraryUpdates_CEM_()
    fi
    local theVersTextFile="${1}/$CEM_TXT_VERFILE"
    local libraryVerNum  dlFileVersNum  dlFileVersStr
-   local showMsg  retCode  urlDLCount  urlDLMax
+   local showAllMsgs="$cemIsVerboseMode"  showWarnings=true
+   local retCode  urlDLCount  urlDLMax
 
-   if [ $# -gt 1 ] && echo "$2" | grep -qE "^[-]?quiet$"
-   then showMsg=false ; else showMsg=true ; fi
+   if [ $# -gt 1 ]
+   then
+       if echo "$2" | grep -qE "^[-]?quiet$"
+       then showAllMsgs=false
+       elif [ "$2" = "-veryquiet" ]
+       then showAllMsgs=false ; showWarnings=false
+       fi
+   fi
 
-   "$cemIsVerboseMode" && "$showMsg" && \
-   _PrintMsg_CEM_ "\nChecking for shared email library script updates...\n"
+   "$showAllMsgs" && \
+   _PrintMsg_CEM_ "\nChecking for the shared email library script updates...\n"
 
    retCode=1 ; urlDLCount=0 ; urlDLMax=2
    for cemLibScriptURL in "$CEM_LIB_SCRIPT_URL1" "$CEM_LIB_SCRIPT_URL2"
@@ -176,12 +186,12 @@ _CheckLibraryUpdates_CEM_()
    if [ "$dlFileVersNum" -le "$libraryVerNum" ]
    then
        retCode=1
-       "$cemIsVerboseMode" && "$showMsg" && \
+       "$showAllMsgs" && \
        _PrintMsg_CEM_ "Update check done.\n"
    else
        _DoReInit_CEM_
        retCode=0
-       "$cemIsVerboseMode" && "$showMsg" && \
+       "$showAllMsgs" && \
        _PrintMsg_CEM_ "New email library script version [$dlFileVersStr] is available.\n"
    fi
 
