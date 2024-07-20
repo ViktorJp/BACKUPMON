@@ -1,3 +1,10 @@
+v1.8.19 - (July 20, 2024)
+        - PATCH: Bugfix release to help fix missing shared email libarary error messages that popped up
+          due to the last release. Issue ended up being that the email library update wasn't properly
+          being called and therefore not loading into memory before the backupmon.cfg variables got
+          loaded. Shared Email Library script update is now a function, and is strategically called on
+          when needed to perform email functionality.
+
 v1.8.18 - (July 19, 2024)
         - PATCH: Small change to the way Shared Email Library updates are being handled. On startup, the
           script will check if AMTM email is enabled before checking for updates, just to prevent this
