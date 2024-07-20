@@ -17,7 +17,7 @@
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 
 # Variable list -- please do not change any of these
-Version="1.8.19"                                                # Current version
+Version="1.8.18"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1154,7 +1154,7 @@ vconfig () {
                 read -p 'Email on Backup Failures? (No=0, Yes=1): ' AMTMEMAILFAILURE1
                 if [ "$AMTMEMAILFAILURE1" == "" ] || [ -z "$AMTMEMAILFAILURE1" ]; then AMTMEMAILFAILURE=0; else AMTMEMAILFAILURE="$AMTMEMAILFAILURE1"; fi # Using default value on enter keypress
                 echo ""
-
+                
                 #Install @Martinski's shared email library
                 echo -e "${CClear}Installing Shared Email Library Components..."
                 cemailQuietArg="-verbose"
@@ -1166,7 +1166,7 @@ vconfig () {
                 fi
                 _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
                 echo ""
-
+                
                 echo -e "Would you like to send a TEST email from BACKUPMON?"
                 if promptyn "(y/n): "; then
 
@@ -3532,6 +3532,27 @@ vsetup () {
     } > $LOGFILE
   fi
 
+  # Determine if the config is local or under /jffs/addons/backupmon.d
+  if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
+    source $CFGPATH
+  elif [ -f /jffs/scripts/backupmon.cfg ]; then
+    source /jffs/scripts/backupmon.cfg
+    cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
+  else
+    clear
+    echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
+    echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
+    sleep 3
+    vconfig
+  fi
+
+  #Check to see if old conflicting variable names are being used
+  #if [ ! -z "$USERNAME" ]; then
+  #  sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  source $CFGPATH
+  #fi
+
   tzone=$(date +%Z)
   tzonechars=$(echo ${#tzone})
 
@@ -3540,6 +3561,8 @@ vsetup () {
   elif [ $tzonechars = 3 ]; then tzspaces="    ";
   elif [ $tzonechars = 4 ]; then tzspaces="   ";
   elif [ $tzonechars = 5 ]; then tzspaces="  "; fi
+
+  updatecheck
 
   while true; do
     clear
@@ -5718,6 +5741,13 @@ unmounttestdrv () {
 
 checkplaintxtpwds () {
 
+  #Check to see if old conflicting variable names are being used
+  #if [ ! -z "$USERNAME" ]; then
+  #  sed -i "s/USERNAME=/BTUSERNAME=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  sed -i "s/PASSWORD=/BTPASSWORD=/" "/jffs/addons/backupmon.d/backupmon.cfg"
+  #  source $CFGPATH
+  #fi
+
   #echo $PASSWORD | base64 -d > /dev/null 2>&1
   echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
   PRI="$?"
@@ -5804,14 +5834,8 @@ if [ "$BACKUPSWAP" == "0" ]; then
 fi
 }
 
-# -------------------------------------------------------------------------------------------------------------------------
-# checklibupdate is a function to check for updates to the shared email library hosted by @Martinski
-
-checklibupdate () {
-
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Jul-17] ##
-## Mofified by ViktorJp [2024-Jul-20]     ##
 ##----------------------------------------##
 #-----------------------------------------------------------------#
 # Check, install or update the shared Custom Email Library Script #
@@ -5826,17 +5850,15 @@ checklibupdate () {
 #-----------------------------------------------------------------#
 
 if [ $AMTMEMAIL -eq 1 ]; then
-  cemailQuietArg="-veryquiet"
-  cemailCheckArg="-versionCheck"
-  if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
-  then
-      cemailQuietArg="-verbose"
-      cemailCheckArg="-versionCheck"
-  fi
-  _CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
+	cemailQuietArg="-veryquiet"
+	cemailCheckArg="-versionCheck"
+	if [ ! -s "$CEMAIL_LIB_FILE_PATH" ]
+	then
+	    cemailQuietArg="-verbose"
+	    cemailCheckArg="-versionCheck"
+	fi
+	_CheckForCustomEmailLibraryScript_ "$cemailCheckArg" "$cemailQuietArg"
 fi
-
-}
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Begin Main Program
@@ -5971,7 +5993,6 @@ if [ "$1" == "-restore" ]
       echo -e "${CClear}"
       exit 0
     fi
-    checklibupdate
     checkplaintxtpwds    #Check for plaintext passwords
     restore              #Run the restore routine
     trimlogs             #Trim the logs
@@ -5982,23 +6003,6 @@ fi
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
-
-    # Determine if the config is local or under /jffs/addons/backupmon.d
-    if [ -f $CFGPATH ]; then #Making sure file exists before proceeding
-      source $CFGPATH
-    elif [ -f /jffs/scripts/backupmon.cfg ]; then
-      source /jffs/scripts/backupmon.cfg
-      cp /jffs/scripts/backupmon.cfg /jffs/addons/backupmon.d/backupmon.cfg
-    else
-      clear
-      echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
-      sleep 3
-      vconfig
-    fi
-
-    checklibupdate
-    updatecheck
     logoNM
     vsetup
 fi
@@ -6025,7 +6029,6 @@ if [ "$1" == "-purge" ]
       echo -e "${CClear}"
       exit 0
     fi
-    checklibupdate
     checkplaintxtpwds     #Check for plaintext passwords
     autopurge             #Purge primary backups
     autopurgesecondaries  #Purge secondary backups
@@ -6050,7 +6053,6 @@ if [ "$1" == "-backup" ]
       echo -e "${CClear}"
       exit 0
     fi
-    checklibupdate
     checkplaintxtpwds
     BSWITCH="True"
 fi
@@ -6097,7 +6099,6 @@ if [ "$BACKUPSWAP" == "0" ]; then
   excludeswap
 fi
 
-checklibupdate
 updatecheck
 
 clear
