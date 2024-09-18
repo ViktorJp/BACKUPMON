@@ -15,7 +15,7 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2024-Aug-11
+# Last Modified: 2024-Sep-17
 
 # Variable list -- please do not change any of these
 Version="1.8.20"                                                # Current version
@@ -2273,7 +2273,7 @@ fi
 # This amazing function was borrowed from none other than @Martinski... a genius approach to filtering and deleting files/folders
 # $1 = path, $2 = age, $3 = show/delete
 
-_DeleteFileDirAfterNumberOfDays_ ()
+_DeleteFileDirAfterNumberOfDays_()
 {
    local retCode=1  minNumOfDays=1
    if [ $# -eq 0 ] || [ -z "$1" ] || [ -z "$2" ] || \
@@ -3315,7 +3315,7 @@ purgebackups () {
       # Show a list of valid backups on screen
       count=0
       echo -e "${CGreen}STATUS: Perpetual backup folders identified below are older than $PURGELIMIT days:${CRed}"
-      for FOLDER in $(ls "${UNCDRIVE}"${BKDIR} -1)
+      for FOLDER in $(ls -1 "${UNCDRIVE}${BKDIR}")
       do
         _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT show
       done
@@ -3342,7 +3342,7 @@ purgebackups () {
 
       if promptyn "(y/n): "; then
         echo -e "\n${CRed}"
-        for FOLDER in $(ls "${UNCDRIVE}"${BKDIR} -1)
+        for FOLDER in $(ls -1 "${UNCDRIVE}${BKDIR}")
         do
           _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT delete
         done
@@ -3420,7 +3420,7 @@ autopurge () {
   then
       # Continue with deleting backups permanently
       count=0
-      for FOLDER in $(ls "${UNCDRIVE}"${BKDIR} -1)
+      for FOLDER in $(ls -1 "${UNCDRIVE}${BKDIR}")
       do
         _DeleteFileDirAfterNumberOfDays_ "${UNCDRIVE}${BKDIR}/$FOLDER" $PURGELIMIT delete
       done
@@ -3507,7 +3507,7 @@ purgesecondaries () {
       # Show a list of valid backups on screen
       count=0
       echo -e "${CGreen}STATUS: Perpetual secondary backup folders identified below are older than $SECONDARYPURGELIMIT days:${CRed}"
-      for FOLDER in $(ls "${SECONDARYUNCDRIVE}"${SECONDARYBKDIR} -1)
+      for FOLDER in $(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}")
       do
         _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT show
       done
@@ -3534,7 +3534,7 @@ purgesecondaries () {
 
       if promptyn "(y/n): "; then
         echo -e "\n${CRed}"
-        for FOLDER in $(ls "${SECONDARYUNCDRIVE}"${SECONDARYBKDIR} -1)
+        for FOLDER in $(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}")
         do
           _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT delete
         done
@@ -3616,7 +3616,7 @@ autopurgesecondaries () {
   then
       # Continue with deleting backups permanently
       count=0
-      for FOLDER in $(ls "${SECONDARYUNCDRIVE}"${SECONDARYBKDIR} -1)
+      for FOLDER in $(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}")
       do
         _DeleteFileDirAfterNumberOfDays_ "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/$FOLDER" $SECONDARYPURGELIMIT delete
       done
@@ -4522,28 +4522,33 @@ backup () {
         fi
       fi
 
-      if [ $MODE == "Basic" ]; then
-        # Remove old tar files if they exist in the daily folders
-        if [ $FREQUENCY == "W" ]; then
-          [ -f "${UNCDRIVE}${BKDIR}/${WDAY}"/jffs.tar* ] && rm "${UNCDRIVE}${BKDIR}/${WDAY}"/jffs.tar*
-          [ -f "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.cfg* ] && rm "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.cfg*
-          [ -f "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt* ] && rm "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt*
-          [ -f "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar* ] && rm "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar*
-        elif [ $FREQUENCY == "M" ]; then
-          [ -f "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar* ] && rm "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar*
-          [ -f "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.cfg* ] && rm "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.cfg*
-          [ -f "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt* ] && rm "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt*
-          [ -f "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar* ] && rm "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar*
-        elif [ $FREQUENCY == "Y" ]; then
-          [ -f "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar* ] && rm "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar*
-          [ -f "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.cfg* ] && rm "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.cfg*
-          [ -f "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt* ] && rm "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt*
-          [ -f "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar* ] && rm "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar*
-        elif [ $FREQUENCY == "P" ]; then
-          [ -f "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar* ] && rm "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar*
-          [ -f "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.cfg* ] && rm "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.cfg*
-          [ -f "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt* ] && rm "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt*
-          [ -f "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar* ] && rm "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar*
+      if [ "$MODE" = "Basic" ]
+      then
+        # Remove old tar files if they exist in the daily folders #
+        if [ "$FREQUENCY" = "W" ]
+        then
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/jffs.tar*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.cfg*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar*
+        elif [ "$FREQUENCY" = "M" ]
+        then
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.cfg*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar*
+        elif [ "$FREQUENCY" = "Y" ]
+        then
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.cfg*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar*
+        elif [ "$FREQUENCY" = "P" ]
+        then
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.cfg*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar*
         fi
       fi
 
@@ -4778,28 +4783,33 @@ secondary () {
         fi
       fi
 
-      if [ $SECONDARYMODE == "Basic" ]; then
-        # Remove old tar files if they exist in the daily folders
-        if [ $SECONDARYFREQUENCY == "W" ]; then
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/jffs.tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/jffs.tar*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.cfg* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.cfg*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar*
-        elif [ $SECONDARYFREQUENCY == "M" ]; then
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.cfg* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.cfg*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar*
-        elif [ $SECONDARYFREQUENCY == "Y" ]; then
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.cfg* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.cfg*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar*
-        elif [ $SECONDARYFREQUENCY == "P" ]; then
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.cfg* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.cfg*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt*
-          [ -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar* ] && rm "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar*
+      if [ "$SECONDARYMODE" = "Basic" ]
+      then
+        # Remove old tar files if they exist in the daily folders #
+        if [ "$SECONDARYFREQUENCY" = "W" ]
+        then
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/jffs.tar*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.cfg*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar*
+        elif [ "$SECONDARYFREQUENCY" = "M" ]
+        then
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.cfg*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar*
+        elif [ "$SECONDARYFREQUENCY" = "Y" ]
+        then
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.cfg*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar*
+        elif [ "$SECONDARYFREQUENCY" = "P" ]
+        then
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.cfg* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.cfg*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar*
         fi
       fi
 
