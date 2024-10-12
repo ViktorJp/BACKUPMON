@@ -1,3 +1,10 @@
+v1.8.20 - (October 12, 2024)
+        - PATCH: Code improvements to allow blank space chars in directory paths.
+        - PATCH: Changed defaults to directory paths to show the correct router model.
+        - PATCH: Changed defaults containing an IP address to show the correct LAN IP address octets of
+          the router.
+        - PATCH: Various fixes and code improvements
+
 v1.8.19 - (July 20, 2024)
         - PATCH: Bugfix release to help fix missing shared email libarary error messages that popped up
           due to the last release. Issue ended up being that the email library update wasn't properly
