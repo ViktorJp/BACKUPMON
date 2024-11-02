@@ -15,10 +15,11 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2024-Sep-17
+# Last Modified: 2024-Nov-01
+######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.8.20"                                                # Current version
+Version="1.8.21"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -281,37 +282,41 @@ fi
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Preparebar and Progressbaroverride is a script that provides a nice progressbar to show script activity
-
+##----------------------------------------##
+## Modified by Martinski W. [2024-Nov-01] ##
+##----------------------------------------##
 preparebar()
 {
   # $1 - bar length
   # $2 - bar char
   barlen="$1"
-  barspaces="$(printf "%*s" "$1")"
-  barchars="$(printf "%*s" "$1" | tr ' ' "$2")"
+  barspaces="$(printf "%*s" "$1" ' ')"
+  barchars="$(printf "%*s" "$1" ' ' | tr ' ' "$2")"
 }
 
 progressbaroverride()
 {
    insertspc=" "
 
-   if [ "$1" -eq -1 ]; then
+   if [ "$1" -eq -1 ]
+   then
       printf "\r  $barspaces\r"
    else
       barch="$(($1*barlen/$2))"
       barsp="$((barlen-barch))"
-      progr="$((100*$1/$2))"
+      percnt="$((100*$1/$2))"
    fi
 
    if [ $# -gt 5 ] && [ -n "$6" ]; then AltNum="$6" ; else AltNum="$1" ; fi
 
-   printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${progr}%%${CClear} ${CGreen}[ e=Exit / Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
+   printf "  ${CWhite}${InvDkGray}$AltNum${4} / ${percnt}%%${CClear} ${CGreen}[ e=Exit / Selection? ${InvGreen} ${CClear}${CGreen}]\r${CClear}" "$barchars" "$barspaces"
 
    # Borrowed this wonderful keypress capturing mechanism from @Eibgrad... thank you! :)
    key_press=''; read -rsn1 -t 1 key_press < "$(tty 0>&2)"
 
-   if [ $key_press ]; then
-        case $key_press in
+   if [ "$key_press" ]
+   then
+        case "$key_press" in
             [Xx]) echo ""; echo ""; sleep 1; restore;;
             [Ss]) (vsetup); source "$CFGPATH" ; echo ""; sleep 1; exit 0;;
             [Ee])  # Exit gracefully
@@ -6282,7 +6287,7 @@ echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}-------------------------------
 echo ""
 
 # Check to see if the secondary-only backup is supposed to run
-if [ "$1" == "-secondary" ]
+if [ "$1" = "-secondary" ]
   then
     SECONDARYSWITCH="True"
     checkplaintxtpwds
@@ -6294,16 +6299,31 @@ if [ "$1" == "-secondary" ]
     exit 0
 fi
 
+##----------------------------------------##
+## Modified by Martinski W. [2024-Nov-01] ##
+##----------------------------------------##
 # If the -backup switch is used then bypass the counter for immediate backup
-if [ "$BSWITCH" == "False" ]; then
-  # Run a 10sec timer
-  i=0
-  while [ $i -ne 10 ]
-  do
+if [ "$BSWITCH" = "False" ]
+then
+   # Run a 10sec timer #
+   timerCount=0
+   maxTimeSec=10
+   updateTimer=true
+
+   while [ "$timerCount" -lt "$maxTimeSec" ]
+   do
+      if "$updateTimer"
+      then
+          updateTimer=false
+          timerCount="$((timerCount+1))"
+          lastTimerSec="$(date +%s)"
+      fi
       preparebar 51 "|"
-      progressbaroverride $i 10 "" "s" "Standard"
-      i=$(($i+1))
-  done
+      progressbaroverride "$timerCount" "$maxTimeSec" "" "s" "Standard"
+
+      ## Prevent repeatedly fast key presses from updating the timer ##
+      [ "$(date +%s)" -gt "$lastTimerSec" ] && updateTimer=true
+   done
 fi
 
 # Run a normal backup
