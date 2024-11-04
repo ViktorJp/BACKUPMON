@@ -15,7 +15,7 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2024-Nov-01
+# Last Modified: 2024-Nov-03
 ######################################################################################
 
 # Variable list -- please do not change any of these
@@ -6308,6 +6308,7 @@ then
    # Run a 10sec timer #
    timerCount=0
    maxTimeSec=10
+   lastTimerSec=0
    updateTimer=true
 
    while [ "$timerCount" -lt "$maxTimeSec" ]
