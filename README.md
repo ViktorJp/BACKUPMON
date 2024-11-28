@@ -1,5 +1,5 @@
-# BACKUPMON v1.8.21
-## Updated on 2024-Nov-03
+# BACKUPMON v1.8.22
+## Updated on 2024-Nov-28
 
 ![image](https://github.com/user-attachments/assets/aaa613a4-5453-433b-af47-b209ce65e9b3)
 
