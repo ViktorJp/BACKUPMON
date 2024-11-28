@@ -19,7 +19,7 @@
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.8.21"                                                # Current version
+Version="1.8.22"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
