@@ -18,7 +18,7 @@
 # Last Modified: 2024-Sep-17
 
 # Variable list -- please do not change any of these
-Version="1.8.20"                                                # Current version
+Version="1.8.21"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -688,7 +688,7 @@ vconfig () {
                 fi
                 echo -e "${CClear}"
                 read -rp 'New Password: ' BTPASSWORD1
-                if [ "$BTPASSWORD1" == "" ] || [ -z "$BTPASSWORD1" ]; then BTPASSWORD=`echo "admin" | openssl enc -base64 -A`; else BTPASSWORD=`echo $BTPASSWORD1 | openssl enc -base64 -A`; fi # Using default value on enter keypress
+                if [ "$BTPASSWORD1" != "" ] || [ ! -z "$BTPASSWORD1" ]; then BTPASSWORD=`echo $BTPASSWORD1 | openssl enc -base64 -A`; else BTPASSWORD="$BTPASSWORD1"; fi # Using default value on enter keypress
               fi
             ;;
 
@@ -5867,42 +5867,46 @@ unmounttestdrv () {
 
 checkplaintxtpwds () {
 
-  #echo $PASSWORD | base64 -d > /dev/null 2>&1
-  echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-  PRI="$?"
-  #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
-  echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-  SEC="$?"
+  if [ "$BTPASSWORD" != "" ] || [ ! -z "$BTPASSWORD" ]; then
 
-  if [ "$BACKUPMEDIA" == "Network" ]; then
-    if [ "$PRI" == "1" ]; then
-      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-      echo ""
-      read -rsp $'Press any key to enter setup menu...\n' -n1 key
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-      flagerror
-      vsetup
-      exit 0
-    fi
-  fi
+	  #echo $PASSWORD | base64 -d > /dev/null 2>&1
+	  echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+	  PRI="$?"
+	  #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
+	  echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+	  SEC="$?"
 
-  if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
-    if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
-      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-      echo ""
-      read -rsp $'Press any key to enter setup menu...\n' -n1 key
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-      flagerror
-      vsetup
-      exit 0
-    fi
-  fi
+	  if [ "$BACKUPMEDIA" == "Network" ]; then
+	    if [ "$PRI" == "1" ]; then
+	      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+	      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+	      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+	      echo ""
+	      read -rsp $'Press any key to enter setup menu...\n' -n1 key
+	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
+	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
+	      flagerror
+	      vsetup
+	      exit 0
+	    fi
+	  fi
+
+	  if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+	    if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
+	      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+	      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+	      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+	      echo ""
+	      read -rsp $'Press any key to enter setup menu...\n' -n1 key
+	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
+	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
+	      flagerror
+	      vsetup
+	      exit 0
+	    fi
+	  fi
+	  
+	fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
