@@ -1,3 +1,12 @@
+v1.8.22 - (November 28, 2024)
+        - Fixed printf() command syntax. (Thanks @Martinski!)
+        - Added code to suppress updating the timer prematurely within the main loop due to repeatedly
+          fast key presses. (Thanks @Martinski!)
+        - Minor code improvements. (Thanks @Martinski!)
+        - Now allowing for blank passwords thanks to some sleuthing by @archiel. Having a password being
+          passed during a mount statement when the target is a Windows 11 machine that did not require a
+          password was causing issues. 
+
 v1.8.20 - (October 12, 2024)
         - PATCH: Code improvements to allow blank space chars in directory paths.
         - PATCH: Changed defaults to directory paths to show the correct router model.
