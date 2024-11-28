@@ -15,7 +15,7 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2024-Nov-03
+# Last Modified: 2024-Nov-28
 ######################################################################################
 
 # Variable list -- please do not change any of these
