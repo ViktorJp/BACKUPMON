@@ -1,12 +1,12 @@
 v1.8.22 - (November 28, 2024)
-        - Fixed printf() command syntax. (Thanks @Martinski!)
-        - Added code to suppress updating the timer prematurely within the main loop due to repeatedly
-          fast key presses. (Thanks @Martinski!)
-        - Minor code improvements. (Thanks @Martinski!)
-        - Now allowing for blank passwords thanks to some sleuthing by @archiel. Dealing with issues
-          stemming from a Windows 11 target that was expecting a blank password. In this case, passing
-          a bogus username/password was causing permissions denied errors when trying to access the
-          shared drive location.
+        - PATCH: Fixed printf() command syntax. (Thanks @Martinski!)
+        - PATCH: Added code to suppress updating the timer prematurely within the main loop due to
+          repeatedly fast key presses. (Thanks @Martinski!)
+        - PATCH: Minor code improvements. (Thanks @Martinski!)
+        - PATCH: Now allowing for blank passwords thanks to some sleuthing by @archiel. Dealing with
+          issues stemming from a Windows 11 target that was expecting a blank password. In this case,
+          passing a bogus username/password was causing permissions denied errors when trying to access
+          the shared drive location.
 
 v1.8.20 - (October 12, 2024)
         - PATCH: Code improvements to allow blank space chars in directory paths.
