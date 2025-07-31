@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Original functional backup script by: @Jeffrey Young, August 9, 2023
-# BACKUPMON heavily modified and restore functionality added by @Viktor Jaep, 2023-2024
+# BACKUPMON heavily modified and restore functionality added by @Viktor Jaep, 2023-2025
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS,
 # NVRAM and external USB drive environment. By creating a network share off a NAS, server, or other device, BACKUPMON can
@@ -15,11 +15,11 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2024-Nov-28
+# Last Modified: 2025-Jul-31
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.8.22"                                                # Current version
+Version="1.8.23"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -1715,7 +1715,7 @@ while true; do
            if [ -z "$BKUPMEDIATest" ]
            then
                printf "\nConfiguration parameter was not modified.\n"
-               read -rsn 1 -p "Press any key to continue..." ; echo      
+               read -rsn 1 -p "Press any key to continue..." ; echo
            elif [ "$BKUPMEDIATest" = "1" ]
            then
                if [ "$TESTBACKUPMEDIA" != "Network" ]
@@ -1931,8 +1931,13 @@ while true; do
 
                   if [ "$TESTBACKUPMEDIA" = "Network-NFS" ]
                   then
-                    # Check the build to see if modprobe needs to be called
+                    # Check the build to see if modprobe needs to be called, and other workarounds courtesy @Jeffrey Young
+                    if [ ! -d "/var/lib/nfs" ]
+                      then
+                        mkdir -m 755 -p "/var/lib/nfs"
+                    fi
                     modprobe nfs nfsv3 > /dev/null
+                    portmap
 
                       CNT=0
                       TRIES=3
@@ -3126,7 +3131,13 @@ mountprimary () {
 
       if [ "$BACKUPMEDIA" = "Network-NFS" ]
       then
+        # Check the build to see if modprobe needs to be called, and other workarounds courtesy @Jeffrey Young
+        if [ ! -d "/var/lib/nfs" ]
+          then
+            mkdir -m 755 -p "/var/lib/nfs"
+        fi
         modprobe nfs nfsv3 > /dev/null
+        portmap
 
         CNT=0
         TRIES=3
@@ -3234,7 +3245,13 @@ mountsecondary () {
 
       if [ "$SECONDARYBACKUPMEDIA" = "Network-NFS" ]
       then
+        # Check the build to see if modprobe needs to be called, and other workarounds courtesy @Jeffrey Young
+        if [ ! -d "/var/lib/nfs" ]
+          then
+            mkdir -m 755 -p "/var/lib/nfs"
+        fi
         modprobe nfs nfsv3 > /dev/null
+        portmap
 
         CNT=0
         TRIES=3
@@ -5874,44 +5891,44 @@ checkplaintxtpwds () {
 
   if [ "$BTPASSWORD" != "" ] || [ ! -z "$BTPASSWORD" ]; then
 
-	  #echo $PASSWORD | base64 -d > /dev/null 2>&1
-	  echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-	  PRI="$?"
-	  #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
-	  echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-	  SEC="$?"
+    #echo $PASSWORD | base64 -d > /dev/null 2>&1
+    echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+    PRI="$?"
+    #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
+    echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
+    SEC="$?"
 
-	  if [ "$BACKUPMEDIA" == "Network" ]; then
-	    if [ "$PRI" == "1" ]; then
-	      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-	      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-	      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-	      echo ""
-	      read -rsp $'Press any key to enter setup menu...\n' -n1 key
-	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-	      flagerror
-	      vsetup
-	      exit 0
-	    fi
-	  fi
+    if [ "$BACKUPMEDIA" == "Network" ]; then
+      if [ "$PRI" == "1" ]; then
+        echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+        echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+        echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+        echo ""
+        read -rsp $'Press any key to enter setup menu...\n' -n1 key
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
+        flagerror
+        vsetup
+        exit 0
+      fi
+    fi
 
-	  if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
-	    if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
-	      echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-	      echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-	      echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-	      echo ""
-	      read -rsp $'Press any key to enter setup menu...\n' -n1 key
-	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-	      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-	      flagerror
-	      vsetup
-	      exit 0
-	    fi
-	  fi
-	  
-	fi
+    if [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+      if [ "$SEC" == "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
+        echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
+        echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
+        echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
+        echo ""
+        read -rsp $'Press any key to enter setup menu...\n' -n1 key
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
+        echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
+        flagerror
+        vsetup
+        exit 0
+      fi
+    fi
+
+  fi
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
