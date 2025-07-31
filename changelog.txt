@@ -1,3 +1,9 @@
+v1.8.23 - (July 31, 2025)
+        - PATCH: Based on some findings from @Jeffrey Young, added to and changed some of the commands
+          necessary to successfully connect to an NFS share from the router. Specifically, the folder
+          "/var/lib/nfs" gets created if it doesn't exist, modprobe is then called as usual, followed
+          by calling "portmap", then running the mount NFS statement.
+
 v1.8.22 - (November 28, 2024)
         - PATCH: Fixed printf() command syntax. (Thanks @Martinski!)
         - PATCH: Added code to suppress updating the timer prematurely within the main loop due to
