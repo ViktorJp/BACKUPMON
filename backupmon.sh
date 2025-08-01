@@ -495,9 +495,9 @@ vconfig () {
          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Backup Target Mount Point                    : ${CGreen}$UNCDRIVE"
       fi
       if [ "$UNMOUNTNET" = "1" ]; then
-      		UNMOUNTNETDISP="Yes"
+          UNMOUNTNETDISP="Yes"
       elif [ "$UNMOUNTNET" = "0" ]; then
-      		UNMOUNTNETDISP="No"
+          UNMOUNTNETDISP="No"
       fi
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Unmount Network Drive After Completion?     : ${CGreen}$UNMOUNTNETDISP"
 
@@ -795,9 +795,9 @@ vconfig () {
                 echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
                 echo ""
                 if [ "$UNMOUNTNET" = "1" ]; then
-      		        UNMOUNTNETDISP="Yes"
+                  UNMOUNTNETDISP="Yes"
                 elif [ "$UNMOUNTNET" = "0" ]; then
-      		        UNMOUNTNETDISP="No"
+                  UNMOUNTNETDISP="No"
                 fi
                 echo -e "${CClear}Current Network Drive Unmount Option: ${CGreen}$UNMOUNTNETDISP"; echo -e "${CClear}"
                 read -rp 'Unmount Network Drive (0/1): ' UNMOUNTNET1
@@ -1351,9 +1351,9 @@ vconfig () {
                  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Secondary Target Drive Mount Point           : ${CGreen}$SECONDARYUNCDRIVE"
               fi
               if [ "$SECONDARYUNMOUNTNET" = "1" ]; then
-      		      SECONDARYUNMOUNTNETDISP="Yes"
+                SECONDARYUNMOUNTNETDISP="Yes"
               elif [ "$SECONDARYUNMOUNTNET" = "0" ]; then
-      		      SECONDARYUNMOUNTNETDISP="No"
+                SECONDARYUNMOUNTNETDISP="No"
               fi
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Unmount Network Drive After Completion?     : ${CGreen}$SECONDARYUNMOUNTNETDISP"
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="$BKUP_Dir_Def2"; fi
@@ -1492,7 +1492,7 @@ vconfig () {
                           then SECONDARYUNCDRIVE="$UNC_DRIVE2nd"
                           else SECONDARYUNCDRIVE="${SECONDARYUNCDRIVE:=$UNC_Drive_Def2}"
                           fi
-                          
+
                           echo ""
                           printf "Unmount Network Drive After Backup Completes? (0=No, 1=Yes) (0/1?): "
                           read -r SECONDARYUNMOUNTNET1
@@ -5871,7 +5871,7 @@ unmountsecondarydrv () {
   if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
      echo -e "${CGreen}STATUS: Secondary external USB drive continues to stay mounted.${CClear}"
      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external USB drive continues to stay mounted." >> $LOGFILE
-  elif [ "$UNMOUNTNET" = "0" ]; then
+  elif [ "$SECONDARYUNMOUNTNET" = "0" ]; then
      echo -e "${CGreen}STATUS: Secondary external Network drive continues to stay mounted.${CClear}"
      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external Network drive continues to stay mounted." >> $LOGFILE
   else
@@ -5911,8 +5911,6 @@ unmounttestdrv () {
 
   if [ "$TESTBACKUPMEDIA" == "USB" ]; then
      echo -e "${CGreen}STATUS: Test external USB drive continues to stay mounted.${CClear}"
-  elif [ "$UNMOUNTNET" = "0" ]; then
-  	 echo -e "${CGreen}STATUS: Test external Network drive continues to stay mounted.${CClear}"
   else
     CNT=0
     TRIES=3
