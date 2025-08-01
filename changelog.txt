@@ -1,4 +1,11 @@
-v1.8.23 - (July 31, 2025)
+v1.9.1  - (July 31, 2025)
+        - MINOR: Added an option to the setup menu under item #6 that allows you to choose whether or
+          not to unmount the TARGET network drive after backup completion. This issue was reported by
+          @pedeb04 using a scenario where a backup is going across the network to a local network
+          share on the router that is pointing to a local USB drive. BACKUPMON would try to unmount the
+          network drive by default, which would unmount the USB drive. In addition to this new option,
+          the fix to this issue would be to specify that the backup target is a USB drive instead of a
+          network drive.
         - PATCH: Based on some findings from @Jeffrey Young, added to and changed some of the commands
           necessary to successfully connect to an NFS share from the router. Specifically, the folder
           "/var/lib/nfs" gets created if it doesn't exist, modprobe is then called as usual, followed
