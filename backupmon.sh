@@ -19,7 +19,7 @@
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.8.23"                                                # Current version
+Version="1.9.1"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -42,6 +42,8 @@ SMBTARGET="FALSE"                                               # Tracking switc
 SECONDARYUSBTARGET="FALSE"                                      # Tracking switch
 TESTUSBTARGET="FALSE"                                           # Tracking switch
 SECONDARYSWITCH="False"                                         # Tracking switch
+UNMOUNTNET=1                                                    # Tracking switch
+SECONDARYUNMOUNTNET=1                                           # Tracking switch
 
 ##-------------------------------------##
 ## Added by Martinski W. [2024-Aug-10] ##
@@ -492,6 +494,12 @@ vconfig () {
       else
          echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Backup Target Mount Point                    : ${CGreen}$UNCDRIVE"
       fi
+      if [ "$UNMOUNTNET" = "1" ]; then
+      		UNMOUNTNETDISP="Yes"
+      elif [ "$UNMOUNTNET" = "0" ]; then
+      		UNMOUNTNETDISP="No"
+      fi
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Unmount Network Drive After Completion?     : ${CGreen}$UNMOUNTNETDISP"
 
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Backup Target Directory Path                 : ${CGreen}$BKDIR"
 
@@ -775,6 +783,25 @@ vconfig () {
                 then UNCDRIVE="$UNC_DRIVE1st"
                 else UNCDRIVE="${UNCDRIVE:=$UNC_Drive_Def1}"
                 fi
+
+                echo ""; echo ""
+                echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Unmount TARGET Network Drive After Backup Completion?                     ${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} Would you like to unmount the TARGET Network Drive Mount after the backup completes?${CClear}"
+                echo -e "${InvGreen} ${CClear} By default, the network drive will unmount itself to keep the system clean and${CClear}"
+                echo -e "${InvGreen} ${CClear} prevents any further access to the drive for security reasons.${CClear}"
+                echo -e "${InvGreen} ${CClear}"
+                echo -e "${InvGreen} ${CClear} (No=0, Yes=1) (Default: 1)"
+                echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+                echo ""
+                if [ "$UNMOUNTNET" = "1" ]; then
+      		        UNMOUNTNETDISP="Yes"
+                elif [ "$UNMOUNTNET" = "0" ]; then
+      		        UNMOUNTNETDISP="No"
+                fi
+                echo -e "${CClear}Current Network Drive Unmount Option: ${CGreen}$UNMOUNTNETDISP"; echo -e "${CClear}"
+                read -rp 'Unmount Network Drive (0/1): ' UNMOUNTNET1
+                if [ "$UNMOUNTNET1" == "" ] || [ -z "$UNMOUNTNET1" ]; then UNMOUNTNET=""; else UNMOUNTNET="$UNMOUNTNET1"; fi # Using default value on enter keypress
 
                 ##OFF##SMBTARGET="TRUE"
                 ##OFF##_GetMountPoint_ SMBmp "Select an existing Target CIFS/SMB Backup Drive Mount Point: "
@@ -1323,6 +1350,12 @@ vconfig () {
               else
                  echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(6) ${CClear} : Secondary Target Drive Mount Point           : ${CGreen}$SECONDARYUNCDRIVE"
               fi
+              if [ "$SECONDARYUNMOUNTNET" = "1" ]; then
+      		      SECONDARYUNMOUNTNETDISP="Yes"
+              elif [ "$SECONDARYUNMOUNTNET" = "0" ]; then
+      		      SECONDARYUNMOUNTNETDISP="No"
+              fi
+              echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite} |--${CClear}--  Unmount Network Drive After Completion?     : ${CGreen}$SECONDARYUNMOUNTNETDISP"
               if [ -z "$SECONDARYBKDIR" ]; then SECONDARYBKDIR="$BKUP_Dir_Def2"; fi
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(7) ${CClear} : Secondary Target Directory Path              : ${CGreen}$SECONDARYBKDIR"
               echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(8) ${CClear} : Secondary Backup Exclusion File              : ${CGreen}$SECONDARYEXCLUSION"
@@ -1459,6 +1492,14 @@ vconfig () {
                           then SECONDARYUNCDRIVE="$UNC_DRIVE2nd"
                           else SECONDARYUNCDRIVE="${SECONDARYUNCDRIVE:=$UNC_Drive_Def2}"
                           fi
+                          
+                          echo ""
+                          printf "Unmount Network Drive After Backup Completes? (0=No, 1=Yes) (0/1?): "
+                          read -r SECONDARYUNMOUNTNET1
+                          if [ -n "$SECONDARYUNMOUNTNET1" ]
+                          then SECONDARYUNMOUNTNET="$SECONDARYUNMOUNTNET1"
+                          else SECONDARYUNMOUNTNET="${SECONDARYUNMOUNTNET:=1}"
+                          fi
                        elif [ "$SECONDARYBACKUPMEDIA" = "USB" ]; then
                           SECONDARYUSBTARGET="TRUE"
                           _GetMountPoint_ USBmp "Select a Secondary Target USB Backup Drive Mount Point: "
@@ -1491,7 +1532,7 @@ vconfig () {
                        if [ "$SECONDARYFREQUENCY" == "P" ]; then
                          SECONDARYMODE="Basic"
                          echo ""
-                         read -p 'Purge Secondary Backups? (Yes=1/No=0) ' SECONDARYPURGE
+                         read -p 'Purge Secondary Backups? (No=0, Yes=1) (0/1?): ' SECONDARYPURGE
                          echo ""
                          read -p 'Secondary Backup Purge Age? (Days/Disabled=0) ' SECONDARYPURGELIMIT
                        else
@@ -1537,6 +1578,7 @@ vconfig () {
                   echo 'EXCLUSION="'"$EXCLUSION"'"'
                   echo 'BACKUPSWAP='$BACKUPSWAP
                   echo 'SMBVER="'"$SMBVER"'"'
+                  echo 'UNMOUNTNET='$UNMOUNTNET
                   echo 'SCHEDULE='$SCHEDULE
                   echo 'SCHEDULEHRS='$SCHEDULEHRS
                   echo 'SCHEDULEMIN='$SCHEDULEMIN
@@ -1561,6 +1603,7 @@ vconfig () {
                   echo 'SECONDARYMODE="'"$SECONDARYMODE"'"'
                   echo 'SECONDARYPURGE='$SECONDARYPURGE
                   echo 'SECONDARYPURGELIMIT='$SECONDARYPURGELIMIT
+                  echo 'SECONDARYUNMOUNTNET='$SECONDARYUNMOUNTNET
                 } > "$CFGPATH"
               echo -e "${CGreen}Applying config changes to BACKUPMON..."
               echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Successfully wrote a new config file" >> $LOGFILE
@@ -1596,6 +1639,7 @@ vconfig () {
         echo 'EXCLUSION=""'
         echo 'BACKUPSWAP=0'
         echo 'SMBVER="2.1"'
+        echo 'UNMOUNTNET=1'
         echo 'SCHEDULE=0'
         echo 'SCHEDULEHRS=2'
         echo 'SCHEDULEMIN=30'
@@ -5786,6 +5830,9 @@ unmountdrv () {
   if [ "$BACKUPMEDIA" == "USB" ]; then
      echo -e "${CGreen}STATUS: External USB drive continues to stay mounted.${CClear}"
      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External USB drive continues to stay mounted." >> $LOGFILE
+  elif [ "$UNMOUNTNET" = "0" ]; then
+     echo -e "${CGreen}STATUS: External Network drive continues to stay mounted.${CClear}"
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: External Network drive continues to stay mounted." >> $LOGFILE
   else
     CNT=0
     TRIES=3
@@ -5824,6 +5871,9 @@ unmountsecondarydrv () {
   if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
      echo -e "${CGreen}STATUS: Secondary external USB drive continues to stay mounted.${CClear}"
      echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external USB drive continues to stay mounted." >> $LOGFILE
+  elif [ "$UNMOUNTNET" = "0" ]; then
+     echo -e "${CGreen}STATUS: Secondary external Network drive continues to stay mounted.${CClear}"
+     echo -e "$(date +'%b %d %Y %X') $(nvram get lan_hostname) BACKUPMON[$$] - INFO: Secondary external Network drive continues to stay mounted." >> $LOGFILE
   else
     CNT=0
     TRIES=3
@@ -5861,6 +5911,8 @@ unmounttestdrv () {
 
   if [ "$TESTBACKUPMEDIA" == "USB" ]; then
      echo -e "${CGreen}STATUS: Test external USB drive continues to stay mounted.${CClear}"
+  elif [ "$UNMOUNTNET" = "0" ]; then
+  	 echo -e "${CGreen}STATUS: Test external Network drive continues to stay mounted.${CClear}"
   else
     CNT=0
     TRIES=3
