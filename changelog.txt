@@ -1,4 +1,4 @@
-v1.9.1  - (July 31, 2025)
+v1.9.0  - (TBA)
         - MINOR: Added an option to the setup menu under item #6 that allows you to choose whether or
           not to unmount the TARGET network drive after backup completion. This issue was reported by
           @pedeb04 using a scenario where a backup is going across the network to a local network
