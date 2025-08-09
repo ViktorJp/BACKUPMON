@@ -2,6 +2,7 @@ Future Enhancements (Planned)
 -----------------------------
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 * Remove the plaintextpasswords check.
+* Add the additional commands that @Jeffrey uncovered for NFS connections
 
 Completed:
 ----------
