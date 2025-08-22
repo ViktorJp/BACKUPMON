@@ -6,7 +6,7 @@ v1.9.0b1  - (TBA)
             network drive by default, which would unmount the USB drive. In addition to this new option,
             the fix to this issue would be to specify that the backup target is a USB drive instead of a
             network drive.
-          - PATCH: Implemented a formal email rate limiter function that controls a user-configurable
+          - MINOR: Implemented a formal email rate limiter function that controls a user-configurable
             allowed number of emails to be sent per hour. This option is configured under item #14 AMTM
             Email Notifications, and allows you to choose a number between 1 and 9999, with 0 having this 
             function disabled. When email events fire off, you will see a system message during the backup
