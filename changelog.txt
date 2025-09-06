@@ -1,524 +1,544 @@
-v1.8.22 - (November 28, 2024)
-        - PATCH: Fixed printf() command syntax. (Thanks @Martinski!)
-        - PATCH: Added code to suppress updating the timer prematurely within the main loop due to
-          repeatedly fast key presses. (Thanks @Martinski!)
-        - PATCH: Minor code improvements. (Thanks @Martinski!)
-        - PATCH: Now allowing for blank passwords thanks to some sleuthing by @archiel. Dealing with
-          issues stemming from a Windows 11 target that was expecting a blank password. In this case,
-          passing a bogus username/password was causing permissions denied errors when trying to access
-          the shared drive location.
+v1.9.0    - (September 6, 2025)
+          - MINOR: Added an option to the setup menu under item #6 that allows you to choose whether or
+            not to unmount the TARGET network drive after backup completion. This issue was reported by
+            @pedeb04 using a scenario where a backup is going across the network to a local network
+            share on the router that is pointing to a local USB drive. BACKUPMON would try to unmount the
+            network drive by default, which would unmount the USB drive. In addition to this new option,
+            the fix to this issue would be to specify that the backup target is a USB drive instead of a
+            network drive.
+          - MINOR: Implemented a formal email rate limiter function that controls a user-configurable
+            allowed number of emails to be sent per hour. This option is configured under item #14 AMTM
+            Email Notifications, and allows you to choose a number between 1 and 9999, with 0 having this 
+            function disabled. When email events fire off, you will see a system message during the backup
+            process indicating how many emails have been sent thusfar this past hour, and whether any rate
+            limiting is in effect. An indicator is on the #14 AMTM Email Notification menu item, with RL
+            (red) = disabled, and RL:<number of emails>/h showing the number of emails allowed per hour.
+          - PATCH: Based on some findings from @Jeffrey Young, added to and changed some of the commands
+            necessary to successfully connect to an NFS share from the router. Specifically, the folder
+            "/var/lib/nfs" gets created if it doesn't exist, modprobe is then called as usual, followed
+            by calling "portmap", then running the mount NFS statement.
 
-v1.8.20 - (October 12, 2024)
-        - PATCH: Code improvements to allow blank space chars in directory paths.
-        - PATCH: Changed defaults to directory paths to show the correct router model.
-        - PATCH: Changed defaults containing an IP address to show the correct LAN IP address octets of
-          the router.
-        - PATCH: Various fixes and code improvements
+v1.8.22   - (November 28, 2024)
+          - PATCH: Fixed printf() command syntax. (Thanks @Martinski!)
+          - PATCH: Added code to suppress updating the timer prematurely within the main loop due to
+            repeatedly fast key presses. (Thanks @Martinski!)
+          - PATCH: Minor code improvements. (Thanks @Martinski!)
+          - PATCH: Now allowing for blank passwords thanks to some sleuthing by @archiel. Dealing with
+            issues stemming from a Windows 11 target that was expecting a blank password. In this case,
+            passing a bogus username/password was causing permissions denied errors when trying to access
+            the shared drive location.
 
-v1.8.19 - (July 20, 2024)
-        - PATCH: Bugfix release to help fix missing shared email libarary error messages that popped up
-          due to the last release. Issue ended up being that the email library update wasn't properly
-          being called and therefore not loading into memory before the backupmon.cfg variables got
-          loaded. Shared Email Library script update is now a function, and is strategically called on
-          when needed to perform email functionality.
+v1.8.20   - (October 12, 2024)
+          - PATCH: Code improvements to allow blank space chars in directory paths.
+          - PATCH: Changed defaults to directory paths to show the correct router model.
+          - PATCH: Changed defaults containing an IP address to show the correct LAN IP address octets of
+            the router.
+          - PATCH: Various fixes and code improvements
 
-v1.8.18 - (July 19, 2024)
-        - PATCH: Small change to the way Shared Email Library updates are being handled. On startup, the
-          script will check if AMTM email is enabled before checking for updates, just to prevent this
-          feature from downloading if not being used. Secondarily, when enabling this feature under the
-          config menu, it will download and check for updates before it asks if you want to send a quick
-          test email to ensure AMTM is configured correctly.
+v1.8.19   - (July 20, 2024)
+          - PATCH: Bugfix release to help fix missing shared email libarary error messages that popped up
+            due to the last release. Issue ended up being that the email library update wasn't properly
+            being called and therefore not loading into memory before the backupmon.cfg variables got
+            loaded. Shared Email Library script update is now a function, and is strategically called on
+            when needed to perform email functionality.
 
-v1.8.17 - (July 18, 2024)
-        - PATCH: With many thanks to @Martinski, he helped develop a new methodology to build in more
-          redundancy should we ever face another situation like this again, where the shared email library
-          file location becomes unavailable. In this latest mod, he has built in the capability of using
-          three distinct file location URLs that the script will use to find and download the latest 
-          version. HUGE THANK YOU for supporting this, @Martinski! :)
-        - PATCH: Based on some feedback and to reduce confusion, I have renamed "Backup Frequency" to
-          "Backup Retention". Thanks to @visortgw and @ExtremeFiretop for the suggestions. The word
-          "retention" word makes much more sense, since we're talking about what kinds of folders we're
-          leaving behind, and how long they will be around (ie. weekly, monthly, yearly, or perpetual
-          backups each day).
+v1.8.18   - (July 19, 2024)
+          - PATCH: Small change to the way Shared Email Library updates are being handled. On startup, the
+            script will check if AMTM email is enabled before checking for updates, just to prevent this
+            feature from downloading if not being used. Secondarily, when enabling this feature under the
+            config menu, it will download and check for updates before it asks if you want to send a quick
+            test email to ensure AMTM is configured correctly.
+ 
+v1.8.17   - (July 18, 2024)
+          - PATCH: With many thanks to @Martinski, he helped develop a new methodology to build in more
+            redundancy should we ever face another situation like this again, where the shared email library
+            file location becomes unavailable. In this latest mod, he has built in the capability of using
+            three distinct file location URLs that the script will use to find and download the latest 
+            version. HUGE THANK YOU for supporting this, @Martinski! :)
+          - PATCH: Based on some feedback and to reduce confusion, I have renamed "Backup Frequency" to
+            "Backup Retention". Thanks to @visortgw and @ExtremeFiretop for the suggestions. The word
+            "retention" word makes much more sense, since we're talking about what kinds of folders we're
+            leaving behind, and how long they will be around (ie. weekly, monthly, yearly, or perpetual
+            backups each day).
 
-v1.8.15 - (July 7, 2024)
-        - PATCH: Implemented a workaround to continue providing AMTM email capabilities due to the shared
-          library source being hosted under @Martinski's github repo becoming unavailable. This should only
-          affect new installs, as having existing functionality in place should continue working as normal.
-          Will work with Martinki to move this back over to his repo when it becomes available again.
-          Thanks to @JimBobJay for bringing this to our attention!
+v1.8.15   - (July 7, 2024)
+          - PATCH: Implemented a workaround to continue providing AMTM email capabilities due to the shared
+            library source being hosted under @Martinski's github repo becoming unavailable. This should only
+            affect new installs, as having existing functionality in place should continue working as normal.
+            Will work with Martinki to move this back over to his repo when it becomes available again.
+            Thanks to @JimBobJay for bringing this to our attention!
 
-v1.8.14 - (July 4, 2024)
-        - PATCH: Continuing with the enhancements of the -secondary switch, suggestion from @visortgw was
-          to be able to force a secondary backup (using the -secondary switch), even if the secondary backup
-          is marked as disabled in the config menu.
-        - PATCH: Running a -secondary switch backup apparently did not delete the error flag and would
-          continue showing the error warning in the setup menu and on screen. When running a -secondary
-          switch-based backup will now remove the error flag so you start with a clean slate next time. Also
-          thanks to @visortgw for this suggestion!
-        - PATCH: Nice catch by @JimbobJay, when a secondary backup successfully completed, it was referencing
-          the incorrect backup media (network/usb), and was using the primary media type. This has now also
-          been fixed. Thank you!
-        - PATCH: General cleanup and spacing logic added for the error flag message on the setup menu that
-          now takes into consideration the different timezone name lengths so that spacing looks correct.
+v1.8.14   - (July 4, 2024)
+          - PATCH: Continuing with the enhancements of the -secondary switch, suggestion from @visortgw was
+            to be able to force a secondary backup (using the -secondary switch), even if the secondary backup
+            is marked as disabled in the config menu.
+          - PATCH: Running a -secondary switch backup apparently did not delete the error flag and would
+            continue showing the error warning in the setup menu and on screen. When running a -secondary
+            switch-based backup will now remove the error flag so you start with a clean slate next time. Also
+            thanks to @visortgw for this suggestion!
+          - PATCH: Nice catch by @JimbobJay, when a secondary backup successfully completed, it was referencing
+            the incorrect backup media (network/usb), and was using the primary media type. This has now also
+            been fixed. Thank you!
+          - PATCH: General cleanup and spacing logic added for the error flag message on the setup menu that
+            now takes into consideration the different timezone name lengths so that spacing looks correct.
 
-v1.8.10 - (July 2, 2024)
-        - PATCH: Based on a good suggestion by @visortgw, a secondary-only backup option was added. This
-          was prompted when possible issues could arise where you might be unable to back up to your primary
-          backup target, upon which BACKUPMON would exit in an error state by default. Now, a "-secondary"
-          switch has been added that simply runs a secondary backup (without any purges). Example usage:
-          "backupmon -secondary". As always, you can hit "backupmon -h" or "backupmon -help" for a full list
-          of commands.
-        - PATCH: @vibroverbus made a good observation on some inconsistencies in the y/n prompts within the
-          script compared to other scripts such as AMTM. It seems the function I'm using would automatically
-          accept the y or n keypress and keep running without needing to hit enter. This function has now
-          been changed so you can you change your mind after typing y or n, and lets you correct yourself
-          before needing to manually hit the enter key now.
+v1.8.10   - (July 2, 2024)
+          - PATCH: Based on a good suggestion by @visortgw, a secondary-only backup option was added. This
+            was prompted when possible issues could arise where you might be unable to back up to your primary
+            backup target, upon which BACKUPMON would exit in an error state by default. Now, a "-secondary"
+            switch has been added that simply runs a secondary backup (without any purges). Example usage:
+            "backupmon -secondary". As always, you can hit "backupmon -h" or "backupmon -help" for a full list
+            of commands.
+          - PATCH: @vibroverbus made a good observation on some inconsistencies in the y/n prompts within the
+            script compared to other scripts such as AMTM. It seems the function I'm using would automatically
+            accept the y or n keypress and keep running without needing to hit enter. This function has now
+            been changed so you can you change your mind after typing y or n, and lets you correct yourself
+            before needing to manually hit the enter key now.
 
-v1.8.8  - (June 30, 2024)
-        - PATCH: Looks like my last update didn't take into consideration the folks using BACKUPMON to back
-          up their environment to their local USB drive. Thanks much to @Just Started for reporting this! 
-          New logic added to only consider erroring out on blank UNC/UNCDRIVE values when the backup media
-          type is NOT a USB target.
+v1.8.8    - (June 30, 2024)
+          - PATCH: Looks like my last update didn't take into consideration the folks using BACKUPMON to back
+            up their environment to their local USB drive. Thanks much to @Just Started for reporting this! 
+            New logic added to only consider erroring out on blank UNC/UNCDRIVE values when the backup media
+            type is NOT a USB target.
 
-v1.8.7  - (June 29, 2024)
-        - PATCH: In further compliance with the 3006 firmware and the new BE devices, @visortgw wisely
-          noted that a "modprobe cifs" might just fix everything... and it sure did. Thanks for that! As of
-          BACKUPMON v1.8.7, you should have full CIFS functionality on the 3006 level firmware. Also, thanks
-          to @RMerlin for adding the CIFS libraries back in and making BACKUPMON functional again. ;)
-        - PATCH: In further troubleshooting BACKUPMON on 3006 with his beefy GT-BE98_Pro, @ExtremeFiretop
-          came across a bug that allowed backups to run if the UNC path was blank, but the drive had been
-          manually mounted in the background. BACKUPMON will now come to a halt if it finds UNC or UNCDRIVE
-          values being blank. Thanks for the heads-up and the testing. A free bug bounty BACKUPMON swag shirt
-          is on its way to you!! (LOL jk)
+v1.8.7    - (June 29, 2024)
+          - PATCH: In further compliance with the 3006 firmware and the new BE devices, @visortgw wisely
+            noted that a "modprobe cifs" might just fix everything... and it sure did. Thanks for that! As of
+            BACKUPMON v1.8.7, you should have full CIFS functionality on the 3006 level firmware. Also, thanks
+            to @RMerlin for adding the CIFS libraries back in and making BACKUPMON functional again. ;)
+          - PATCH: In further troubleshooting BACKUPMON on 3006 with his beefy GT-BE98_Pro, @ExtremeFiretop
+            came across a bug that allowed backups to run if the UNC path was blank, but the drive had been
+            manually mounted in the background. BACKUPMON will now come to a halt if it finds UNC or UNCDRIVE
+            values being blank. Thanks for the heads-up and the testing. A free bug bounty BACKUPMON swag shirt
+            is on its way to you!! (LOL jk)
 
-v1.8.5  - (June 21, 2024)
-        - PATCH: Added a tweak to the config menu that will now display a RED <-- Action Needed! arrow in
-          place of the "Source EXT USB Drive Mount Point" entry if the default sample mount point name is
-          still in use (ie. "/tmp/mnt/<selectusbdrive>"). Thanks to @Gen10 for running into this issue, and
-          figuring out that backup failures were happening because this mount point had not been changed yet.
-          The default entry written to the config file is now "/tmp/mnt/<selectusbdrive>".
+v1.8.5    - (June 21, 2024)
+          - PATCH: Added a tweak to the config menu that will now display a RED <-- Action Needed! arrow in
+            place of the "Source EXT USB Drive Mount Point" entry if the default sample mount point name is
+            still in use (ie. "/tmp/mnt/<selectusbdrive>"). Thanks to @Gen10 for running into this issue, and
+            figuring out that backup failures were happening because this mount point had not been changed yet.
+            The default entry written to the config file is now "/tmp/mnt/<selectusbdrive>".
 
-v1.8.4  - (June 9, 2024)
-        - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
-          versatile functions out of them. This shaved over 90K off the size of the file by eliminating over
-          1100 lines of code. BACKUPMON is now leaner, meaner, and more efficient! ;)
-        - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
-          BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
-          is viewable from the setup/configuration menu using the command "(ve)". It will basically dump any
-          tar-related warnings or any other errors into this log, in addition to the error messages that
-          BACKUPMON generates.
-        - PATCH: Should any sort of error occur, you will get visual feedback in various locations: (1) When
-          manually running a backup job from the menu, it will display the warning that an error occurred and
-          will ask for a keypress to continue. (2) When automatedly running, it will include a warning at the
-          end of the job to let you know something occurred.  (3) When opening BACKUPMON to the setup/
-          configuration menu, it will display that an error occurred during the last backup, and to take a
-          look at the error log.
-        - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
-          option under the setup/configuration menu. Thought these would be good to add to determine if tar
-          is functional in your environment or backup target.
-        - PATCH: Determined that importing status/errors from tar or nvram commands were no longer working
-          due to the number of pipes being appended to these commands in order to divert errors into the new
-          error log. Implemented a workaround to continue to flag major networking or tar errors that would
-          cause script execution and flag it as a failed backup.
+v1.8.4    - (June 9, 2024)
+          - MINOR: Long overdue for a major code overhaul, trimming inefficient repetitive code, and created
+            versatile functions out of them. This shaved over 90K off the size of the file by eliminating over
+            1100 lines of code. BACKUPMON is now leaner, meaner, and more efficient! ;)
+          - PATCH: Some logging additions being made based on feedback from @vibroverbus and @Wendigogo. Now,
+            BACKUPMON will redirect any stderr error-specific messages into a separate "error log". This log
+            is viewable from the setup/configuration menu using the command "(ve)". It will basically dump any
+            tar-related warnings or any other errors into this log, in addition to the error messages that
+            BACKUPMON generates.
+          - PATCH: Should any sort of error occur, you will get visual feedback in various locations: (1) When
+            manually running a backup job from the menu, it will display the warning that an error occurred and
+            will ask for a keypress to continue. (2) When automatedly running, it will include a warning at the
+            end of the job to let you know something occurred.  (3) When opening BACKUPMON to the setup/
+            configuration menu, it will display that an error occurred during the last backup, and to take a
+            look at the error log.
+          - PATCH: Added tar file creation and validation routines to the "Test Your Network Backup Target"
+            option under the setup/configuration menu. Thought these would be good to add to determine if tar
+            is functional in your environment or backup target.
+          - PATCH: Determined that importing status/errors from tar or nvram commands were no longer working
+            due to the number of pipes being appended to these commands in order to divert errors into the new
+            error log. Implemented a workaround to continue to flag major networking or tar errors that would
+            cause script execution and flag it as a failed backup.
 
-v1.7.2  - (April 1, 2024)
-        - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
-          folder and was not deleting these tmp email files if you opted not to receive success or failure
-          emails. Thanks to the keen eye of @ExtremeFiretop watching his precious disk space slowly but 
-          surely getting eaten up with unsent emails that weren't deleting, this has now been patched! Also,
-          huge props to him for testing out the fix in record time!
+v1.7.2    - (April 1, 2024)
+          - PATCH: Fixed a small issue where BACKUPMON was creating success/failure emails in the /tmp/var/tmp
+            folder and was not deleting these tmp email files if you opted not to receive success or failure
+            emails. Thanks to the keen eye of @ExtremeFiretop watching his precious disk space slowly but 
+            surely getting eaten up with unsent emails that weren't deleting, this has now been patched! Also,
+            huge props to him for testing out the fix in record time!
 
-v1.7.1  - (March 24, 2024)
-        - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
-          standard CIFS/SMB methods of transferring data across a network to an NFS network share to safely
-          store your router backups in case of disaster! All necessary changes to the config menu have been
-          considered in order to handle NFS. When choosing NFS, an additional field will become available
-          that allows you to enter optional "NFS Mount Options", understanding that different NFS 
-          implementations may require special mount options/switches, this field allows you to customize your
-          connection based on your needs. Also huge thanks to @Martinski for revamping his mount point
-          selector functionality in order to handle USB, CIFS/SMB and NFS mount points if they exist. Huge
-          shoutout to @smarthome-enthusiast for all the testing he's helped with in getting this NFS
-          functionality over the finishline! :)
-        - MINOR: BACKUPMON has been given a complete UI makeover, and is now on par with VPNMON-R3's look and
-          feel. Emphasis has been given on simplifying the UI design, to account for more screen space, less
-          distracting colors, standardizing submenu design, making it more friendly to use across the board.
-        - PATCH: Found some variable name mismatches under the restore -> secondary backups logic that was 
-          looking at variables for the primary backups. This has been fixed!
+v1.7.1    - (March 24, 2024)
+          - MINOR: Thanks to a push from @smarthome-enthusiast, BACKUPMON now supports NFS in addition to the
+            standard CIFS/SMB methods of transferring data across a network to an NFS network share to safely
+            store your router backups in case of disaster! All necessary changes to the config menu have been
+            considered in order to handle NFS. When choosing NFS, an additional field will become available
+            that allows you to enter optional "NFS Mount Options", understanding that different NFS 
+            implementations may require special mount options/switches, this field allows you to customize your
+            connection based on your needs. Also huge thanks to @Martinski for revamping his mount point
+            selector functionality in order to handle USB, CIFS/SMB and NFS mount points if they exist. Huge
+            shoutout to @smarthome-enthusiast for all the testing he's helped with in getting this NFS
+            functionality over the finishline! :)
+          - MINOR: BACKUPMON has been given a complete UI makeover, and is now on par with VPNMON-R3's look and
+            feel. Emphasis has been given on simplifying the UI design, to account for more screen space, less
+            distracting colors, standardizing submenu design, making it more friendly to use across the board.
+          - PATCH: Found some variable name mismatches under the restore -> secondary backups logic that was 
+            looking at variables for the primary backups. This has been fixed!
 
-v1.5.14 - (March 15, 2024)
-        - PATCH: Thanks to @Martinski, he contributed some code to allow for the sorting of the directories
-          when going through a restore, and are now being sorted in date order (instead of folder name order).
-          This only seemed to be apparent when using the "weekly" backup method, as the other monthly, yearly
-          or perpetual were already in order due to their folder naming conventions. I made a few more minor
-          mods to this to display the foldernames in color as they did before with the "ls" command. Thanks to
-          @maghuro for the suggestion! :)
+v1.5.14   - (March 15, 2024)
+          - PATCH: Thanks to @Martinski, he contributed some code to allow for the sorting of the directories
+            when going through a restore, and are now being sorted in date order (instead of folder name order).
+            This only seemed to be apparent when using the "weekly" backup method, as the other monthly, yearly
+            or perpetual were already in order due to their folder naming conventions. I made a few more minor
+            mods to this to display the foldernames in color as they did before with the "ls" command. Thanks to
+            @maghuro for the suggestion! :)
 
-v1.5.13 - (March 3, 2024)
-        - PATCH: Continued development efforts from both @Martinski and @ExtremeFiretop to come up with a fool-
-          proof solution to determine EXT USB drive labels. Thanks to both for your contributions to BACKUPMON!
-          With the recent finding that the blkid command is creating some weird kernel error messages in the
-          syslog, some workarounds have been put in place to only call on mounted partions.
-        - PATCH: Included more log statements for the EXT USB .tar.gz file integrity check. Now includes a new
-          on-screen/log entry that indicates that the integrity check is starting, and to please stand by. When
-          it comes to larger .tar.gz files, even integrity checks can take some time to complete. This just gives
-          an indicator that it started working on it.
-        - PATCH: Included an error check on the NVRAM SAVE command completion. If the router isn't able to save
-          it's firmware .cfg file, BACKUPMON will error out with the proper error codes.
+v1.5.13   - (March 3, 2024)
+          - PATCH: Continued development efforts from both @Martinski and @ExtremeFiretop to come up with a fool-
+            proof solution to determine EXT USB drive labels. Thanks to both for your contributions to BACKUPMON!
+            With the recent finding that the blkid command is creating some weird kernel error messages in the
+            syslog, some workarounds have been put in place to only call on mounted partions.
+          - PATCH: Included more log statements for the EXT USB .tar.gz file integrity check. Now includes a new
+            on-screen/log entry that indicates that the integrity check is starting, and to please stand by. When
+            it comes to larger .tar.gz files, even integrity checks can take some time to complete. This just gives
+            an indicator that it started working on it.
+          - PATCH: Included an error check on the NVRAM SAVE command completion. If the router isn't able to save
+            it's firmware .cfg file, BACKUPMON will error out with the proper error codes.
 
-v1.5.10 - (March 1, 2024)
-        - PATCH: @Martinski came up with some new ideas on best ways to capture the EXT USB drive label. Many
-          thanks to him for bringing this change to BACKUPMON, and hope this helps solve some of the issues that
-          some are facing when it comes to drive label detection.
+v1.5.10   - (March 1, 2024)
+          - PATCH: @Martinski came up with some new ideas on best ways to capture the EXT USB drive label. Many
+            thanks to him for bringing this change to BACKUPMON, and hope this helps solve some of the issues that
+            some are facing when it comes to drive label detection.
 
-v1.5.9  - (February 21, 2024)
-        - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
-          and functionality. HTML emails are now being sent by default, and have been tested using all major email
-          providers. A new title header is now visible in the email, as well as the ability to bold characters.
-          Looking at adding a secondary email address in the near future as that capability has now been built-in
-          as well, which could optionally be used for text messaging.
-        - PATCH: Noticed that when the "scheduled backup" item was set to "No", that one of its sub-items continued
-          to stay active. Now, when this item is set to "No", both the time and backup modes are grayed out.
-        - PATCH: The update logic now pulls the backupmon.sh directly from github starting from versions after
-          1.5.9, instead of the backupmon-X.Y.Z.sh file based on the version number from the version.txt file.
+v1.5.9    - (February 21, 2024)
+          - PATCH: Thanks to @Martinski, some significant improvements were made to the email notification feature
+            and functionality. HTML emails are now being sent by default, and have been tested using all major email
+            providers. A new title header is now visible in the email, as well as the ability to bold characters.
+            Looking at adding a secondary email address in the near future as that capability has now been built-in
+            as well, which could optionally be used for text messaging.
+          - PATCH: Noticed that when the "scheduled backup" item was set to "No", that one of its sub-items continued
+            to stay active. Now, when this item is set to "No", both the time and backup modes are grayed out.
+          - PATCH: The update logic now pulls the backupmon.sh directly from github starting from versions after
+            1.5.9, instead of the backupmon-X.Y.Z.sh file based on the version number from the version.txt file.
 
-v1.5.6  - (February 18, 2024)
-        - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
-          folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
-          should your EXT USB fail, you will lose all your backups in the process. Also, if your backup folder
-          is not being excluded in the TAR exclusion file, your previous backups will be backed up each time,
-          exponentially increasing their size and the time it takes to back them up. Warnings will now also be
-          displayed on screen and in the logs indicating this risk, and whether or not the backup folder is being
-          excluded. When choosing a source or target path, or backup folder path, BACKUPMON will evaluate whether
-          or not your backup folder needs to be excluded, giving ample language describing the issue and allowing
-          you to automatically add the exclusion.
-        - PATCH: Moved and added some items around on the setup menu, including now the ability to edit your
-          primary and secondary exclusion files (options: 'ep' and 'es'). Performing this action will launch your
-          exclusion files with the NANO text editor, allowing you to free-form edit any items you wish to add,
-          delete or modify. Remember to save: CTRL-O + enter.  To exit: CTRL-X.
-        - PATCH: Minor fixes around the secondary backup setup screen, to add some logic to prompt for a mount
-          point should the backup media type change from USB to Network or vice versa. 
+v1.5.6    - (February 18, 2024)
+          - PATCH: Thanks for @ExtremeFiretop's suggestion to provide guidance and automation to exclude the backup
+            folder if EXT USB backups are backing up to the same EXT USB. Knowing that his is a risky scenario, 
+            should your EXT USB fail, you will lose all your backups in the process. Also, if your backup folder
+            is not being excluded in the TAR exclusion file, your previous backups will be backed up each time,
+            exponentially increasing their size and the time it takes to back them up. Warnings will now also be
+            displayed on screen and in the logs indicating this risk, and whether or not the backup folder is being
+            excluded. When choosing a source or target path, or backup folder path, BACKUPMON will evaluate whether
+            or not your backup folder needs to be excluded, giving ample language describing the issue and allowing
+            you to automatically add the exclusion.
+          - PATCH: Moved and added some items around on the setup menu, including now the ability to edit your
+            primary and secondary exclusion files (options: 'ep' and 'es'). Performing this action will launch your
+            exclusion files with the NANO text editor, allowing you to free-form edit any items you wish to add,
+            delete or modify. Remember to save: CTRL-O + enter.  To exit: CTRL-X.
+          - PATCH: Minor fixes around the secondary backup setup screen, to add some logic to prompt for a mount
+            point should the backup media type change from USB to Network or vice versa. 
 
-v1.5.3  - (February 14, 2024)
-        - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
-          FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
-          and made possible through a wonderful common library graciously made available by @Martinski! When you 
-          enable the AMTM email notification functionality in the config menu (option #14), the script will
-          download a library file into /jffs/addons/shared-libs. Libraries and functions like these can be shared 
-          between many other scripts from one common location. In BACKUPMON, you can enable notifcations for either
-          SUCCESS or FAILURE events, or both. If using primary and secondary backups, you will get notifications
-          for both, whether they succeed or fail. PLEASE NOTE: AMTM Email (AMTM->em) must be set up, configured 
-          and working before enabling this functionality in BACKUPMON.
-        - PATCH: Changed the versioning logic to align with the general accepted way of versioning, using the
-          notation: major.minor.patch ... finally, right? After seeing @thelonelycoder changing his ways, I
-          figured it was probably time for me as well. All my scripts moving forward will go this route. Change
-          log wording is now changed to conform to the major/minor/patch standards. So previously, FIXED now
-          conforms to PATCH, ADDED conforms to MINOR, and MAJOR stays the same!
-        - PATCH: Due to an overlap of common variable names when integrating with AMTM, some mitigations had to be
-          made and will change the username and password variable names within the backupmon.cfg upon start. This
-          will run 1x only once variable names have been corrected.
-        - PATCH: Added AMTM Email testing as a menu item off the main setup menu. This allows you to give the AMTM
-          email capabilities a quick test, providing verbose on-screen feedback during the process.
+v1.5.3    - (February 14, 2024)
+          - MINOR: Added new functionality to BACKUPMON to give you the ability to receive backup SUCCESS and 
+            FAILURE email notifications. This capability is provided through the AMTM Email functionality (AMTM->em)  
+            and made possible through a wonderful common library graciously made available by @Martinski! When you 
+            enable the AMTM email notification functionality in the config menu (option #14), the script will
+            download a library file into /jffs/addons/shared-libs. Libraries and functions like these can be shared 
+            between many other scripts from one common location. In BACKUPMON, you can enable notifcations for either
+            SUCCESS or FAILURE events, or both. If using primary and secondary backups, you will get notifications
+            for both, whether they succeed or fail. PLEASE NOTE: AMTM Email (AMTM->em) must be set up, configured 
+            and working before enabling this functionality in BACKUPMON.
+          - PATCH: Changed the versioning logic to align with the general accepted way of versioning, using the
+            notation: major.minor.patch ... finally, right? After seeing @thelonelycoder changing his ways, I
+            figured it was probably time for me as well. All my scripts moving forward will go this route. Change
+            log wording is now changed to conform to the major/minor/patch standards. So previously, FIXED now
+            conforms to PATCH, ADDED conforms to MINOR, and MAJOR stays the same!
+          - PATCH: Due to an overlap of common variable names when integrating with AMTM, some mitigations had to be
+            made and will change the username and password variable names within the backupmon.cfg upon start. This
+            will run 1x only once variable names have been corrected.
+          - PATCH: Added AMTM Email testing as a menu item off the main setup menu. This allows you to give the AMTM
+            email capabilities a quick test, providing verbose on-screen feedback during the process.
 
-v1.46   - (January 31, 2024)
-        - ADDED: File integrity checks for the tar.gz files created containing JFFS and Ext USB Drive data. After
-          creation of these files, an integrity check executes to ensure that the file is intact before moving on
-          to the next step. If it returns an integrity error, the script will force an exit with an error
-          message/code. While it would probably be pretty rare that tar.gz files actually fail to get created, but
-          even if they were successfully created and still fail an integrity check, there could be bigger problems
-          going on with the network, hardware or disk issues. Keep an eye on those logs!
-        - ADDED: Many thanks to @Martinski for adding a great function that will help determine the EXT USB Drive
-          label, and will return null if one isn't set. It's actually been quite a hurdle to determine what's
-          plugged into the back of your router with the different variations things can take within the OS. Your
-          help and expertise is truly appreciated! :)
+v1.46     - (January 31, 2024)
+          - ADDED: File integrity checks for the tar.gz files created containing JFFS and Ext USB Drive data. After
+            creation of these files, an integrity check executes to ensure that the file is intact before moving on
+            to the next step. If it returns an integrity error, the script will force an exit with an error
+            message/code. While it would probably be pretty rare that tar.gz files actually fail to get created, but
+            even if they were successfully created and still fail an integrity check, there could be bigger problems
+            going on with the network, hardware or disk issues. Keep an eye on those logs!
+          - ADDED: Many thanks to @Martinski for adding a great function that will help determine the EXT USB Drive
+            label, and will return null if one isn't set. It's actually been quite a hurdle to determine what's
+            plugged into the back of your router with the different variations things can take within the OS. Your
+            help and expertise is truly appreciated! :)
 
-v1.44   - (January 28, 2024)
-        - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
-          due to some colossal disk or network issue when writing TAR files. Changed many other error exit codes
-          to produce something usable when looking for script success or failure when running a backup from
-          commandline (ie. the -backup switch). Honored to collaborate with @ExtremeFiretop and @Martinski with 
-          their MerlinAU script, so BACKUPMON may run and check for a successful backup prior to running an
-          automated FW update.
-        - FIXED: In the setup/config, when choosing USB or Network as your target media type (option #2), it will
-          blank out your backup target mount point (option #6), and give you a visual indication that "ACTION IS
-          NEEDED" for this item. In certain situations, the source and target mount points could be the same name,
-          and if the media type had "network" as the default media type, while the mount points were pointing to
-          an External USB drive, then the USB drive would get unmounted after a backup. Many thanks to
-          @ExtremeFiretop for finding that doozy! :)
+v1.44     - (January 28, 2024)
+          - ADDED: More error checking on creation of TAR files to determine if the script needs to force an exit
+            due to some colossal disk or network issue when writing TAR files. Changed many other error exit codes
+            to produce something usable when looking for script success or failure when running a backup from
+            commandline (ie. the -backup switch). Honored to collaborate with @ExtremeFiretop and @Martinski with 
+            their MerlinAU script, so BACKUPMON may run and check for a successful backup prior to running an
+            automated FW update.
+          - FIXED: In the setup/config, when choosing USB or Network as your target media type (option #2), it will
+            blank out your backup target mount point (option #6), and give you a visual indication that "ACTION IS
+            NEEDED" for this item. In certain situations, the source and target mount points could be the same name,
+            and if the media type had "network" as the default media type, while the mount points were pointing to
+            an External USB drive, then the USB drive would get unmounted after a backup. Many thanks to
+            @ExtremeFiretop for finding that doozy! :)
 
-v1.43   - (January 13, 2024)
-        - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
-          not bring over the SMB version, and continue to give you the default. This has been fixed to now bring
-          over your custom SMB setting. Thanks much to @Tallion_o7 for the heads-up!
+v1.43     - (January 13, 2024)
+          - FIXED: When selecting to import your primary backup settings in the connection testing tool, it would
+            not bring over the SMB version, and continue to give you the default. This has been fixed to now bring
+            over your custom SMB setting. Thanks much to @Tallion_o7 for the heads-up!
 
-v1.42   - (December 23, 2023)
-        - ADDED: Added a new option #9 under the config menu based on feedback from @ScottW. This option allows
-          you to specify if you want to back up the swap file. By default, the swap file will now be excluded from
-          backups as we have now seen that restoring a backup with a swap file contained within will have problems
-          restoring to a system that already has an existing swap file. If the user does not choose an exclusion
-          file, BACKUPMON will create an exclusion file, and specify the name of the swap file to be excluded from
-          backup. You still have the ability to maintain your own exclusion file with your own custom entries. If
-          a custom exclusion file is in place without the swap file name included, BACKUPMON will add the swap
-          file name to your custom exclusion file before the next backup. If you really want to back up your swap
-          file, simply set this configuration setting to "Yes", and the script will remove any references to the
-          swap file name from your exclusions files.
-        - ADDED: More logic around the restore process to catch any errors during the TAR file restore back to the
-          External USB drive. If the process encounters any errors, you will be prompted to enter either a Y or N
-          to proceed or stop the restore process. This was added in response to the experience that @ScottW had
-          described, where the TAR restore encountered errors restoring the swap file, and proceeded to restore
-          the router config, and rebooted immediately after. This will give that needed pause to determine whether
-          or not to proceed.
-        - FIXED: Included some more language around the need for an exclusions.txt file, and if not used, that the
-          user might face larger-than-normal backups which also will take much longer, because the swap file will
-          be included in that backup. Thanks to @bibikalka for the suggestion!
+v1.42     - (December 23, 2023)
+          - ADDED: Added a new option #9 under the config menu based on feedback from @ScottW. This option allows
+            you to specify if you want to back up the swap file. By default, the swap file will now be excluded from
+            backups as we have now seen that restoring a backup with a swap file contained within will have problems
+            restoring to a system that already has an existing swap file. If the user does not choose an exclusion
+            file, BACKUPMON will create an exclusion file, and specify the name of the swap file to be excluded from
+            backup. You still have the ability to maintain your own exclusion file with your own custom entries. If
+            a custom exclusion file is in place without the swap file name included, BACKUPMON will add the swap
+            file name to your custom exclusion file before the next backup. If you really want to back up your swap
+            file, simply set this configuration setting to "Yes", and the script will remove any references to the
+            swap file name from your exclusions files.
+          - ADDED: More logic around the restore process to catch any errors during the TAR file restore back to the
+            External USB drive. If the process encounters any errors, you will be prompted to enter either a Y or N
+            to proceed or stop the restore process. This was added in response to the experience that @ScottW had
+            described, where the TAR restore encountered errors restoring the swap file, and proceeded to restore
+            the router config, and rebooted immediately after. This will give that needed pause to determine whether
+            or not to proceed.
+          - FIXED: Included some more language around the need for an exclusions.txt file, and if not used, that the
+            user might face larger-than-normal backups which also will take much longer, because the swap file will
+            be included in that backup. Thanks to @bibikalka for the suggestion!
 
-v1.40   - (November 20, 2023)
-        - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
-          to @vaboro, you can choose between using v1.0, v2.0, v2.1 (default), v3.0 and v3.02. This is especially
-          useful when connecting to older hardware that may not be able to support the later versions, as it is 
-          apparent that older NAS or routers are still in use that need this for backwards compatibility.
-        - FIXED: Changed some of the logic around detecting the primary EXT USB drive in order to determine its
-          label name. This is used to present a warning if the label is blank. Before, it would not let the user
-          proceed, but now it just gives a 10sec warning before continuing, and gives some suggestions on what
-          to label the drive, and that in its current state, may have consequences on the operation of BACKUPMON.
-          Thanks to @_m4t3u_ and @TheMorpN for bringing this to light.
-        - FIXED: Thanks to a suggestion from @thelonelycoder, after the script downloads an update, it will no
-          longer ask the user to exit and restart. Now using the exec command, the script restarts by itself, and
-          goes back to the -setup menu.
+v1.40     - (November 20, 2023)
+          - ADDED: You now have the ability to choose which version of the CIFS/SMB protocol you want to use. Thanks
+            to @vaboro, you can choose between using v1.0, v2.0, v2.1 (default), v3.0 and v3.02. This is especially
+            useful when connecting to older hardware that may not be able to support the later versions, as it is 
+            apparent that older NAS or routers are still in use that need this for backwards compatibility.
+          - FIXED: Changed some of the logic around detecting the primary EXT USB drive in order to determine its
+            label name. This is used to present a warning if the label is blank. Before, it would not let the user
+            proceed, but now it just gives a 10sec warning before continuing, and gives some suggestions on what
+            to label the drive, and that in its current state, may have consequences on the operation of BACKUPMON.
+            Thanks to @_m4t3u_ and @TheMorpN for bringing this to light.
+          - FIXED: Thanks to a suggestion from @thelonelycoder, after the script downloads an update, it will no
+            longer ask the user to exit and restart. Now using the exec command, the script restarts by itself, and
+            goes back to the -setup menu.
 
-v1.38   - (November 13, 2023)
-        - FIXED: On the heels of RMerlin's 386.12_2 release, I realized that the FW build values I was pulling did
-          not include the minor version "_2", and continued to pull just "386.12" when querying this information.
-          RMerlin explained that the minor version is captured under the EXTENDNO variable under nvram. Made a
-          slight tweak to the way this is now being captured and documented, as it's used when comparing what was
-          backed up vs. what is being restored, and issuing the proper warning should these values not match, and
-          hopefully prevent someone from restoring a FW CFG from an older version onto a newer version, and
-          possibly borking up their router.
+v1.38     - (November 13, 2023)
+          - FIXED: On the heels of RMerlin's 386.12_2 release, I realized that the FW build values I was pulling did
+            not include the minor version "_2", and continued to pull just "386.12" when querying this information.
+            RMerlin explained that the minor version is captured under the EXTENDNO variable under nvram. Made a
+            slight tweak to the way this is now being captured and documented, as it's used when comparing what was
+            backed up vs. what is being restored, and issuing the proper warning should these values not match, and
+            hopefully prevent someone from restoring a FW CFG from an older version onto a newer version, and
+            possibly borking up their router.
 
-v1.37   - (November 12, 2023)
-        - ADDED: By popular demand, BACKUPMON now features a dedicated log file, located under
-          /jffs/addons/backupmon.d/backupmon.log. You can access this log by hitting "vl" from the setup and
-          operations menu, and will use the NANO text editor to open the log. Exit NANO using CTRL-X. All major
-          events that you would see on-screen are displayed in the log. Certain major items continue to be
-          displayed in the main SYSLOG just incase people are utilizing these someway. I will continue pruning,
-          adding and correcting items as needed. The logfile won't exceed 5000 lines, and will keep itself
-          trimmed automatically, so there won't be any space concerns in /jffs.
-        - FIXED: Thanks to @Ripshod, found an invalid reference where the secondary backups were referring to the
-          primary exclusion list file for weekly backups. Corrected the issue.
+v1.37     - (November 12, 2023)
+          - ADDED: By popular demand, BACKUPMON now features a dedicated log file, located under
+            /jffs/addons/backupmon.d/backupmon.log. You can access this log by hitting "vl" from the setup and
+            operations menu, and will use the NANO text editor to open the log. Exit NANO using CTRL-X. All major
+            events that you would see on-screen are displayed in the log. Certain major items continue to be
+            displayed in the main SYSLOG just incase people are utilizing these someway. I will continue pruning,
+            adding and correcting items as needed. The logfile won't exceed 5000 lines, and will keep itself
+            trimmed automatically, so there won't be any space concerns in /jffs.
+          - FIXED: Thanks to @Ripshod, found an invalid reference where the secondary backups were referring to the
+            primary exclusion list file for weekly backups. Corrected the issue.
 
-v1.35   - (November 10, 2023)
-        - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
-          Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
-          scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
-          much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
-          "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
-          file without all the messy color escape characters, and make it much more readable. It's not perfect,
-          but in lieu of creating a separate log file (on to-do list), this will make do.
-        - ADDED: For the capability to distinguish between directly attached USB backup devices, and network
-          backup devices using a new menu item, available in the config menu. (See item #2). You will also need to
-          indicate whether your backup target is a "Network" or "USB" device. In the case of a USB Backup Target 
-          (directly attached to your router), the script will no longer mount or unmount the device before or after
-          a backup has been completed. It will also use the mount point selector to let you chose an already mounted
-          USB device. By default, "Network" is selected, which in this case requires you to fill in a mount point
-          name of your choice that the script will create for you. Thanks much to @Quoc Huynh for the helpful
-          suggestion, and for the extensive testing done by @visortgw!
-        - ADDED: New functionality to the scheduler menu item, asking if you want the script to simply run a backup,
-          or if you want it to run a backup + autopurge. If you chose the latter, it will add the "-backup" switch
-          to the cron job. Please note: when running "backupmon.sh" standalone, you will only run a backup job. If
-          you run "backupmon.sh -backup", it will run a backup followed by an autopurge for those who are running
-          in "perptual backup frequency" mode. This is just an automated way to keep your backups trimmed per the
-          age that you have specified. This item is now also featured under the config menu (under item #11) for easy
-          reference. Please make sure you save your config!
-        - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
-          optimized. It now starts with determining what type of media the target device is, and using this info, will
-          determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
-          force the use of @Martinski's excellent mount point selector!
-        - FIXED: Many verbiage changes in the config menu to help standardize terms.
-        - FIXED: @Martinski has worked some magic on his mount point selector functions to catch unexpected characters
-          in your drive labels. PRO TIP: Please try to keep your drive labels as plain as possible. Ex: SAMSUNG-SSD
-        - FIXED: The annoying bug that @visortgw identified when choosing USB, the script would still complain if one
-          of the passwords was plaintext, eventhough it would not even get used in this scenario. When USB is selected
-          as a target backup device, checking for plaintext passwords will no longer come under scrutiny.
+v1.35     - (November 10, 2023)
+          - ADDED: Created a secondary commandline switch (-bw) that will launch the script in single color B/W.
+            Thanks to some creative suggestions from @PeterT and an extreme dislike of any form of color within
+            scripts from @ColinTaylor, which helped give me a push in this direction. Instructions: The -bw switch
+            much be used secondarily to any other switch... such as "backupmon.sh -backup -bw", or when using
+            "backupmon.sh -setup -bw". Using a switch like this would allow you to then dump screenwrites to a log
+            file without all the messy color escape characters, and make it much more readable. It's not perfect,
+            but in lieu of creating a separate log file (on to-do list), this will make do.
+          - ADDED: For the capability to distinguish between directly attached USB backup devices, and network
+            backup devices using a new menu item, available in the config menu. (See item #2). You will also need to
+            indicate whether your backup target is a "Network" or "USB" device. In the case of a USB Backup Target 
+            (directly attached to your router), the script will no longer mount or unmount the device before or after
+            a backup has been completed. It will also use the mount point selector to let you chose an already mounted
+            USB device. By default, "Network" is selected, which in this case requires you to fill in a mount point
+            name of your choice that the script will create for you. Thanks much to @Quoc Huynh for the helpful
+            suggestion, and for the extensive testing done by @visortgw!
+          - ADDED: New functionality to the scheduler menu item, asking if you want the script to simply run a backup,
+            or if you want it to run a backup + autopurge. If you chose the latter, it will add the "-backup" switch
+            to the cron job. Please note: when running "backupmon.sh" standalone, you will only run a backup job. If
+            you run "backupmon.sh -backup", it will run a backup followed by an autopurge for those who are running
+            in "perptual backup frequency" mode. This is just an automated way to keep your backups trimmed per the
+            age that you have specified. This item is now also featured under the config menu (under item #11) for easy
+            reference. Please make sure you save your config!
+          - FIXED: The order of the config menu items for the primary, secondary and test backup menu items have been
+            optimized. It now starts with determining what type of media the target device is, and using this info, will
+            determine if menu items need to get grayed out. In the case of selecting the USB option, it will also now
+            force the use of @Martinski's excellent mount point selector!
+          - FIXED: Many verbiage changes in the config menu to help standardize terms.
+          - FIXED: @Martinski has worked some magic on his mount point selector functions to catch unexpected characters
+            in your drive labels. PRO TIP: Please try to keep your drive labels as plain as possible. Ex: SAMSUNG-SSD
+          - FIXED: The annoying bug that @visortgw identified when choosing USB, the script would still complain if one
+            of the passwords was plaintext, eventhough it would not even get used in this scenario. When USB is selected
+            as a target backup device, checking for plaintext passwords will no longer come under scrutiny.
 
-v1.31   - (November 5, 2023)
-        - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
-          eliminate some extraneous UBI drive references. Also, if only one external drive is attached, it will
-          automatically select that without needing to display a selection menu.
-        - FIXED: Gave -purge mode a little more context on-screen, and fixed the exit back to a prompt after running
-          since it incorrectly started a backup afterwards.
-        - MINOR: Fixed some grammar for a few on-screen messages based on the variable language they were displaying.
+v1.31     - (November 5, 2023)
+          - FIXED: @Martinski was gracious enough to add a few fixes to his mount path selector function in order to
+            eliminate some extraneous UBI drive references. Also, if only one external drive is attached, it will
+            automatically select that without needing to display a selection menu.
+          - FIXED: Gave -purge mode a little more context on-screen, and fixed the exit back to a prompt after running
+            since it incorrectly started a backup afterwards. 
+          - MINOR: Fixed some grammar for a few on-screen messages based on the variable language they were displaying.
 
-v1.30   - (November 4, 2023)
-        - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
-          now allows you to pick a drive/partition other than sda1, which was the only supported backup source up
-          until now. This selector is available under configuration menu item #4. If an alternate selection is not
-          made, by default it will continue to backup your EXT USB drive that is mapped to sda1. Please note: 
-          BACKUPMON will only backup 1 drive/partition. It does not and will not support configurations consisting
-          of multiple partitions.
-        - ADDED: Included the EXT USB drive mount path on the top of the screen when backups run, which is displayed
-          alongside other settings, to give you some quick at-a-glance feedback on what's being backed up, where.
-        - ADDED: Included the amount of time a backup takes, and will now show an on-screen status that the main
-          EXT USB backup is starting, and to please stand by... It will calculate and show how many seconds the
-          backup took, and will also write this same info to the syslog. Thanks to @monakh for the good suggestion!
-        - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
-          the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
+v1.30     - (November 4, 2023)
+          - ADDED: Implemented an awesome EXT USB drive mount path selector, courtesy of @Martinski! This nice feature
+            now allows you to pick a drive/partition other than sda1, which was the only supported backup source up
+            until now. This selector is available under configuration menu item #4. If an alternate selection is not
+            made, by default it will continue to backup your EXT USB drive that is mapped to sda1. Please note: 
+            BACKUPMON will only backup 1 drive/partition. It does not and will not support configurations consisting
+            of multiple partitions.
+          - ADDED: Included the EXT USB drive mount path on the top of the screen when backups run, which is displayed
+            alongside other settings, to give you some quick at-a-glance feedback on what's being backed up, where.
+          - ADDED: Included the amount of time a backup takes, and will now show an on-screen status that the main
+            EXT USB backup is starting, and to please stand by... It will calculate and show how many seconds the
+            backup took, and will also write this same info to the syslog. Thanks to @monakh for the good suggestion!
+          - FIXED: When a regular backup runs with purge enabled, I have fixed the screen output to now flow along with
+            the regular backup feedback, and no longer clears screens/displays BACKUPMON headers, etc.
 
-v1.27   - (October 24, 2023)
-        - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
-          have performed a restore. This was causing some conflicts between it and a similar copy that was located
-          under the /jffs/addons/backupmon.d/ folder. Thanks to @Ripshod for finding this!
-        - FIXED: Now testing to see if your EXT USB drive label is blank, and will require having at least a 2-char
-          value before being able to run. It is important to name your devices, and not keep them blank/null. This
-          wreaks havoc on all kinds of stuff. Please use this as a best-practice for any device you interact with.
-          Just give it a name. All one word, no spaces, no crazy special characters. It's certainly easier to identify
-          what device is having problems should you ever need to troubleshoot.
-        - CHANGED: Incorporated changes to the way passwords are being saved, now using the base64 method suggested by
-          @PeterT and @ColinTaylor. Passwords are now encoded via base64 and saved to your config file. PLEASE NOTE:
-          this change will require you to go into your config, and resave your passwords into proper base64 encoding.
-          I've added a test to the script to determine if your passwords need to be resaved, and will direct you to
-          the setup menu. This means your passwords can now be overly complex, using special characters, including the
-          \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts. Many thanks goes to
-          @Somewhereovertherainbow for his help coming up with a clever way to grep openssl to determine valid base64
-          passwords or invalid plaintext passwords!
-        - ADDED: Included the current model/firmware/build in the instructions.txt file, including a warning not to
-          restore your router from an older firmware/build or model type, or you may face possibly bricking your
-          router. This info is now also shown within the setup menu, and is written to a routerfw.txt file located
-          under each of your backup folders. This is to keep track what router model/firmware build each backup was
-          taken with. When going through a restore, BACKUPMON will compare your router's current model/firmware/build
-          and compare it to the model/firmware/build found in the backup folder's routerfw.txt file... if they match,
-          it proceeds with an uninterrupted restore. If it notices a difference, it will give you explicit warnings not
-          to proceed, and asks you whether or not you want to continue, but won't stop you from overwriting your router
-          with an older configuration from a previous firmware. This is done at your own risk. I built this roadblock
-          to prevent people from possibly unknowingly damaging their routers if they happen to restore an older
-          firmware, or think they can restore a backup from an RT-AC86U to a GT-AX6000 (or the like). 
-        - ADDED: Included a ping test in the backup target network connection tester functionality. Thought this would
-          be a worthy add-on when troubleshooting getting your router talking to your backup target. Please note, your
-          backup target must have capabilities of returning icmp/ping requests to show valid results, but this won't
-          stop the testing process.
-        - ADDED: Added the ability to import your primary or secondary backup settings into the Backup Target Network
-          Connection Tester. Thanks to @PeterT for the suggestion!
+v1.27     - (October 24, 2023)
+          - FIXED: BACKUPMON will now remove any remaining copy of backupmon.cfg in the /jffs/scripts folder should you
+            have performed a restore. This was causing some conflicts between it and a similar copy that was located
+            under the /jffs/addons/backupmon.d/ folder. Thanks to @Ripshod for finding this!
+          - FIXED: Now testing to see if your EXT USB drive label is blank, and will require having at least a 2-char
+            value before being able to run. It is important to name your devices, and not keep them blank/null. This
+            wreaks havoc on all kinds of stuff. Please use this as a best-practice for any device you interact with.
+            Just give it a name. All one word, no spaces, no crazy special characters. It's certainly easier to identify
+            what device is having problems should you ever need to troubleshoot.
+          - CHANGED: Incorporated changes to the way passwords are being saved, now using the base64 method suggested by
+            @PeterT and @ColinTaylor. Passwords are now encoded via base64 and saved to your config file. PLEASE NOTE:
+            this change will require you to go into your config, and resave your passwords into proper base64 encoding.
+            I've added a test to the script to determine if your passwords need to be resaved, and will direct you to
+            the setup menu. This means your passwords can now be overly complex, using special characters, including the
+            \ and $ characters, which normally cause all kinds of trouble in these kinds of scripts. Many thanks goes to
+            @Somewhereovertherainbow for his help coming up with a clever way to grep openssl to determine valid base64
+            passwords or invalid plaintext passwords!
+          - ADDED: Included the current model/firmware/build in the instructions.txt file, including a warning not to
+            restore your router from an older firmware/build or model type, or you may face possibly bricking your
+            router. This info is now also shown within the setup menu, and is written to a routerfw.txt file located
+            under each of your backup folders. This is to keep track what router model/firmware build each backup was
+            taken with. When going through a restore, BACKUPMON will compare your router's current model/firmware/build
+            and compare it to the model/firmware/build found in the backup folder's routerfw.txt file... if they match,
+            it proceeds with an uninterrupted restore. If it notices a difference, it will give you explicit warnings not
+            to proceed, and asks you whether or not you want to continue, but won't stop you from overwriting your router
+            with an older configuration from a previous firmware. This is done at your own risk. I built this roadblock
+            to prevent people from possibly unknowingly damaging their routers if they happen to restore an older
+            firmware, or think they can restore a backup from an RT-AC86U to a GT-AX6000 (or the like). 
+          - ADDED: Included a ping test in the backup target network connection tester functionality. Thought this would
+            be a worthy add-on when troubleshooting getting your router talking to your backup target. Please note, your
+            backup target must have capabilities of returning icmp/ping requests to show valid results, but this won't
+            stop the testing process.
+          - ADDED: Added the ability to import your primary or secondary backup settings into the Backup Target Network
+            Connection Tester. Thanks to @PeterT for the suggestion!
 
-v1.22   - (October 2, 2023)
-        - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
-          would experience some issues backing itself up, throwing some errors and whatnot because this situation was 
-          never considered. Logic was added to factor in a missing EXT USB drive, and will now backup and restore only 
-          the JFFS and NVRAM components.
-        - MINOR: Added a missing logger statement to indicate that the NVRAM was backed up (primary & secondary) that
-          was being left out of the syslogs after a backup.
+v1.22     - (October 2, 2023)
+          - FIXED: Thanks to @maghuro, in a situation where an EXT USB drive would not be connected to the router, it 
+            would experience some issues backing itself up, throwing some errors and whatnot because this situation was 
+            never considered. Logic was added to factor in a missing EXT USB drive, and will now backup and restore only 
+            the JFFS and NVRAM components.
+          - MINOR: Added a missing logger statement to indicate that the NVRAM was backed up (primary & secondary) that
+            was being left out of the syslogs after a backup.
 
-v1.20   - (September 27, 2023)
-        - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
-          the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
-          set up a secondary backup target. You can choose a completely different kind of backup frequency compared
-          to your primary backup method, and will also be able to be purged/autopurged should you allow it. Also, if
-          secondary backups are enabled, when you run the restoration procedure, it will prompt you whether you want
-          to restore from your primary or secondary backup source. When you install this version, **please** make
-          sure you save a new configuration from the configuration utility as many new variables have been added to
-          keep track of this functionality.
-        - MAJOR: Added a Backup Target Network Connection Tester... in a situation where you might be setting up a new
-          device, or just trying to troubleshoot, it's easier to just try your username/password, UNC path, local drive
-          mount path and target network folders from this utility than beating your head against trying to run a backup
-          with these settings. You receive on-screen feedback when things are going right or wrong. When you have
-          achieved success, test backup folders will be created under your network target, and a testfile will have
-          been written to ensure you have proper read/write permissions. When the connection tester reports success,
-          you can copy those settings over to your primary network backup config. This item is found under the Setup +
-          Operations Menu, item "TS" allows you to run this utility. 
-        - MINOR: Added a notification in the configuration utility to remind you to save when new activity has been
-          noticed. 
-        - MINOR: General improvements to visual consistency and messaging.
+v1.20     - (September 27, 2023)
+          - MAJOR: Added the capability of running backups to a secondary backup target! Many thanks to @visortgw for
+            the suggestion! Item #10 in the configuration utility allows you to configure all necessary information to
+            set up a secondary backup target. You can choose a completely different kind of backup frequency compared
+            to your primary backup method, and will also be able to be purged/autopurged should you allow it. Also, if
+            secondary backups are enabled, when you run the restoration procedure, it will prompt you whether you want
+            to restore from your primary or secondary backup source. When you install this version, **please** make
+            sure you save a new configuration from the configuration utility as many new variables have been added to
+            keep track of this functionality.
+          - MAJOR: Added a Backup Target Network Connection Tester... in a situation where you might be setting up a new
+            device, or just trying to troubleshoot, it's easier to just try your username/password, UNC path, local drive
+            mount path and target network folders from this utility than beating your head against trying to run a backup
+            with these settings. You receive on-screen feedback when things are going right or wrong. When you have
+            achieved success, test backup folders will be created under your network target, and a testfile will have
+            been written to ensure you have proper read/write permissions. When the connection tester reports success,
+            you can copy those settings over to your primary network backup config. This item is found under the Setup +
+            Operations Menu, item "TS" allows you to run this utility.  
+          - MINOR: Added a notification in the configuration utility to remind you to save when new activity has been
+            noticed. 
+          - MINOR: General improvements to visual consistency and messaging.
 
-v1.18   - (September 20, 2023)
-        - FIXED: Bug associated with generating a correct CRON statement. Thanks to @Stephen Harrington for the
-          catch. Minutes and hours were reversed, and has been corrected.
+v1.18     - (September 20, 2023)
+          - FIXED: Bug associated with generating a correct CRON statement. Thanks to @Stephen Harrington for the
+            catch. Minutes and hours were reversed, and has been corrected.
 
-v1.17   - (September 18, 2023)
-        - FIXED: Bugs associated with adding a CRON job were found while adding the request that @Ripshod made note
-          of, and now updates the cru job with the correct time if you happen to change the time without the need to
-          first disable and then re-enable the backup scheduler!
+v1.17     - (September 18, 2023)
+          - FIXED: Bugs associated with adding a CRON job were found while adding the request that @Ripshod made note
+            of, and now updates the cru job with the correct time if you happen to change the time without the need to
+            first disable and then re-enable the backup scheduler!
 
-v1.16   - (September 18, 2023)
-        - FIXED: Another minor bug fix that was preventing the -purge switch from working correctly. Many thanks to
-          @Stephen Harrington for identifying that!
-        - ADDED: By request, if you have enabled "Purge Backups" in the configuration menu, then auto purge will
-          automatically run if you call BACKUPMON with the -backup switch, ie: "sh backupmon.sh -backup". After it
-          completes a backup, it will auto purge any backups that fall in range with the set number of days value. You
-          can still run BACKUPMON without auto purging, even if "Purge Backups" is enabled, by just running BACKUPMON
-          without switches, ie: "sh backupmon.sh".  Thanks to @Stephen Harrington for the good idea!
+v1.16     - (September 18, 2023)
+          - FIXED: Another minor bug fix that was preventing the -purge switch from working correctly. Many thanks to
+            @Stephen Harrington for identifying that!
+          - ADDED: By request, if you have enabled "Purge Backups" in the configuration menu, then auto purge will
+            automatically run if you call BACKUPMON with the -backup switch, ie: "sh backupmon.sh -backup". After it
+            completes a backup, it will auto purge any backups that fall in range with the set number of days value. You
+            can still run BACKUPMON without auto purging, even if "Purge Backups" is enabled, by just running BACKUPMON
+            without switches, ie: "sh backupmon.sh".  Thanks to @Stephen Harrington for the good idea!
 
-v1.15   - (September 17, 2023)
-        - FIXED: Minor bug fix preventing a new install from getting into setup! So much for optimizations! :) Thanks
-          much to @visortgw for the catch!
+v1.15     - (September 17, 2023)
+          - FIXED: Minor bug fix preventing a new install from getting into setup! So much for optimizations! :) Thanks
+            much to @visortgw for the catch!
 
-v1.14   - (September 17, 2023)
-        - MAJOR: Added an auto-purge feature! Based on the existing purge feature from the operations section under the
-          setup menu, when calling "sh backupmon.sh -purge", it will use the purge settings you have configured to trim
-          your perpetual backups without any user input. You can utilize this switch in conjunction with a daily CRON job
-          to keep your backups trimmed.
-        - ADDED: Thanks to @visortgw, added functionality to bypass the 10 second initial timer when using the -backup
-          switch. If BACKUPMON is called without switches, it will use the 10 second timer.
-        - MINOR: General improvements to visual spacing, messaging and logging.
+v1.14     - (September 17, 2023)
+          - MAJOR: Added an auto-purge feature! Based on the existing purge feature from the operations section under the
+            setup menu, when calling "sh backupmon.sh -purge", it will use the purge settings you have configured to trim
+            your perpetual backups without any user input. You can utilize this switch in conjunction with a daily CRON job
+            to keep your backups trimmed.
+          - ADDED: Thanks to @visortgw, added functionality to bypass the 10 second initial timer when using the -backup
+            switch. If BACKUPMON is called without switches, it will use the 10 second timer.
+          - MINOR: General improvements to visual spacing, messaging and logging.
 
-v1.12   - (September 16, 2023)
-        - FIXED: You guys are getting a BOGO today. Thanks to @ColinTaylor for the recommendation to immediately force a 
-          reboot after restoring the NVRAM.cfg file, instead of prompting the user to choose y/n. I agree... this should
-          be done immediately after, just like when restoring NVRAM from the UI.
-        - ADDED: Good suggestion from @maghuro to check to make sure the source/target routers are the same, so that
-          people aren't trying to restore an RT-AC86U backup onto a GT-AX6000, thinking this is all fine and all. Added
-          some logic in there that captures router model and saves it to your config, and will compare that to the router
-          model when you start a restore. This is the best attempt I can come up with to prevent people from bricking
-          their router, and a last stop-gap measure to prevent a restore from doing potential damage. Please make sure you
-          save a fresh copy of your configs as this value will need to be written before a restore can happen.
+v1.12     - (September 16, 2023)
+          - FIXED: You guys are getting a BOGO today. Thanks to @ColinTaylor for the recommendation to immediately force a 
+            reboot after restoring the NVRAM.cfg file, instead of prompting the user to choose y/n. I agree... this should
+            be done immediately after, just like when restoring NVRAM from the UI.
+          - ADDED: Good suggestion from @maghuro to check to make sure the source/target routers are the same, so that
+            people aren't trying to restore an RT-AC86U backup onto a GT-AX6000, thinking this is all fine and all. Added
+            some logic in there that captures router model and saves it to your config, and will compare that to the router
+            model when you start a restore. This is the best attempt I can come up with to prevent people from bricking
+            their router, and a last stop-gap measure to prevent a restore from doing potential damage. Please make sure you
+            save a fresh copy of your configs as this value will need to be written before a restore can happen.
 
-v1.1    - (September 16, 2023)
-        - MAJOR: Many thanks to @maghuro and @ColinTaylor for their advice on NVRAM backups! BACKUPMON will now not only
-          take backups of JFFS, your external USB drive, but also NVRAM! These 3 backups are stored under each of your
-          daily folders. In case of a restore, these snapshots will work in concert together to bring your router back to
-          its exact same state as before, settings and ALL!
-        - FIXED: Some minor instruction verbiage changes in the restore instructions, as I blew away my old AC86U during
-          the testing process of getting it restored back to a previous state with BACKUPMON. 
+v1.1      - (September 16, 2023)
+          - MAJOR: Many thanks to @maghuro and @ColinTaylor for their advice on NVRAM backups! BACKUPMON will now not only
+            take backups of JFFS, your external USB drive, but also NVRAM! These 3 backups are stored under each of your
+            daily folders. In case of a restore, these snapshots will work in concert together to bring your router back to
+            its exact same state as before, settings and ALL!
+          - FIXED: Some minor instruction verbiage changes in the restore instructions, as I blew away my old AC86U during
+            the testing process of getting it restored back to a previous state with BACKUPMON. 
 
-v1.02   - (September 15, 2023)
-        - ADDED: Thanks to @maghuro and @alan6854321 for the suggestion to include a copy of the NVRAM settings. Please
-          note... this extract is for reference purposes only, and cannot be used to import old NVRAM values back into
-          your router. The 'nvram.txt' file is now included with the other assortment of files that are exported into
-          the root of your external backup folder.
-        - FIXED: Thanks to @maghuro for finding the typo in the config for the username/password labels.
+v1.02     - (September 15, 2023)
+          - ADDED: Thanks to @maghuro and @alan6854321 for the suggestion to include a copy of the NVRAM settings. Please
+            note... this extract is for reference purposes only, and cannot be used to import old NVRAM values back into
+            your router. The 'nvram.txt' file is now included with the other assortment of files that are exported into
+            the root of your external backup folder.
+          - FIXED: Thanks to @maghuro for finding the typo in the config for the username/password labels.
 
-v1.0    - (September 14, 2023)
-        - RELEASE:  I'm satisfied... let's go live!
+v1.0      - (September 14, 2023)
+          - RELEASE:  I'm satisfied... let's go live!
 
-v0.92RC - (September 12, 2023)
-        - FIXED: Issue where when backupmon was newly downloaded and installed, the setup menu would be going through a
-          loop because it was referencing that the .cfg file was not found, and telling you to run setup. All fixed!
+v0.92RC   - (September 12, 2023)
+          - FIXED: Issue where when backupmon was newly downloaded and installed, the setup menu would be going through a
+            loop because it was referencing that the .cfg file was not found, and telling you to run setup. All fixed!
 
-v0.91RC - (September 10, 2023)
-        - ADDED: Major new functionality to help purge perpetual backups, with much thanks to @Martinski for supplying a
-          great function to help with this! Under the config menu, when selecting "perpetual" backup frequency, you will
-          have the option to choose whether you want to enable backup purging for everything older than a certain number
-          of days. Once configured, you can access the purge backups functionality under the operations area under the
-          setup menu. This function will step you through multiple prompts before committing to delete any backups, and
-          will show you which backups are affected. PLEASE NOTE: deleting backups is permanent, and advise caution on what
-          you are deleting, and ensure that the list presented to you is what you want deleted. Also, PLEASE NOTE: if there
-          are any backups that you want to save or store for later use, PLEASE move these to a SAFE and otherwise secure
-          location outside of the backup folder structure that BACKUPMON utilizes, else there will be a chance these
-          backups will get deleted. I will be keeping the purge backups utility manual for the time being, giving you more
-          control over when and what gets deleted. I may automate this in the future depending on demand.
-        - RELEASE CANDIDATE: This completes all work for the release candidate. I will be taking another week to thoroughly
-          test all functionality before releasing v1.0! 
+v0.91RC   - (September 10, 2023)
+          - ADDED: Major new functionality to help purge perpetual backups, with much thanks to @Martinski for supplying a
+            great function to help with this! Under the config menu, when selecting "perpetual" backup frequency, you will
+            have the option to choose whether you want to enable backup purging for everything older than a certain number
+            of days. Once configured, you can access the purge backups functionality under the operations area under the
+            setup menu. This function will step you through multiple prompts before committing to delete any backups, and
+            will show you which backups are affected. PLEASE NOTE: deleting backups is permanent, and advise caution on what
+            you are deleting, and ensure that the list presented to you is what you want deleted. Also, PLEASE NOTE: if there
+            are any backups that you want to save or store for later use, PLEASE move these to a SAFE and otherwise secure
+            location outside of the backup folder structure that BACKUPMON utilizes, else there will be a chance these
+            backups will get deleted. I will be keeping the purge backups utility manual for the time being, giving you more
+            control over when and what gets deleted. I may automate this in the future depending on demand.
+          - RELEASE CANDIDATE: This completes all work for the release candidate. I will be taking another week to thoroughly
+            test all functionality before releasing v1.0! 
 
-v0.9RC  - (September 9, 2023)
-        - ADDED: Major new functionality was added to give you an additional backup frequency choice... So in addition to
-          weekly, monthly and yearly backup frequencies, you will now have a 'perpetual' option. (Thanks to @Stephen
-          Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
-          weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
-          For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
-          naming convention, and easier restoration process. When using the 'perpetual frequency' option under BASIC mode,
-          backups are not pruned, nor are they overwritten if multiple backups are taken on the same day. In this case, a
-          new, uniquely named backup folder is created each time.
+v0.9RC    - (September 9, 2023)
+          - ADDED: Major new functionality was added to give you an additional backup frequency choice... So in addition to
+            weekly, monthly and yearly backup frequencies, you will now have a 'perpetual' option. (Thanks to @Stephen
+            Harrington for the suggestion!) In this mode, instead of a Mon-Fri, 01-31 or 001-365 folder being created for the
+            weekly, monthly or yearly backup frequencies, a unique folder based on date/time is created when the backup runs.
+            For example: 20230909-092021. In this mode, only BASIC mode backups are allowed, which provide for a simpler
+            naming convention, and easier restoration process. When using the 'perpetual frequency' option under BASIC mode,
+            backups are not pruned, nor are they overwritten if multiple backups are taken on the same day. In this case, a
+            new, uniquely named backup folder is created each time.
 
-v0.8RC  - (September 8, 2023)
-        - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
-          between this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
+v0.8RC    - (September 8, 2023)
+          - ADDED: Major new functionality to choose between the mode of BACKUPMON: Basic or Advanced. Here is the difference
+            between this functionality (formally called, @Stephen Harrington Mode) <tongue-in-cheek>:
 
               BASIC
               - Only backs up one backup set per daily folder
@@ -534,29 +554,29 @@ v0.8RC  - (September 8, 2023)
               - Will not overwrite daily backups, even if multiple are made on the same day
               - Restore more tedious, and required to type exact backup file names before restore
 
-          Please note, that during a restore in advanced mode, you will be able to see the files under the directories
-          you specify, but you will be required to enter in the EXACT full filename of the JFFS and USB backup filenames
-          you wish to have restored. 
+            Please note, that during a restore in advanced mode, you will be able to see the files under the directories
+            you specify, but you will be required to enter in the EXACT full filename of the JFFS and USB backup filenames
+            you wish to have restored. 
 
-        - ADDED: New menu items under the setup menu, allow you to launch a backup or restore. Thanks to @Kingp!n for the
-          suggestion!
+          - ADDED: New menu items under the setup menu, allow you to launch a backup or restore. Thanks to @Kingp!n for the
+            suggestion!
 
-v0.7RC  - (September 7, 2023)
-        - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
-          before giving up due to a failure. The error will be written to the syslog.
+v0.7RC    - (September 7, 2023)
+          - FIXED: Added logic to watch for mount/umount failures, and will keep trying to mount or dismount for up to 2 minutes
+            before giving up due to a failure. The error will be written to the syslog.
 
-v0.6RC  - (September 5, 2023)
-        - ADDED: Ability to set a scheduled daily CRON job with the time of your choice. This function will create the 
-          necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
-          choice will remove it from both CRON and the service-start file. This item can be configured under the config
-          menu, item #7.
-        - ADDED: Ability to choose between 3 different backup frequency strategies. You get to choose between cycling through
-          a week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
-          it creates folder from day 01 through day 31... and with the year, day 001 all the way through day 365. You better
-          be prepared to allocate some space. ;)  You can pick your backup frequency under the config menu, item #8.
-        - FIXED: Based on some feedback, I reworked the way modprobe is being used. No longer using the build of the FW as a
-          and indicator, but as Jeff suggested, just seeing if the file exists, and if it does, use it. 
+v0.6RC    - (September 5, 2023)
+          - ADDED: Ability to set a scheduled daily CRON job with the time of your choice. This function will create the 
+            necessary cru statement in your /jffs/scripts/service-start file, and add it to CRON as well. Unselecting this
+            choice will remove it from both CRON and the service-start file. This item can be configured under the config
+            menu, item #7.
+          - ADDED: Ability to choose between 3 different backup frequency strategies. You get to choose between cycling through
+            a week, a month, or a year. The week selection, it will create folders from Mon - Sun.  With the month (standard), 
+            it creates folder from day 01 through day 31... and with the year, day 001 all the way through day 365. You better
+            be prepared to allocate some space. ;)  You can pick your backup frequency under the config menu, item #8.
+          - FIXED: Based on some feedback, I reworked the way modprobe is being used. No longer using the build of the FW as a
+            and indicator, but as Jeff suggested, just seeing if the file exists, and if it does, use it. 
 
-v0.5RC  - (September 4, 2023)
-        - RELEASE: First release candidate of BACKUPMON! After some extensive backup and restoration testing, I believe it's
-          ready for the masses to try out! :)
+v0.5RC    - (September 4, 2023)
+          - RELEASE: First release candidate of BACKUPMON! After some extensive backup and restoration testing, I believe it's
+            ready for the masses to try out! :)
