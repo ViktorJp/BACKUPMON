@@ -15,11 +15,11 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2025-Sep-6
+# Last Modified: 2025-Oct-28
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.9.0"                                                 # Current version
+Version="1.9.1"                                                 # Current version
 Beta=0                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -4111,6 +4111,11 @@ basicjffsnvram () {
     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.cfg" >> $LOGFILE
   fi
 
+  #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
+  nvram show 2>/dev/null > "${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.txt"
+  echo -e "${CGreen}STATUS: Finished copying reference ${CYellow}NVRAM${CGreen} extract to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.txt.${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying reference NVRAM extract to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.txt" >> $LOGFILE
+
   #include current router model/firmware/build info in the backup location
   { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
     echo 'RESTOREBUILD="'"$FWBUILD"'"'
@@ -4245,6 +4250,11 @@ advjffsnvram () {
     echo -e "${CGreen}STATUS: Finished backing up ${CYellow}NVRAM${CGreen} to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.cfg.${CClear}"
     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished backing up NVRAM to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.cfg" >> $LOGFILE
   fi
+  
+  #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
+  nvram show 2>/dev/null > "${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.txt"
+  echo -e "${CGreen}STATUS: Finished copying reference ${CYellow}NVRAM${CGreen} extract to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.txt.${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying reference NVRAM extract to ${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.txt" >> $LOGFILE
 
   #include current router model/firmware/build info in the backup location
   { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -4380,6 +4390,11 @@ basicsecjffsnvram () {
     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.cfg" >> $LOGFILE
   fi
 
+  #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
+  nvram show 2>/dev/null > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.txt"
+  echo -e "${CGreen}STATUS: Finished copying secondary reference ${CYellow}NVRAM${CGreen} extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.txt.${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying secondary reference NVRAM extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.txt" >> $LOGFILE
+
   #include current router model/firmware/build info in the backup location
   { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
     echo 'RESTOREBUILD="'"$FWBUILD"'"'
@@ -4514,6 +4529,11 @@ advsecjffsnvram () {
     echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}NVRAM${CGreen} to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.cfg.${CClear}"
     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary backup of NVRAM to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.cfg" >> $LOGFILE
   fi
+
+  #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
+  nvram show 2>/dev/null > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.txt"
+  echo -e "${CGreen}STATUS: Finished copying secondary reference ${CYellow}NVRAM${CGreen} extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.txt.${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying secondary reference NVRAM extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.txt" >> $LOGFILE
 
   #include current router model/firmware/build info in the backup location
   { echo 'RESTOREMODEL="'"$ROUTERMODEL"'"'
@@ -4776,11 +4796,6 @@ backup () {
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying $EXCLFILE file to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
       fi
 
-      #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
-      nvram show 2>/dev/null > "${UNCDRIVE}${BKDIR}/nvram.txt"
-      echo -e "${CGreen}STATUS: Finished copying reference ${CYellow}nvram.txt${CGreen} extract to ${UNCDRIVE}${BKDIR}.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying reference nvram.txt extract to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
-
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
         echo ''
@@ -5034,11 +5049,6 @@ secondary () {
         echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}$EXCLFILE${CGreen} file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary copy of $EXCLFILE file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" >> $LOGFILE
       fi
-
-      #Please note: the nvram.txt export is for reference only. This file cannot be used to restore from, just to reference from.
-      nvram show 2>/dev/null > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/nvram.txt"
-      echo -e "${CGreen}STATUS: Finished secondary reference copy of ${CYellow}nvram.txt${CGreen} extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary reference copy of nvram.txt extract to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" >> $LOGFILE
 
       #include restore instructions in the backup location
       { echo 'RESTORE INSTRUCTIONS'
@@ -6010,53 +6020,6 @@ unmounttestdrv () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# checkplaintxtpwds is a function to check if old plaintext pwds are still in use due to change to new base64 pwd storage change
-
-checkplaintxtpwds () {
-
-  if [ "$BTPASSWORD" != "" ] || [ ! -z "$BTPASSWORD" ]; then
-
-    #echo $PASSWORD | base64 -d > /dev/null 2>&1
-    echo "$BTPASSWORD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-    PRI="$?"
-    #echo $SECONDARYPWD | base64 -d > /dev/null 2>&1
-    echo "$SECONDARYPWD" | openssl enc -d -base64 -A | grep -vqE '[^[:graph:]]'
-    SEC="$?"
-
-    if [ "$BACKUPMEDIA" = "Network" ]; then
-      if [ "$PRI" = "1" ]; then
-        echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-        echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-        echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-        echo ""
-        read -rsp $'Press any key to enter setup menu...\n' -n1 key
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-        flagerror
-        vsetup
-        exit 0
-      fi
-    fi
-
-    if [ "$SECONDARYBACKUPMEDIA" = "Network" ]; then
-      if [ "$SEC" = "1" ] && [ $SECONDARYSTATUS -eq 1 ]; then
-        echo -e "${CRed}ERROR: Plaintext passwords are still being used in the config file. Please go under the BACKUPMON setup menu"
-        echo -e "to reconfigure your primary and/or secondary target backup passwords, and save your config. New changes to the"
-        echo -e "way passwords are encoded and saved requires your immediate attention!${CClear}"
-        echo ""
-        read -rsp $'Press any key to enter setup menu...\n' -n1 key
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Plaintext passwords detected. Please check your configuration!" >> $ERRORLOGFILE
-        flagerror
-        vsetup
-        exit 0
-      fi
-    fi
-
-  fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
 # excludeswap is a function to write a swap file exlusion file, or to add to an existing exlusions file
 
 excludeswap () {
@@ -6265,7 +6228,6 @@ then
       exit 0
     fi
     checklibupdate
-    checkplaintxtpwds    #Check for plaintext passwords
     restore              #Run the restore routine
     trimlogs             #Trim the logs
     echo -e "${CClear}"
@@ -6319,7 +6281,6 @@ if [ "$1" == "-purge" ]
       exit 0
     fi
     checklibupdate
-    checkplaintxtpwds     #Check for plaintext passwords
     autopurge             #Purge primary backups
     autopurgesecondaries  #Purge secondary backups
     trimlogs              #Trim the logs
@@ -6344,7 +6305,6 @@ if [ "$1" == "-backup" ]
       exit 0
     fi
     checklibupdate
-    checkplaintxtpwds
     BSWITCH="True"
 fi
 
@@ -6364,7 +6324,6 @@ if [ "$1" == "-noswitch" ]
       echo -e "${CClear}\n"
       exit 1
     fi
-    checkplaintxtpwds
     BSWITCH="False"
 fi
 
@@ -6436,7 +6395,6 @@ echo ""
 if [ "$1" = "-secondary" ]
   then
     SECONDARYSWITCH="True"
-    checkplaintxtpwds
     secondary               #Run secondary backups
     sendmessage 0 "Secondary Backup completed successfully"
     trimlogs #Trim the logs
@@ -6478,7 +6436,6 @@ echo -e "${CGreen}[Primary Backup Commencing]...          "
 echo ""
 echo -e "${CWhite}Messages:${CClear}"
 
-checkplaintxtpwds       #Check for plaintext passwords
 backup                  #Run primary backups
 sendmessage 0 "Primary Backup completed successfully"
 secondary               #Run secondary backups

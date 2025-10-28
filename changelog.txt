@@ -1,3 +1,14 @@
+v1.9.1    - (October 28, 2025)
+          - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
+            the actual backup folder in order to keep that as part of the archive, instead of writing a
+            copy of this file to the root of the backup folder. Makes a ton of sense, and an easy enough
+            quick patch! Thank you for the great suggestion :)  (Please remember to delete the remaining
+            nvram.txt under the root of your main backup folder at your convenience.)
+          - PATCH: Removed some legacy code and functions around trying to detect if the share password
+            was formatted in plaintext, and would prompt the user to change it to a base64-encoded
+            password. We have been using the base64-encoded methodology for long enough, that this
+            additional code and checks were no longer needed.
+
 v1.9.0    - (September 6, 2025)
           - MINOR: Added an option to the setup menu under item #6 that allows you to choose whether or
             not to unmount the TARGET network drive after backup completion. This issue was reported by
