@@ -2,6 +2,7 @@ Future Enhancements (Planned)
 -----------------------------
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 * Remove the plaintextpasswords check.
+* Write the nvram.txt to the backup folders instead of the root backup folder (@visortgw)
 
 Completed:
 ----------
