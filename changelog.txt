@@ -1,3 +1,13 @@
+v1.10.0b2 - (TBA)
+          - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
+            secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
+            under me. This was a fun exercise. ;) New item under the main setup and operations menu,
+            using option (en)cryption. Complete sub-menu that allows you to configure your encryption
+            options for both your primary and secondary backups, as well as choosing between the
+            AES-256 and AES-128 ciphers. The latter is still a very strong and secure encryption, but
+            may perform better on older devices, or larger backup sets. Major rework had to be done
+            to ensure integrity can still be checked, now needing to decrypt before checking for this.
+
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
             the actual backup folder in order to keep that as part of the archive, instead of writing a
