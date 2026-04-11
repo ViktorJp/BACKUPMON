@@ -159,6 +159,7 @@ CClear="\e[0m"
 
 #Preferred standard router binaries path
 export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
+unset LD_LIBRARY_PATH
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Functions
