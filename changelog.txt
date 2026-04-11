@@ -7,6 +7,11 @@ v1.10.0b2 - (TBA)
             AES-256 and AES-128 ciphers. The latter is still a very strong and secure encryption, but
             may perform better on older devices, or larger backup sets. Major rework had to be done
             to ensure integrity can still be checked, now needing to decrypt before checking for this.
+          - PATCH: Reworked the encryption methodology after some suggestions from @salvo. BACKUPMON no 
+            longer saves your master password in the config file, but uses a combination of a salt, hash
+            and nonce file to uniquely encrypt each backup. You will now see a unique enc.nonce file
+            being written along with your backups that is used to decrypt your backups when needed.
+            Don't delete these!
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
