@@ -1,4 +1,4 @@
-v1.10.0b7 - (TBA)
+v1.10.0b8 - (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
@@ -12,6 +12,7 @@ v1.10.0b7 - (TBA)
             and nonce file to uniquely encrypt each backup. You will now see a unique enc.nonce file
             being written along with your backups that is used to decrypt your backups when needed.
             Don't delete these!
+          - PATCH: Various bugfixes and cleanup!
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
