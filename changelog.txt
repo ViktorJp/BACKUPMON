@@ -1,4 +1,4 @@
-v1.10.0b2 - (TBA)
+v1.10.0b7 - (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
