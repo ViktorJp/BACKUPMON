@@ -19,7 +19,7 @@
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.10.0b11"                                             # Current version
+Version="1.10.0b12"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -3922,6 +3922,11 @@ vsetup () {
     echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(bk)${CClear} : Run a Manual Backup"
     echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(rs)${CClear} : Run a Manual Restore"
+    if [ "$ENCPRIMARY" = "1" ] || [ "$ENCSECONDARY" = "1" ]; then
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(de)${CClear} : Decrypt a Single Backup File"
+    else
+      echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(de)${CClear}${CDkGray} : Decrypt a Single Backup File"
+    fi
     if [ $PURGE == "1" ]; then
       echo -e "${InvGreen} ${CClear} ${InvDkGray}${CWhite}(pg)${CClear} : Purge Perpetual Primary Backups"
     else
@@ -4010,6 +4015,13 @@ vsetup () {
             clear
             if [ $SECONDARYFREQUENCY == "P" ]; then
               purgesecondaries
+            fi
+          ;;
+
+          de)
+            clear
+            if [ "$ENCPRIMARY" = "1" ] || [ "$ENCSECONDARY" = "1" ]; then
+              decryptfile
             fi
           ;;
 
@@ -5998,6 +6010,366 @@ secondary () {
       exit 1
 
   fi
+}
+
+# -------------------------------------------------------------------------------------------------------------------------
+# decryptfile allows the user to select and decrypt a single encrypted file from a backup location
+
+decryptfile () {
+
+  clear
+  DLVersionPF=$(printf "%-8s" $DLVersion)
+  LCLVersionPF=$(printf "%-8s" $Version)
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Decrypt Single Backup File Utility                                          ${CClear}"
+  if [ "$UpdateNotify" == "1" ]; then
+    echo -e "${InvYellow} ${InvDkGray}${CWhite} Update available: v$LCLVersionPF -> v$DLVersionPF                                              ${CClear}"
+  fi
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} This utility allows you to decrypt a single encrypted file from a primary or${CClear}"
+  echo -e "${InvGreen} ${CClear} secondary backup location to a destination folder of your choice. You will need${CClear}"
+  echo -e "${InvGreen} ${CClear} your RSA private key passphrase in order to complete the decryption process.${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  # Step 1: Choose primary or secondary
+  local DESOURCE DEBKDIR DEUNCDRIVE DEFREQ DEMODE DEENCVAR DEFOLDER DEFILE DEDESTROOT DEDESTFOLDER
+
+  if [ "$ENCPRIMARY" = "1" ] && [ "$ENCSECONDARY" = "1" ]; then
+    echo ""
+    echo -e "${CClear}Would you like to decrypt a file from the primary or secondary backup location?${CClear}"
+    while true; do
+      read -p "Source (P=Primary, S=Secondary, e=Exit): " DESOURCE
+      case $DESOURCE in
+        [Pp]) DESOURCE="primary";  break ;;
+        [Ss]) DESOURCE="secondary"; break ;;
+        [Ee]) echo -e "${CClear}"; return ;;
+        "") echo -e "\nPlease enter P or S.\n" ;;
+        *) echo -e "\nPlease enter P or S.\n" ;;
+      esac
+    done
+  elif [ "$ENCPRIMARY" = "1" ]; then
+    DESOURCE="primary"
+  else
+    DESOURCE="secondary"
+  fi
+
+  echo ""
+  echo -e "${CGreen}[${DESOURCE} backup source selected]${CClear}"
+
+  # Set source-specific variables
+  if [ "$DESOURCE" = "primary" ]; then
+    DEUNCDRIVE="$UNCDRIVE"
+    DEBKDIR="$BKDIR"
+    DEFREQ="$FREQUENCY"
+    DEMODE="$MODE"
+    DEENCVAR="primary"
+  else
+    DEUNCDRIVE="$SECONDARYUNCDRIVE"
+    DEBKDIR="$SECONDARYBKDIR"
+    DEFREQ="$SECONDARYFREQUENCY"
+    DEMODE="$SECONDARYMODE"
+    DEENCVAR="secondary"
+  fi
+
+  # Mount the backup drive
+  echo ""
+  echo -e "${CWhite}Messages:${CClear}"
+
+  if [ "$DESOURCE" = "primary" ]; then
+    if ! [ -d "$DEUNCDRIVE" ]; then
+      mkdir -p "$DEUNCDRIVE"
+      chmod 777 "$DEUNCDRIVE"
+    fi
+    mountprimary
+    if [ -z "$(mount | grep "$DEUNCDRIVE")" ]; then
+      echo -e "${CRed}ERROR: Unable to mount primary backup drive. Check your configuration.${CClear}"
+      echo ""
+      read -rsp $'Press any key to acknowledge...\n' -n1 key
+      return
+    fi
+  else
+    if ! [ -d "$DEUNCDRIVE" ]; then
+      mkdir -p "$DEUNCDRIVE"
+      chmod 777 "$DEUNCDRIVE"
+    fi
+    mountsecondary
+    if [ -z "$(mount | grep "$DEUNCDRIVE")" ]; then
+      echo -e "${CRed}ERROR: Unable to mount secondary backup drive. Check your configuration.${CClear}"
+      echo ""
+      read -rsp $'Press any key to acknowledge...\n' -n1 key
+      return
+    fi
+  fi
+
+  if [ "$DESOURCE" = "primary" ]; then
+    echo -en "${CGreen}STATUS: Primary backup drive mounted successfully under: $DEUNCDRIVE${CClear}"; printf "%s\n"
+  else
+    echo -en "${CGreen}STATUS: Secondary backup drive mounted successfully under: $DEUNCDRIVE${CClear}"; printf "%s\n"
+  fi
+
+  # Step 2: Show backup folders and get selection
+  echo ""
+  echo -e "${CGreen}Available Backup Folders:${CClear}"
+  echo -e "${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  latestTimeFromTop=false
+  if "$latestTimeFromTop"; then lsFlags="-letd"; else lsFlags="-lertd"; fi
+  ls $lsFlags "${DEUNCDRIVE}${DEBKDIR}"/*/ 2>/dev/null | \
+    awk -F ' ' '{printf "%s %s %2d %s %s",$6,$7,$8,$9,$10} { printf " \033[1;34m"$11" \033[0m\n";}'
+
+  echo ""
+  local ok=0
+  while [ $ok = 0 ]; do
+    if [ "$DEFREQ" = "W" ]; then
+      echo -e "${CClear}Enter the Day of the backup folder (ex: Mon or Fri) (e=Exit): "
+      read DEFOLDER
+      if [ "$DEFOLDER" = "e" ]; then
+        if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+        echo -e "${CClear}"; return
+      fi
+      [ ${#DEFOLDER} -eq 3 ] && ok=1 || echo -e "${CRed}ERROR: Please use 3 characters for the day format.${CClear}"
+    elif [ "$DEFREQ" = "M" ]; then
+      echo -e "${CClear}Enter the Day # of the backup folder (ex: 02 or 27) (e=Exit): "
+      read DEFOLDER
+      if [ "$DEFOLDER" = "e" ]; then
+        if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+        echo -e "${CClear}"; return
+      fi
+      [ ${#DEFOLDER} -eq 2 ] && ok=1 || echo -e "${CRed}ERROR: Please use 2 characters for the day format.${CClear}"
+    elif [ "$DEFREQ" = "Y" ]; then
+      echo -e "${CClear}Enter the Day # of the backup folder (ex: 002 or 270) (e=Exit): "
+      read DEFOLDER
+      if [ "$DEFOLDER" = "e" ]; then
+        if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+        echo -e "${CClear}"; return
+      fi
+      [ ${#DEFOLDER} -eq 3 ] && ok=1 || echo -e "${CRed}ERROR: Please use 3 characters for the day format.${CClear}"
+    elif [ "$DEFREQ" = "P" ]; then
+      echo -e "${CClear}Enter the exact folder name (ex: 20230909-083422) (e=Exit): "
+      read DEFOLDER
+      if [ "$DEFOLDER" = "e" ]; then
+        if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+        echo -e "${CClear}"; return
+      fi
+      [ ${#DEFOLDER} -eq 15 ] && ok=1 || echo -e "${CRed}ERROR: Please use 15 characters for the folder name format.${CClear}"
+    fi
+  done
+
+  local DEFULLPATH="${DEUNCDRIVE}${DEBKDIR}/${DEFOLDER}"
+  if [ ! -d "$DEFULLPATH" ]; then
+    echo -e "${CRed}ERROR: Backup folder not found: $DEFULLPATH${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  # Step 3: Show encrypted files in the folder
+  echo ""
+  echo -e "${CGreen}Encrypted files available in ${CYellow}$DEFULLPATH${CGreen}:${CClear}"
+  echo -e "${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  # List .enc files, excluding symkey.enc
+  local ENCFILES FILECOUNT
+  ENCFILES=$(ls -1 "$DEFULLPATH"/*.enc 2>/dev/null | grep -v 'symkey\.enc' | xargs -I{} basename {})
+  FILECOUNT=$(echo "$ENCFILES" | grep -c '.' 2>/dev/null)
+
+  if [ -z "$ENCFILES" ] || [ "$FILECOUNT" -eq 0 ]; then
+    echo -e "${CYellow}WARNING: No encrypted files found in this backup folder.${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  # Display numbered list
+  local idx=1
+  echo "$ENCFILES" | while IFS= read -r fname; do
+    echo -e " ${InvDkGray}${CWhite}($idx)${CClear} : ${CBlue}$fname${CClear}"
+    idx=$((idx+1))
+  done
+  echo ""
+
+  local FILESEL
+  read -p "Select file number (e=Exit): " FILESEL
+  if [ "$FILESEL" = "e" ] || [ "$FILESEL" = "E" ]; then
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo -e "${CClear}"; return
+  fi
+
+  # Validate selection
+  if ! echo "$FILESEL" | grep -qE '^[0-9]+$' || [ "$FILESEL" -lt 1 ] || [ "$FILESEL" -gt "$FILECOUNT" ]; then
+    echo -e "${CRed}ERROR: Invalid selection.${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  DEFILE=$(echo "$ENCFILES" | sed -n "${FILESEL}p")
+  echo ""
+  echo -e "${CGreen}STATUS: Selected file: ${CYellow}${DEFILE}${CClear}"
+
+  # Step 4 & 5: Select destination mount point then folder
+  echo ""
+  echo -e "${CGreen}Available storage locations for decryption output:${CClear}"
+  echo -e "${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  # Build list of mounted drives from /proc/mounts (USB + network mounts under /tmp/mnt)
+  local MNTLIST MNTCOUNT
+  MNTLIST=$(mount | awk '{print $3}' | grep '^/tmp/mnt' | sort -u)
+  MNTCOUNT=$(echo "$MNTLIST" | grep -c '.' 2>/dev/null)
+
+  if [ -z "$MNTLIST" ] || [ "$MNTCOUNT" -eq 0 ]; then
+    echo -e "${CYellow}WARNING: No mounted storage locations found. Please mount a drive first.${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  idx=1
+  echo "$MNTLIST" | while IFS= read -r mnt; do
+    echo -e " ${InvDkGray}${CWhite}($idx)${CClear} : ${CBlue}$mnt${CClear}"
+    idx=$((idx+1))
+  done
+  echo ""
+
+  local MNTSEL
+  read -p "Select destination mount point number (e=Exit): " MNTSEL
+  if [ "$MNTSEL" = "e" ] || [ "$MNTSEL" = "E" ]; then
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo -e "${CClear}"; return
+  fi
+
+  if ! echo "$MNTSEL" | grep -qE '^[0-9]+$' || [ "$MNTSEL" -lt 1 ] || [ "$MNTSEL" -gt "$MNTCOUNT" ]; then
+    echo -e "${CRed}ERROR: Invalid selection.${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  DEDESTROOT=$(echo "$MNTLIST" | sed -n "${MNTSEL}p")
+  echo ""
+  echo -e "${CGreen}STATUS: Destination mount point: ${CYellow}${DEDESTROOT}${CClear}"
+
+  # Show folders under the selected mount point
+  echo ""
+  echo -e "${CGreen}Available folders under ${CYellow}${DEDESTROOT}${CGreen}:${CClear}"
+  echo -e "${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+
+  local DIRLIST DIRCOUNT d
+  # Always include the mount root itself as the first option.
+  DIRLIST="${DEDESTROOT}"
+  for d in "${DEDESTROOT}"/*/; do
+    if [ -d "$d" ]; then
+      DIRLIST="${DIRLIST}
+${d%/}"
+    fi
+  done
+  DIRCOUNT=$(printf '%s\n' "$DIRLIST" | wc -l | tr -d ' ')
+
+  idx=1
+  printf '%s\n' "$DIRLIST" | while IFS= read -r d; do
+    echo -e " ${InvDkGray}${CWhite}($idx)${CClear} : ${CBlue}$d${CClear}"
+    idx=$((idx+1))
+  done
+  echo ""
+
+  local DIRSEL
+  read -p "Select destination folder number (e=Exit): " DIRSEL
+  if [ "$DIRSEL" = "e" ] || [ "$DIRSEL" = "E" ]; then
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo -e "${CClear}"; return
+  fi
+
+  if ! echo "$DIRSEL" | grep -qE '^[0-9]+$' || [ "$DIRSEL" -lt 1 ] || [ "$DIRSEL" -gt "$DIRCOUNT" ]; then
+    echo -e "${CRed}ERROR: Invalid selection.${CClear}"
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  DEDESTFOLDER=$(echo "$DIRLIST" | sed -n "${DIRSEL}p")
+  echo ""
+  echo -e "${CGreen}STATUS: Destination folder: ${CYellow}${DEDESTFOLDER}${CClear}"
+
+  # Derive output filename (strip .enc extension)
+  local DEOUTFILE
+  DEOUTFILE="${DEDESTFOLDER}/$(basename "$DEFILE" .enc)"
+
+  # Step 6: Decrypt the file
+  echo ""
+  echo -e "${InvGreen} ${InvDkGray}${CWhite} Decryption Summary                                                                    ${CClear}"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} Source  : ${CBlue}${DEFULLPATH}/${DEFILE}${CClear}"
+  echo -e "${InvGreen} ${CClear} Output  : ${CBlue}${DEOUTFILE}${CClear}"
+  echo -e "${InvGreen} ${CClear} Method  : ${CGreen}RSA-4096 + AES-${ENCPRICIPHER}-CBC${CClear}"
+  echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
+  echo ""
+  echo -e "${CClear}Proceed with decryption?${CClear}"
+  if ! promptyn "(y/n): "; then
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo -e "${CClear}"; return
+  fi
+
+  echo ""
+  echo ""
+  echo -e "${CWhite}Messages:${CClear}"
+  echo ""
+
+  # Determine cipher to use
+  local DECIPHER
+  if [ "$DESOURCE" = "primary" ]; then
+    DECIPHER="${ENCPRICIPHER}"
+  else
+    DECIPHER="${ENCSECCIPHER}"
+  fi
+
+  # Prompt for passphrase and decrypt symmetric key
+  echo -e "${CGreen}STATUS: Decrypting RSA-protected symmetric key from backup folder...${CClear}"
+  derivepkikey "$DEENCVAR" "$DEFULLPATH"
+  if [ $? -ne 0 ]; then
+    if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+    echo ""
+    read -rsp $'Press any key to acknowledge...\n' -n1 key
+    return
+  fi
+
+  # Decrypt the selected file
+  echo -e "${CGreen}STATUS: Decrypting ${CYellow}${DEFILE}${CGreen} using AES-${DECIPHER}-CBC...${CClear}"
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Decrypting $DEFILE from $DEFULLPATH to $DEOUTFILE" >> $LOGFILE
+
+  openssl enc -d -aes-${DECIPHER}-cbc -pbkdf2 -iter 100000 \
+    -pass file:"$PKISYMKEYFILE" \
+    -in "${DEFULLPATH}/${DEFILE}" \
+    -out "$DEOUTFILE" 2>/dev/null
+  local DECRESULT=$?
+
+  # Clean up symmetric key temp file immediately
+  rm -f "$PKISYMKEYFILE" 2>/dev/null
+
+  if [ $DECRESULT -ne 0 ] || [ ! -s "$DEOUTFILE" ]; then
+    rm -f "$DEOUTFILE" 2>/dev/null
+    echo -e "${CRed}ERROR: Decryption failed. The output file was not produced or is empty.${CClear}"
+    echo -e "${CRed}ERROR: Verify your passphrase is correct and the backup files are intact.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of $DEFILE failed." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of $DEFILE failed." >> $ERRORLOGFILE
+    flagerror
+  else
+    echo -e "${CGreen}STATUS: Decryption successful!${CClear}"
+    echo -e "${CGreen}STATUS: Decrypted file saved to: ${CYellow}${DEOUTFILE}${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Successfully decrypted $DEFILE to $DEOUTFILE" >> $LOGFILE
+  fi
+
+  if [ "$DESOURCE" = "primary" ]; then unmountdrv; else unmountsecondarydrv; fi
+  echo -e "${CGreen}STATUS: Settling for 10 seconds...${CClear}"
+  sleep 10
+  echo ""
+  read -rsp $'Press any key to acknowledge...\n' -n1 key
+  
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
