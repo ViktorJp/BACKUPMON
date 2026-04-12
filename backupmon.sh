@@ -15,11 +15,11 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2026-Apr-11
+# Last Modified: 2026-Apr-12
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.10.0b10"                                              # Current version
+Version="1.10.0b11"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -232,10 +232,11 @@ logoNMexit () {
 # -------------------------------------------------------------------------------------------------------------------------
 # Promptyn is a simple function that accepts y/n input
 
-promptyn () {   # No defaults, just y or n
+promptyn()
+{   # No defaults, just y or n
   while true; do
-    read -p '[y/n]? ' YESNO
-      case "$YESNO" in
+    read -p "$1" -n 1 -r yn
+      case "${yn}" in
         [Yy]* ) return 0 ;;
         [Nn]* ) return 1 ;;
         * ) echo -e "\nPlease answer y or n.";;
@@ -1655,13 +1656,13 @@ vconfig () {
         echo 'SECONDARYPURGELIMIT=0'
         echo 'SECONDARYUNMOUNTNET=1'
         echo 'ENCPRIMARY=0'
-		    echo 'ENCSECONDARY=0'
-		    echo 'ENCPRICIPHER=0'
-		    echo 'ENCSECCIPHER=0'
-		    echo 'ENCPRIPUBKEY=""'
-		    echo 'ENCPRIPRIVKEY=""'
-		    echo 'ENCSECPUBKEY=""'
-		    echo 'ENCSECPRIVKEY=""'
+        echo 'ENCSECONDARY=0'
+        echo 'ENCPRICIPHER=0'
+        echo 'ENCSECCIPHER=0'
+        echo 'ENCPRIPUBKEY=""'
+        echo 'ENCPRIPRIVKEY=""'
+        echo 'ENCSECPUBKEY=""'
+        echo 'ENCSECPRIVKEY=""'
       } > "$CFGPATH"
 
       #Re-run backupmon -config to restart setup process
@@ -1672,7 +1673,7 @@ vconfig () {
 
 saveconfig()
 {
-	
+
     echo
     UNC="$(_EscapeUNCPathBackslashes_ "${UNC}")"
     SECONDARYUNC="$(_EscapeUNCPathBackslashes_ "$SECONDARYUNC")"
@@ -4795,7 +4796,7 @@ advextdrv () {
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
   # PKISYMKEYFILE was set by the jffsnvram function for this backup session
-  
+
   if [ "$ENCPRIMARY" = "1" ]; then
     EXTFILE="${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.enc"
     OE="/tmp/sslexit_$$"
@@ -5528,7 +5529,7 @@ backup () {
 
       if [ "$ENCPRIMARY" = "1" ]
       then
-      	echo -e "${CGreen}STATUS: Primary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCPRICIPHER}-CBC.${CClear}"
+        echo -e "${CGreen}STATUS: Primary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCPRICIPHER}-CBC.${CClear}"
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Primary Backup Encrypted with RSA-4096 + AES-${ENCPRICIPHER}-CBC." >> $LOGFILE
       fi
 
@@ -5800,7 +5801,7 @@ secondary () {
 
       if [ "$ENCSECONDARY" = "1" ]
       then
-      	echo -e "${CGreen}STATUS: Secondary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCSECCIPHER}-CBC.${CClear}"
+        echo -e "${CGreen}STATUS: Secondary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCSECCIPHER}-CBC.${CClear}"
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary Backup Encrypted with RSA-4096 + AES-${ENCSECCIPHER}-CBC." >> $LOGFILE
       fi
 
@@ -6087,7 +6088,7 @@ restore () {
     fi
 
     PKISYMKEYFILE=""
-  
+
     mountprimary
 
     # If the UNC is successfully mounted, proceed
@@ -7523,7 +7524,7 @@ echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BK
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Retention: ${CGreen}$FREQEXPANDED"
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
 if [ "$ENCPRIMARY" = "1" ]; then
-	echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCPRICIPHER}-CBC"
+  echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCPRICIPHER}-CBC"
 fi
 if [ "$SECONDARYSTATUS" == "1" ]; then
   if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
@@ -7533,7 +7534,7 @@ if [ "$SECONDARYSTATUS" == "1" ]; then
   echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Retention: ${CGreen}$SECFREQEXPANDED"
   echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Mode: ${CGreen}$SECONDARYMODE"
   if [ "$ENCSECONDARY" = "1" ]; then
-	echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCSECCIPHER}-CBC"
+  echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCSECCIPHER}-CBC"
   fi
 fi
 echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
