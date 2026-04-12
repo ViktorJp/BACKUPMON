@@ -136,6 +136,9 @@ readonly CEMAIL_LIB_LOCAL_DIR="/jffs/addons/shared-libs"
 readonly CEMAIL_LIB_FILE_NAME="CustomEMailFunctions.lib.sh"
 readonly CEMAIL_LIB_FILE_PATH="${CEMAIL_LIB_LOCAL_DIR}/$CEMAIL_LIB_FILE_NAME"
 
+# To support automatic script updates from AMTM #
+doScriptUpdateFromAMTM=true
+
 # Color variables
 CBlack="\e[1;30m"
 InvBlack="\e[1;40m"
@@ -294,6 +297,34 @@ if [ -f $ERRORFILE ]; then
   echo -e "${InvRed}${CWhite} Please review error logs from the setup/configuration menu.${CClear}"
   echo ""
 fi
+}
+
+##-------------------------------------------##
+## Borrwed from ExtremeFiretop [2026-Apr-11] ##
+##-------------------------------------------##
+ScriptUpdateFromAMTM()
+{
+    if ! "$doScriptUpdateFromAMTM"
+    then
+        printf "Automatic script updates via AMTM are currently disabled.\n\n"
+        return 1
+    fi
+    
+    if [ $# -gt 0 ] && [ "$1" = "check" ]
+    then return 0
+    fi
+
+    # Force a BACKUPMON download and update
+    echo -e "${CClear}[i] Force Downloading BACKUPMON... Please stand by..."
+    curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
+    DLsuccess=$?
+    if [ "$DLsuccess" -eq 0 ]; then
+      echo -e "${CClear}[i] BACKUPMON Download/Update Success."
+    else
+      echo -e "${CClear}[X] BACKUPMON Download/Update Failed."
+    fi
+
+    return "$DLsuccess"
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -7292,6 +7323,13 @@ elif [ "$LABELSIZE" -le 1 ]; then
   sleep 10
 fi
 
+if [ "$1" = "amtmupdate" ]
+then
+    shift
+    ScriptUpdateFromAMTM "$@"
+    exit "$?"
+fi
+
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
 then
@@ -7303,7 +7341,8 @@ fi
 # Check and see if an invalid commandline option is being used
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || \
    [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || \
-   [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ]
+   [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ] || \
+   [ "$1" == "amtmupdate" ]
 then
     clear
 else
