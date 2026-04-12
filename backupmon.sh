@@ -19,7 +19,7 @@
 ######################################################################################
 
 # Variable list -- please do not change any of these
-Version="1.10.0b8"                                              # Current version
+Version="1.10.0b10"                                              # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -117,10 +117,10 @@ ENCPRIMARY=0
 ENCSECONDARY=0
 ENCPRICIPHER=0
 ENCSECCIPHER=0
-ENCPRISALT=""
-ENCSECSALT=""
-ENCPRIHASH=""
-ENCSECHASH=""
+ENCPRIPUBKEY=""
+ENCPRIPRIVKEY=""
+ENCSECPUBKEY=""
+ENCSECPRIVKEY=""
 
 ##----------------------------------------##
 ## Modified by Martinski W. [2024-Jul-09] ##
@@ -1658,10 +1658,10 @@ vconfig () {
 		    echo 'ENCSECONDARY=0'
 		    echo 'ENCPRICIPHER=0'
 		    echo 'ENCSECCIPHER=0'
-		    echo 'ENCPRISALT=""'
-		    echo 'ENCSECSALT=""'
-		    echo 'ENCPRIHASH=""'
-		    echo 'ENCSECHASH=""'
+		    echo 'ENCPRIPUBKEY=""'
+		    echo 'ENCPRIPRIVKEY=""'
+		    echo 'ENCSECPUBKEY=""'
+		    echo 'ENCSECPRIVKEY=""'
       } > "$CFGPATH"
 
       #Re-run backupmon -config to restart setup process
@@ -1720,10 +1720,10 @@ saveconfig()
     echo 'ENCSECONDARY='$ENCSECONDARY
     echo 'ENCPRICIPHER='$ENCPRICIPHER
     echo 'ENCSECCIPHER='$ENCSECCIPHER
-    echo 'ENCPRISALT="'"$ENCPRISALT"'"'
-    echo 'ENCSECSALT="'"$ENCSECSALT"'"'
-    echo 'ENCPRIHASH="'"$ENCPRIHASH"'"'
-    echo 'ENCSECHASH="'"$ENCSECHASH"'"'
+    echo 'ENCPRIPUBKEY="'"$ENCPRIPUBKEY"'"'
+    echo 'ENCPRIPRIVKEY="'"$ENCPRIPRIVKEY"'"'
+    echo 'ENCSECPUBKEY="'"$ENCSECPUBKEY"'"'
+    echo 'ENCSECPRIVKEY="'"$ENCSECPRIVKEY"'"'
   } > "$CFGPATH"
 
     PRIMARYUNCUPDATED="False"
@@ -4033,24 +4033,21 @@ vsetup () {
             clear
             echo -e "${InvGreen} ${InvDkGray}${CWhite} Backup Encryption Configuration                                                       ${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} Please indicate below if you would like to configure using encryption on your${CClear}"
-            echo -e "${InvGreen} ${CClear} primary and secondary backups. This method applies AES-256-CBC or AES-128-CBC${CClear}"
-            echo -e "${InvGreen} ${CClear} against your .TAR compressed backup files before they are copied to their final${CClear}"
-            echo -e "${InvGreen} ${CClear} destinations. AES-256 encryption represents some of the very best encryption${CClear}"
-            echo -e "${InvGreen} ${CClear} currently available, however, may impact performance on larger backups. On the${CClear}"
-            echo -e "${InvGreen} ${CClear} other hand, AES-128 is slightly less secure, and provides better performance.${CClear}"
+            echo -e "${InvGreen} ${CClear} Backupmon uses RSA-4096 + AES-CBC hybrid encryption. A fresh random AES symmetric${CClear}"
+            echo -e "${InvGreen} ${CClear} key is generated for each backup run, used to encrypt all backup files, and then${CClear}"
+            echo -e "${InvGreen} ${CClear} the symmetric key is itself encrypted with your RSA public key and stored alongside${CClear}"
+            echo -e "${InvGreen} ${CClear} the backup as 'symkey.enc'. At restore time, your RSA private key passphrase decrypts${CClear}"
+            echo -e "${InvGreen} ${CClear} the symmetric key, which decrypts the backup files. Backups continue to run fully${CClear}"
+            echo -e "${InvGreen} ${CClear} unattended - only the public key is needed.${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 1${CClear}: Losing your Master Password will make decryption impossible. Please${CClear}"
-            echo -e "${InvGreen} ${CClear} keep this password in a safe place or offline password manager.${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 1${CClear}: Your RSA private key passphrase is never stored. You must remember it.${CClear}"
+            echo -e "${InvGreen} ${CClear} Losing it makes all encrypted backups permanently unrestorable.${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 2${CClear}: If you change your Encryption Cipher (switching from AES256->AES128),${CClear}"
-            echo -e "${InvGreen} ${CClear} you will not be able to decrypt backups encoded with the original Cipher. You${CClear}"
-            echo -e "${InvGreen} ${CClear} would need to reset your Cipher and Master Password to what your backup was${CClear}"
-            echo -e "${InvGreen} ${CClear} originally encrypted with in order to make a successfully decryption.${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 2${CClear}: Regenerating a key pair invalidates ALL existing encrypted backups.${CClear}"
+            echo -e "${InvGreen} ${CClear} They cannot be restored with a new key pair.${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 3${CClear}: Your Master Password is never stored. A salted SHA-256 hash is derived${CClear}"
-            echo -e "${InvGreen} ${CClear} from it and saved to the config. You must re-enter your Master Password during${CClear}"
-            echo -e "${InvGreen} ${CClear} any restore operation in order to successfully decrypt your backup files.${CClear}"
+            echo -e "${InvGreen} ${CClear} ${CRed}WARNING 3${CClear}: RSA key generation may take 30-60 seconds on the router CPU. Please be${CClear}"
+            echo -e "${InvGreen} ${CClear} patient after selecting option (3) or (6).${CClear}"
             echo -e "${InvGreen} ${CClear}"
             echo -e "${InvGreen} ${CClear} Use the corresponding ${InvDkGray}${CWhite}()${CClear} keys to modify the different options.${CClear}"
             echo -e "${InvGreen} ${CClear} (Encryption enabled by default = NO)${CClear}"
@@ -4059,28 +4056,28 @@ vsetup () {
 
             if [ "$ENCPRIMARY" = 1 ]; then
               ENCPRIMARYDISP="${CGreen}Yes"
-              if [ -n "$ENCPRIHASH" ]; then
-                ENCPRIPASSDISP="${CGreen}[Master Password Set]"
+              if [ -n "$ENCPRIPUBKEY" ]; then
+                ENCPRIKEYDISP="${CGreen}[RSA-4096 Key Set]"
               else
-                ENCPRIPASSDISP="${CRed}[Not Set]"
+                ENCPRIKEYDISP="${CRed}[Not Set - Generate Key Pair!]"
               fi
             else
               ENCPRIMARYDISP="${CDkGray}No"
               ENCPRICIPHERDISP="${CDkGray}N/A"
-              ENCPRIPASSDISP="${CDkGray}N/A"
+              ENCPRIKEYDISP="${CDkGray}N/A"
             fi
 
             if [ "$ENCSECONDARY" = 1 ]; then
               ENCSECONDARYDISP="${CGreen}Yes"
-              if [ -n "$ENCSECHASH" ]; then
-                ENCSECPASSDISP="${CGreen}[Master Password Set]"
+              if [ -n "$ENCSECPUBKEY" ]; then
+                ENCSECKEYDISP="${CGreen}[RSA-4096 Key Set]"
               else
-                ENCSECPASSDISP="${CRed}[Not Set]"
+                ENCSECKEYDISP="${CRed}[Not Set - Generate Key Pair!]"
               fi
             else
               ENCSECONDARYDISP="${CDkGray}No"
               ENCSECCIPHERDISP="${CDkGray}N/A"
-              ENCSECPASSDISP="${CDkGray}N/A"
+              ENCSECKEYDISP="${CDkGray}N/A"
             fi
 
             if [ "$ENCPRICIPHER" = 256 ]; then
@@ -4101,15 +4098,15 @@ vsetup () {
 
             echo -e "${InvGreen} ${InvDkGray}${CWhite} Primary Backup Encryption Options                                                     ${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(1)${CClear}${CWhite} : ${CClear}Enable Encryption                 : $ENCPRIMARYDISP${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(2)${CClear}${CWhite} : ${CClear}Encryption Cipher                 : $ENCPRICIPHERDISP${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(3)${CClear}${CWhite} : ${CClear}Set Master Password               : $ENCPRIPASSDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(1)${CClear}${CWhite} : ${CClear}Enable Primary Encryption         : $ENCPRIMARYDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(2)${CClear}${CWhite} : ${CClear}Primary AES Cipher                : $ENCPRICIPHERDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(3)${CClear}${CWhite} : ${CClear}Generate Primary RSA Key Pair     : $ENCPRIKEYDISP${CClear}"
             echo -e "${InvGreen} ${CClear}"
             echo -e "${InvGreen} ${InvDkGray}${CWhite} Secondary Backup Encryption Options                                                   ${CClear}"
             echo -e "${InvGreen} ${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(4)${CClear}${CWhite} : ${CClear}Enable Encryption                 : $ENCSECONDARYDISP${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(5)${CClear}${CWhite} : ${CClear}Encryption Cipher                 : $ENCSECCIPHERDISP${CClear}"
-            echo -e "${InvGreen} ${CClear} ${InvDkGray}(6)${CClear}${CWhite} : ${CClear}Set Master Password               : $ENCSECPASSDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(4)${CClear}${CWhite} : ${CClear}Enable Secondary Encryption       : $ENCSECONDARYDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(5)${CClear}${CWhite} : ${CClear}Secondary AES Cipher              : $ENCSECCIPHERDISP${CClear}"
+            echo -e "${InvGreen} ${CClear} ${InvDkGray}(6)${CClear}${CWhite} : ${CClear}Generate Secondary RSA Key Pair   : $ENCSECKEYDISP${CClear}"
             echo ""
             read -p "Please select? (1-6, e=Exit/Save): " SelectSlot
             case $SelectSlot in
@@ -4124,13 +4121,13 @@ vsetup () {
                 else
                   ENCPRIMARY=0
                   ENCPRICIPHER=0
-                  ENCPRISALT=""
-                  ENCPRIHASH=""
+                  ENCPRIPUBKEY=""
+                  ENCPRIPRIVKEY=""
                 fi;;
 
               2)
                 echo ""
-                read -p "Please choose preferred Encryption Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher
+                read -p "Please choose preferred AES Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher
                 case $SelectCipher in
                   1) ENCPRICIPHER=256 ;;
                   2) ENCPRICIPHER=128 ;;
@@ -4140,23 +4137,41 @@ vsetup () {
 
               3)
                 echo ""
-                echo -e "${CClear}Enter a Master Password to derive the primary encryption key.${CClear}"
-                echo -e "${CYellow}WARNING: This password is never stored. You must remember it for restores!${CClear}"
+                echo -e "${CClear}This will generate a new RSA-4096 primary key pair for backup encryption.${CClear}"
+                if [ -n "$ENCPRIPUBKEY" ]; then
+                  echo -e "${CRed}WARNING: A primary key pair already exists. Regenerating will make ALL existing${CClear}"
+                  echo -e "${CRed}primary encrypted backups permanently unrestorable!${CClear}"
+                fi
+                echo -e "${CYellow}Your passphrase is never stored. You MUST remember it for restore operations.${CClear}"
                 echo ""
-                read -rsp 'New Primary Master Password (enter=Cancel): ' ENCPRIPASS1
+                read -rsp 'Primary Key Pair Passphrase (enter=Cancel): ' PKIPASS1
                 echo ""
-                if [ -n "$ENCPRIPASS1" ]; then
-                  read -rsp 'Verify Primary Master Password: ' ENCPRIPASS2
+                if [ -n "$PKIPASS1" ]; then
+                  read -rsp 'Verify Passphrase: ' PKIPASS2
                   echo ""
-                  if [ "$ENCPRIPASS1" = "$ENCPRIPASS2" ]; then
-                    ENCPRISALT="$(openssl rand -hex 16)"
-                    ENCPRIHASH=$(printf '%s%s' "$ENCPRISALT" "$ENCPRIPASS1" | openssl dgst -sha256 | awk '{print $2}')
+                  if [ "$PKIPASS1" = "$PKIPASS2" ]; then
                     echo ""
-                    echo -e "${CGreen}STATUS: Primary Master Password accepted. Salt and hash saved to config.${CClear}"
-                    sleep 2
+                    echo -e "${CGreen}STATUS: Generating RSA-4096 primary key pair. Please wait 30-60 seconds...${CClear}"
+                    TMPKEYDIR="/tmp/bm_keygen_$$"
+                    mkdir -p "$TMPKEYDIR"
+                    openssl genrsa -aes256 -passout pass:"$PKIPASS1" -out "$TMPKEYDIR/privkey.pem" 4096 2>/dev/null
+                    if [ $? -eq 0 ]; then
+                      openssl rsa -in "$TMPKEYDIR/privkey.pem" -passin pass:"$PKIPASS1" -pubout -out "$TMPKEYDIR/pubkey.pem" 2>/dev/null
+                      ENCPRIPUBKEY=$(tr '\n' '|' < "$TMPKEYDIR/pubkey.pem")
+                      ENCPRIPRIVKEY=$(tr '\n' '|' < "$TMPKEYDIR/privkey.pem")
+                      rm -rf "$TMPKEYDIR"
+                      echo ""
+                      echo -e "${CGreen}STATUS: RSA-4096 primary key pair generated and saved to config.${CClear}"
+                      sleep 2
+                    else
+                      rm -rf "$TMPKEYDIR"
+                      echo ""
+                      echo -e "${CRed}ERROR: Key generation failed. Please try again.${CClear}"
+                      sleep 2
+                    fi
                   else
                     echo ""
-                    echo -e "${CRed}ERROR: Passwords do not match. No changes made.${CClear}"
+                    echo -e "${CRed}ERROR: Passphrases do not match. No changes made.${CClear}"
                     sleep 2
                   fi
                 fi
@@ -4166,8 +4181,8 @@ vsetup () {
                 if [ $SECONDARYSTATUS -eq 0 ]; then
                   ENCSECONDARY=0
                   ENCSECCIPHER=0
-                  ENCSECSALT=""
-                  ENCSECHASH=""
+                  ENCSECPUBKEY=""
+                  ENCSECPRIVKEY=""
                   saveconfig
                 else
                   echo ""
@@ -4179,8 +4194,8 @@ vsetup () {
                   else
                     ENCSECONDARY=0
                     ENCSECCIPHER=0
-                    ENCSECSALT=""
-                    ENCSECHASH=""
+                    ENCSECPUBKEY=""
+                    ENCSECPRIVKEY=""
                   fi
                 fi
               ;;
@@ -4189,12 +4204,12 @@ vsetup () {
                 if [ $SECONDARYSTATUS -eq 0 ]; then
                   ENCSECONDARY=0
                   ENCSECCIPHER=0
-                  ENCSECSALT=""
-                  ENCSECHASH=""
+                  ENCSECPUBKEY=""
+                  ENCSECPRIVKEY=""
                   saveconfig
                 else
                   echo ""
-                  read -p "Please choose preferred Encryption Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher2
+                  read -p "Please choose preferred AES Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher2
                   case $SelectCipher2 in
                     1) ENCSECCIPHER=256 ;;
                     2) ENCSECCIPHER=128 ;;
@@ -4207,28 +4222,46 @@ vsetup () {
                 if [ $SECONDARYSTATUS -eq 0 ]; then
                   ENCSECONDARY=0
                   ENCSECCIPHER=0
-                  ENCSECSALT=""
-                  ENCSECHASH=""
+                  ENCSECPUBKEY=""
+                  ENCSECPRIVKEY=""
                   saveconfig
                 else
                   echo ""
-                  echo -e "${CClear}Enter a Master Password to derive the secondary encryption key.${CClear}"
-                  echo -e "${CYellow}WARNING: This password is never stored. You must remember it for restores!${CClear}"
+                  echo -e "${CClear}This will generate a new RSA-4096 secondary key pair for backup encryption.${CClear}"
+                  if [ -n "$ENCSECPUBKEY" ]; then
+                    echo -e "${CRed}WARNING: A secondary key pair already exists. Regenerating will make ALL existing${CClear}"
+                    echo -e "${CRed}secondary encrypted backups permanently unrestorable!${CClear}"
+                  fi
+                  echo -e "${CYellow}Your passphrase is never stored. You MUST remember it for restore operations.${CClear}"
                   echo ""
-                  read -rsp 'New Secondary Master Password (enter=Cancel): ' ENCSECPASS1
+                  read -rsp 'Secondary Key Pair Passphrase (enter=Cancel): ' PKIPASS1
                   echo ""
-                  if [ -n "$ENCSECPASS1" ]; then
-                    read -rsp 'Verify Secondary Master Password: ' ENCSECPASS2
+                  if [ -n "$PKIPASS1" ]; then
+                    read -rsp 'Verify Passphrase: ' PKIPASS2
                     echo ""
-                    if [ "$ENCSECPASS1" = "$ENCSECPASS2" ]; then
-                      ENCSECSALT="$(openssl rand -hex 16)"
-                      ENCSECHASH=$(printf '%s%s' "$ENCSECSALT" "$ENCSECPASS1" | openssl dgst -sha256 | awk '{print $2}')
+                    if [ "$PKIPASS1" = "$PKIPASS2" ]; then
                       echo ""
-                      echo -e "${CGreen}STATUS: Secondary Master Password accepted. Salt and hash saved to config.${CClear}"
-                      sleep 2
+                      echo -e "${CGreen}STATUS: Generating RSA-4096 secondary key pair. Please wait 30-60 seconds...${CClear}"
+                      TMPKEYDIR="/tmp/bm_keygen_$$"
+                      mkdir -p "$TMPKEYDIR"
+                      openssl genrsa -aes256 -passout pass:"$PKIPASS1" -out "$TMPKEYDIR/privkey.pem" 4096 2>/dev/null
+                      if [ $? -eq 0 ]; then
+                        openssl rsa -in "$TMPKEYDIR/privkey.pem" -passin pass:"$PKIPASS1" -pubout -out "$TMPKEYDIR/pubkey.pem" 2>/dev/null
+                        ENCSECPUBKEY=$(tr '\n' '|' < "$TMPKEYDIR/pubkey.pem")
+                        ENCSECPRIVKEY=$(tr '\n' '|' < "$TMPKEYDIR/privkey.pem")
+                        rm -rf "$TMPKEYDIR"
+                        echo ""
+                        echo -e "${CGreen}STATUS: RSA-4096 secondary key pair generated and saved to config.${CClear}"
+                        sleep 2
+                      else
+                        rm -rf "$TMPKEYDIR"
+                        echo ""
+                        echo -e "${CRed}ERROR: Key generation failed. Please try again.${CClear}"
+                        sleep 2
+                      fi
                     else
                       echo ""
-                      echo -e "${CRed}ERROR: Passwords do not match. No changes made.${CClear}"
+                      echo -e "${CRed}ERROR: Passphrases do not match. No changes made.${CClear}"
                       sleep 2
                     fi
                   fi
@@ -4295,15 +4328,27 @@ basicjffsnvram () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCPRIPASSD="$ENCPRIHASH"
-  # Generate a per-backup nonce and derive a unique key for this backup run
+  # Generate a fresh per-backup AES symmetric key and encrypt it with the RSA public key
   if [ "$ENCPRIMARY" = "1" ]; then
-    ENCPRINONCE=$(openssl rand -hex 16)
-    ENCPRIKEY=$(printf '%s%s' "$ENCPRIHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-    echo "$ENCPRINONCE" > "${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce"
-    logger "BACKUPMON INFO: Finished backing up unique enc.nonce key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce"
-    echo -e "${CGreen}STATUS: Finished backing up unique ${CYellow}enc.nonce${CGreen} key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished backing up unique enc.nonce key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce." >> $LOGFILE
+    PKISYMKEYFILE="/tmp/bm_pri_symkey_$$.key"
+    PKIPUBKEYFILE="/tmp/bm_pri_pubkey_$$.pem"
+    echo "$ENCPRIPUBKEY" | tr '|' '\n' > "$PKIPUBKEYFILE"
+    openssl rand -hex 32 > "$PKISYMKEYFILE"
+    openssl pkeyutl -encrypt -pubin -inkey "$PKIPUBKEYFILE" \
+      -in "$PKISYMKEYFILE" -out "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc"
+    PKIENCRESULT=$?
+    rm -f "$PKIPUBKEYFILE"
+    if [ $PKIENCRESULT -ne 0 ]; then
+      rm -f "$PKISYMKEYFILE" "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
+      echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid primary key pair is configured. Exiting Script!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
+      flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
+      echo -e "${CClear}\n"; exit 1
+    fi
+    logger "BACKUPMON INFO: Finished generating RSA+AES symmetric key for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc"
+    echo -e "${CGreen}STATUS: Finished generating ${CYellow}RSA+AES symmetric key${CGreen} for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished generating RSA+AES symmetric key for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc." >> $LOGFILE
   fi
 
   if [ "$ENCPRIMARY" = "1" ]; then
@@ -4311,10 +4356,10 @@ basicjffsnvram () {
     OE="/tmp/sslexit_$$"
     if [ -n "$EXCLUSION" ]; then
       (tar -zcf - -X "$EXCLUSION" -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -4362,7 +4407,7 @@ basicjffsnvram () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCPRIMARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$JFFSFILE" \
+    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$JFFSFILE" \
       | tar -tzf - >/dev/null; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$JFFSFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -4404,7 +4449,7 @@ basicjffsnvram () {
       echo -e "${CClear}\n"
       exit 1
     fi
-    openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$NVRAMTMP" -out "$NVRAMCFG"
+    openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$NVRAMTMP" -out "$NVRAMCFG"
     NSOEresult=$?
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
@@ -4442,7 +4487,7 @@ basicjffsnvram () {
   if [ "$ENCPRIMARY" = "1" ]; then
     NVRAMTXT="${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.txt.enc"
     nvram show 2>/dev/null \
-      | openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$NVRAMTXT"
+      | openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$NVRAMTXT"
   else
     NVRAMTXT="${UNCDRIVE}${BKDIR}/${freqtmp}/nvram.txt"
     nvram show 2>/dev/null > "$NVRAMTXT"
@@ -4468,22 +4513,17 @@ basicextdrv () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCPRIPASSD="$ENCPRIHASH"
-  # Read the nonce written by the jffsnvram function and re-derive the same key
-  if [ "$ENCPRIMARY" = "1" ]; then
-    ENCPRINONCE=$(cat "${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce" 2>/dev/null)
-    ENCPRIKEY=$(printf '%s%s' "$ENCPRIHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-  fi
+  # PKISYMKEYFILE was set by the jffsnvram function for this backup session
 
   if [ "$ENCPRIMARY" = "1" ]; then
     EXTFILE="${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}.tar.gz.enc"
     OE="/tmp/sslexit_$$"
     if [ -n "$EXCLUSION" ]; then
       (tar -zcf - -X "$EXCLUSION" -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -4534,7 +4574,7 @@ basicextdrv () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCPRIMARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$EXTFILE" \
+    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$EXTFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$EXTFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -4569,15 +4609,27 @@ advjffsnvram () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCPRIPASSD="$ENCPRIHASH"
-  # Generate a per-backup nonce and derive a unique key for this backup run
+  # Generate a fresh per-backup AES symmetric key and encrypt it with the RSA public key
   if [ "$ENCPRIMARY" = "1" ]; then
-    ENCPRINONCE=$(openssl rand -hex 16)
-    ENCPRIKEY=$(printf '%s%s' "$ENCPRIHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-    echo "$ENCPRINONCE" > "${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce"
-    logger "BACKUPMON INFO: Finished backing up unique enc.nonce key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce"
-    echo -e "${CGreen}STATUS: Finished backing up unique ${CYellow}enc.nonce${CGreen} key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished backing up unique enc.nonce key to ${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce." >> $LOGFILE
+    PKISYMKEYFILE="/tmp/bm_pri_symkey_$$.key"
+    PKIPUBKEYFILE="/tmp/bm_pri_pubkey_$$.pem"
+    echo "$ENCPRIPUBKEY" | tr '|' '\n' > "$PKIPUBKEYFILE"
+    openssl rand -hex 32 > "$PKISYMKEYFILE"
+    openssl pkeyutl -encrypt -pubin -inkey "$PKIPUBKEYFILE" \
+      -in "$PKISYMKEYFILE" -out "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc"
+    PKIENCRESULT=$?
+    rm -f "$PKIPUBKEYFILE"
+    if [ $PKIENCRESULT -ne 0 ]; then
+      rm -f "$PKISYMKEYFILE" "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
+      echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid primary key pair is configured. Exiting Script!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
+      flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
+      echo -e "${CClear}\n"; exit 1
+    fi
+    logger "BACKUPMON INFO: Finished generating RSA+AES symmetric key for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc"
+    echo -e "${CGreen}STATUS: Finished generating ${CYellow}RSA+AES symmetric key${CGreen} for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished generating RSA+AES symmetric key for ${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc." >> $LOGFILE
   fi
 
   if [ "$ENCPRIMARY" = "1" ]; then
@@ -4585,10 +4637,10 @@ advjffsnvram () {
     OE="/tmp/sslexit_$$"
     if [ -n "$EXCLUSION" ]; then
       (tar -zcf - -X "$EXCLUSION" -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -4636,7 +4688,7 @@ advjffsnvram () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCPRIMARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$JFFSFILE" \
+    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$JFFSFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$JFFSFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -4678,7 +4730,7 @@ advjffsnvram () {
       echo -e "${CClear}\n"
       exit 1
     fi
-    openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$NVRAMTMP" -out "$NVRAMCFG"
+    openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$NVRAMTMP" -out "$NVRAMCFG"
     NSOEresult=$?
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
@@ -4716,7 +4768,7 @@ advjffsnvram () {
   if [ "$ENCPRIMARY" = "1" ]; then
     NVRAMTXT="${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.txt.enc"
     nvram show 2>/dev/null \
-      | openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$NVRAMTXT"
+      | openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$NVRAMTXT"
   else
     NVRAMTXT="${UNCDRIVE}${BKDIR}/${freqtmp}/nvram-${datelabel}.txt"
     nvram show 2>/dev/null > "$NVRAMTXT"
@@ -4742,22 +4794,17 @@ advextdrv () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCPRIPASSD="$ENCPRIHASH"
-  # Read the nonce written by the jffsnvram function and re-derive the same key
-  if [ "$ENCPRIMARY" = "1" ]; then
-    ENCPRINONCE=$(cat "${UNCDRIVE}${BKDIR}/${freqtmp}/enc.nonce" 2>/dev/null)
-    ENCPRIKEY=$(printf '%s%s' "$ENCPRIHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-  fi
+  # PKISYMKEYFILE was set by the jffsnvram function for this backup session
   
   if [ "$ENCPRIMARY" = "1" ]; then
     EXTFILE="${UNCDRIVE}${BKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.enc"
     OE="/tmp/sslexit_$$"
     if [ -n "$EXCLUSION" ]; then
       (tar -zcf - -X "$EXCLUSION" -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -4808,7 +4855,7 @@ advextdrv () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCPRIMARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" -in "$EXTFILE" \
+    (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" -in "$EXTFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$EXTFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -4843,15 +4890,27 @@ basicsecjffsnvram () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCSECPASSD="$ENCSECHASH"
-  # Generate a per-backup nonce and derive a unique key for this backup run
+  # Generate a fresh per-backup AES symmetric key and encrypt it with the RSA public key
   if [ "$ENCSECONDARY" = "1" ]; then
-    ENCPRINONCE=$(openssl rand -hex 16)
-    ENCSECKEY=$(printf '%s%s' "$ENCSECHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-    echo "$ENCPRINONCE" > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce"
-    logger "BACKUPMON INFO: Finished secondary backup of unique enc.nonce key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce"
-    echo -e "${CGreen}STATUS: Finished secondary backup of unique ${CYellow}enc.nonce${CGreen} key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary backup of unique enc.nonce key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce." >> $LOGFILE
+    PKISECSYMKEYFILE="/tmp/bm_sec_symkey_$$.key"
+    PKIPUBKEYFILE="/tmp/bm_sec_pubkey_$$.pem"
+    echo "$ENCSECPUBKEY" | tr '|' '\n' > "$PKIPUBKEYFILE"
+    openssl rand -hex 32 > "$PKISECSYMKEYFILE"
+    openssl pkeyutl -encrypt -pubin -inkey "$PKIPUBKEYFILE" \
+      -in "$PKISECSYMKEYFILE" -out "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc"
+    PKIENCRESULT=$?
+    rm -f "$PKIPUBKEYFILE"
+    if [ $PKIENCRESULT -ne 0 ]; then
+      rm -f "$PKISECSYMKEYFILE" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
+      echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid secondary key pair is configured. Exiting Script!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
+      flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
+      echo -e "${CClear}\n"; exit 1
+    fi
+    logger "BACKUPMON INFO: Finished generating RSA+AES symmetric key for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc"
+    echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}RSA+AES symmetric key${CGreen} for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished generating RSA+AES symmetric key for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc." >> $LOGFILE
   fi
 
   if [ "$ENCSECONDARY" = "1" ]; then
@@ -4859,10 +4918,10 @@ basicsecjffsnvram () {
     OE="/tmp/sslexit_$$"
     if [ -n "$SECONDARYEXCLUSION" ]; then
       (tar -zcf - -X "$SECONDARYEXCLUSION" -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -4910,7 +4969,7 @@ basicsecjffsnvram () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCSECONDARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$JFFSFILE" \
+    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$JFFSFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$JFFSFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -4952,7 +5011,7 @@ basicsecjffsnvram () {
       echo -e "${CClear}\n"
       exit 1
     fi
-    openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$NVRAMTMP" -out "$NVRAMCFG"
+    openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$NVRAMTMP" -out "$NVRAMCFG"
     NSOEresult=$?
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
@@ -4990,7 +5049,7 @@ basicsecjffsnvram () {
   if [ "$ENCSECONDARY" = "1" ]; then
     NVRAMTXT="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.txt.enc"
     nvram show 2>/dev/null \
-      | openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$NVRAMTXT"
+      | openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$NVRAMTXT"
   else
     NVRAMTXT="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram.txt"
     nvram show 2>/dev/null > "$NVRAMTXT"
@@ -5016,22 +5075,17 @@ basicsecextdrv () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCSECPASSD="$ENCSECHASH"
-  # Read the nonce written by the jffsnvram function and re-derive the same key
-  if [ "$ENCSECONDARY" = "1" ]; then
-    ENCPRINONCE=$(cat "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce" 2>/dev/null)
-    ENCSECKEY=$(printf '%s%s' "$ENCSECHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-  fi
+  # PKISECSYMKEYFILE was set by the jffsnvram function for this backup session
 
   if [ "$ENCSECONDARY" = "1" ]; then
     EXTFILE="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}.tar.gz.enc"
     OE="/tmp/sslexit_$$"
     if [ -n "$SECONDARYEXCLUSION" ]; then
       (tar -zcf - -X "$SECONDARYEXCLUSION" -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -5082,7 +5136,7 @@ basicsecextdrv () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCSECONDARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$EXTFILE" \
+    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$EXTFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$EXTFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -5117,15 +5171,27 @@ advsecjffsnvram () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCSECPASSD="$ENCSECHASH"
-  # Generate a per-backup nonce and derive a unique key for this backup run
+  # Generate a fresh per-backup AES symmetric key and encrypt it with the RSA public key
   if [ "$ENCSECONDARY" = "1" ]; then
-    ENCPRINONCE=$(openssl rand -hex 16)
-    ENCSECKEY=$(printf '%s%s' "$ENCSECHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-    echo "$ENCPRINONCE" > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce"
-    logger "BACKUPMON INFO: Finished secondary backup of unique enc.nonce key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce"
-    echo -e "${CGreen}STATUS: Finished secondary backup of unique ${CYellow}enc.nonce${CGreen} key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary backup of unique enc.nonce key to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce." >> $LOGFILE
+    PKISECSYMKEYFILE="/tmp/bm_sec_symkey_$$.key"
+    PKIPUBKEYFILE="/tmp/bm_sec_pubkey_$$.pem"
+    echo "$ENCSECPUBKEY" | tr '|' '\n' > "$PKIPUBKEYFILE"
+    openssl rand -hex 32 > "$PKISECSYMKEYFILE"
+    openssl pkeyutl -encrypt -pubin -inkey "$PKIPUBKEYFILE" \
+      -in "$PKISECSYMKEYFILE" -out "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc"
+    PKIENCRESULT=$?
+    rm -f "$PKIPUBKEYFILE"
+    if [ $PKIENCRESULT -ne 0 ]; then
+      rm -f "$PKISECSYMKEYFILE" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
+      echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid secondary key pair is configured. Exiting Script!${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
+      flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
+      echo -e "${CClear}\n"; exit 1
+    fi
+    logger "BACKUPMON INFO: Finished generating RSA+AES symmetric key for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc"
+    echo -e "${CGreen}STATUS: Finished secondary backup of ${CYellow}RSA+AES symmetric key${CGreen} for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished generating RSA+AES symmetric key for ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc." >> $LOGFILE
   fi
 
   if [ "$ENCSECONDARY" = "1" ]; then
@@ -5133,10 +5199,10 @@ advsecjffsnvram () {
     OE="/tmp/sslexit_$$"
     if [ -n "$SECONDARYEXCLUSION" ]; then
       (tar -zcf - -X "$SECONDARYEXCLUSION" -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C /jffs . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$JFFSFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$JFFSFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -5184,7 +5250,7 @@ advsecjffsnvram () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCSECONDARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$JFFSFILE" \
+    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$JFFSFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$JFFSFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -5226,7 +5292,7 @@ advsecjffsnvram () {
       echo -e "${CClear}\n"
       exit 1
     fi
-    openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$NVRAMTMP" -out "$NVRAMCFG"
+    openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$NVRAMTMP" -out "$NVRAMCFG"
     NSOEresult=$?
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
@@ -5264,7 +5330,7 @@ advsecjffsnvram () {
   if [ "$ENCSECONDARY" = "1" ]; then
     NVRAMTXT="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.txt.enc"
     nvram show 2>/dev/null \
-      | openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$NVRAMTXT"
+      | openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$NVRAMTXT"
   else
     NVRAMTXT="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/nvram-${datelabel}.txt"
     nvram show 2>/dev/null > "$NVRAMTXT"
@@ -5290,22 +5356,17 @@ advsecextdrv () {
 
   TE="/jffs/addons/backupmon.d/tarexit.txt"
   TARSTDERR="/tmp/tar_stderr_$$"
-  ENCSECPASSD="$ENCSECHASH"
-  # Read the nonce written by the jffsnvram function and re-derive the same key
-  if [ "$ENCSECONDARY" = "1" ]; then
-    ENCPRINONCE=$(cat "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/enc.nonce" 2>/dev/null)
-    ENCSECKEY=$(printf '%s%s' "$ENCSECHASH" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
-  fi
+  # PKISECSYMKEYFILE was set by the jffsnvram function for this backup session
 
   if [ "$ENCSECONDARY" = "1" ]; then
     EXTFILE="${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/${EXTLABEL}-${datelabel}.tar.gz.enc"
     OE="/tmp/sslexit_$$"
     if [ -n "$SECONDARYEXCLUSION" ]; then
       (tar -zcf - -X "$SECONDARYEXCLUSION" -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     else
       (tar -zcf - -C "$EXTDRIVE" . ; echo $? >$TE) 2>"$TARSTDERR" \
-        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -out "$EXTFILE" ; echo $? >$OE)
+        | (openssl enc -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -out "$EXTFILE" ; echo $? >$OE)
     fi
     grep "tar:" "$TARSTDERR" | teelogger $ERRORLOGFILE >/dev/null
     rm -f "$TARSTDERR"
@@ -5356,7 +5417,7 @@ advsecextdrv () {
   TI="/jffs/addons/backupmon.d/intexit.txt"
   INTSTDERR="/tmp/int_stderr_$$"
   if [ "$ENCSECONDARY" = "1" ]; then
-    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" -in "$EXTFILE" \
+    (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISECSYMKEYFILE" -in "$EXTFILE" \
       | tar -tzf - >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
   else
     (tar -tzf "$EXTFILE" >/dev/null ; echo $? >$TI) 2>"$INTSTDERR"
@@ -5467,8 +5528,8 @@ backup () {
 
       if [ "$ENCPRIMARY" = "1" ]
       then
-      	echo -e "${CGreen}STATUS: Primary Backup Encrypted with AES-${ENCPRICIPHER}-CBC.${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Primary Backup Encrypted with AES-${ENCPRICIPHER}-CBC." >> $LOGFILE
+      	echo -e "${CGreen}STATUS: Primary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCPRICIPHER}-CBC.${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Primary Backup Encrypted with RSA-4096 + AES-${ENCPRICIPHER}-CBC." >> $LOGFILE
       fi
 
       if [ "$MODE" = "Basic" ]
@@ -5481,7 +5542,7 @@ backup () {
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/nvram.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/routerfw.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/enc.nonce*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${WDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${WDAY}"/symkey.enc
         elif [ "$FREQUENCY" = "M" ]
         then
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/jffs.tar*
@@ -5489,7 +5550,7 @@ backup () {
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/nvram.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/routerfw.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/enc.nonce*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${MDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${MDAY}"/symkey.enc
         elif [ "$FREQUENCY" = "Y" ]
         then
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/jffs.tar*
@@ -5497,7 +5558,7 @@ backup () {
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/nvram.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/routerfw.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/enc.nonce*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${YDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${YDAY}"/symkey.enc
         elif [ "$FREQUENCY" = "P" ]
         then
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/jffs.tar*
@@ -5505,7 +5566,7 @@ backup () {
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/nvram.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/routerfw.txt*
           [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/enc.nonce*
+          [ "$(ls -1 "${UNCDRIVE}${BKDIR}/${PDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${UNCDRIVE}${BKDIR}/${PDAY}"/symkey.enc
         fi
       fi
 
@@ -5614,6 +5675,8 @@ backup () {
       } > "${UNCDRIVE}${BKDIR}/instructions.txt"
       echo -e "${CGreen}STATUS: Finished copying restoration ${CYellow}instructions.txt${CGreen} file to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying restoration instructions.txt file to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
+      # Clean up PKI primary symmetric key temp file
+      if [ -n "$PKISYMKEYFILE" ] && [ -f "$PKISYMKEYFILE" ]; then rm -f "$PKISYMKEYFILE"; fi
       echo -e "${CGreen}STATUS: Settling for 10 seconds..."
       sleep 10
 
@@ -5737,8 +5800,8 @@ secondary () {
 
       if [ "$ENCSECONDARY" = "1" ]
       then
-      	echo -e "${CGreen}STATUS: Secondary Backup Encrypted with AES-${ENCSECCIPHER}-CBC.${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary Backup Encrypted with AES-${ENCSECCIPHER}-CBC." >> $LOGFILE
+      	echo -e "${CGreen}STATUS: Secondary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCSECCIPHER}-CBC.${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary Backup Encrypted with RSA-4096 + AES-${ENCSECCIPHER}-CBC." >> $LOGFILE
       fi
 
       if [ "$SECONDARYMODE" = "Basic" ]
@@ -5751,7 +5814,7 @@ secondary () {
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/nvram.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/routerfw.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/enc.nonce*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${WDAY}"/symkey.enc
         elif [ "$SECONDARYFREQUENCY" = "M" ]
         then
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/jffs.tar*
@@ -5759,7 +5822,7 @@ secondary () {
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/nvram.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/routerfw.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/enc.nonce*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${MDAY}"/symkey.enc
         elif [ "$SECONDARYFREQUENCY" = "Y" ]
         then
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/jffs.tar*
@@ -5767,7 +5830,7 @@ secondary () {
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/nvram.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/routerfw.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/enc.nonce*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${YDAY}"/symkey.enc
         elif [ "$SECONDARYFREQUENCY" = "P" ]
         then
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/jffs.tar*
@@ -5775,7 +5838,7 @@ secondary () {
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/nvram.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/routerfw.txt*
           [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}/${EXTLABEL}".tar*
-          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/enc.nonce* 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/enc.nonce*
+          [ "$(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/symkey.enc 2>/dev/null | wc -l)" -gt 0 ] && rm -f "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${PDAY}"/symkey.enc
         fi
       fi
 
@@ -5906,42 +5969,62 @@ secondary () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# derivehash prompts for a Master Password and derives the encryption hash for restore operations.
+# derivepkikey prompts for the RSA private key passphrase, decrypts the per-backup
+# symmetric key from the backup folder, and sets PKISYMKEYFILE for use in restore.
 # $1 = "primary" or "secondary"
-# Sets ENCPRIPASSD or ENCSECPASSD in the calling scope.
+# $2 = full path to the backup folder containing symkey.enc
 
-derivehash () {
-  local SALT MASTERPASS HASH
+derivepkikey () {
+  local PRIVKEYB64 PRIVKEYFILE KEYPASS PKRESULT
+  PKISYMKEYFILE="/tmp/bm_symkey_$$.key"
+
   if [ "$1" = "primary" ]; then
-    SALT="$ENCPRISALT"
+    PRIVKEYB64="$ENCPRIPRIVKEY"
   else
-    SALT="$ENCSECSALT"
+    PRIVKEYB64="$ENCSECPRIVKEY"
   fi
 
-  if [ -z "$SALT" ]; then
-    echo -e "${CRed}ERROR: No encryption salt found in config for $1 backups. Cannot decrypt.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: No encryption salt found for $1 backups. Cannot decrypt." >> $LOGFILE
+  if [ -z "$PRIVKEYB64" ]; then
+    echo -e "${CRed}ERROR: No RSA private key found in config for $1 backups. Cannot decrypt.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: No RSA private key found for $1 backups. Cannot decrypt." >> $LOGFILE
     return 1
   fi
 
-  echo -e "${CYellow}Encrypted $1 backup detected. Please enter the Master Password used when these backups were originally${CClear}"
-  echo -e "${CYellow}created in order to decrypt them.${CClear}"
-  read -rsp 'Master Password: ' MASTERPASS
-  echo ""
-  echo ""
-
-  if [ -z "$MASTERPASS" ]; then
-    echo -e "${CRed}ERROR: No Master Password entered. Cannot decrypt.${CClear}"
+  if [ ! -f "$2/symkey.enc" ]; then
+    echo -e "${CRed}ERROR: symkey.enc not found in backup folder. Cannot decrypt.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: symkey.enc not found in backup folder $2. Cannot decrypt." >> $LOGFILE
     return 1
   fi
 
-  HASH="$(printf '%s%s' "$SALT" "$MASTERPASS" | openssl dgst -sha256 | awk '{print $2}')"
+  PRIVKEYFILE="/tmp/bm_privkey_$$.pem"
+  echo "$PRIVKEYB64" | tr '|' '\n' > "$PRIVKEYFILE"
 
-  if [ "$1" = "primary" ]; then
-    ENCPRIPASSD="$HASH"
-  else
-    ENCSECPASSD="$HASH"
+  echo -e "${CYellow}Encrypted $1 backup detected. Please enter the RSA private key passphrase that was set when${CClear}"
+  echo -e "${CYellow}the key pair was originally generated.${CClear}"
+  echo ""
+  read -rsp 'Private Key Passphrase: ' KEYPASS
+  echo ""
+  echo ""
+
+  if [ -z "$KEYPASS" ]; then
+    rm -f "$PRIVKEYFILE"
+    echo -e "${CRed}ERROR: No passphrase entered. Cannot decrypt.${CClear}"
+    return 1
   fi
+
+  openssl pkeyutl -decrypt -inkey "$PRIVKEYFILE" -passin pass:"$KEYPASS" \
+    -in "$2/symkey.enc" -out "$PKISYMKEYFILE" 2>/dev/null
+  PKRESULT=$?
+  rm -f "$PRIVKEYFILE"
+
+  if [ $PKRESULT -ne 0 ]; then
+    rm -f "$PKISYMKEYFILE" 2>/dev/null
+    echo -e "${CRed}ERROR: RSA decryption failed. Incorrect passphrase or corrupted key/symkey file.${CClear}"
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA decryption of symmetric key failed for $1 backup in $2." >> $LOGFILE
+    return 1
+  fi
+
+  echo -e "${CGreen}STATUS: RSA+AES symmetric key successfully decrypted for $1 restore.${CClear}"
   return 0
 }
 
@@ -6003,7 +6086,7 @@ restore () {
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: External drive mount point not set. Created under: $UNCDRIVE" >> $LOGFILE
     fi
 
-    ENCPRIPASSD=""
+    PKISYMKEYFILE=""
   
     mountprimary
 
@@ -6191,35 +6274,39 @@ restore () {
           if promptyn "(y/n): "; then
             echo ""
             echo ""
+            echo -e "${CWhite}Messages:${CClear}"
+            echo ""
             # Run the TAR commands to restore backups to their original locations
             if [ "$ENCPRIMARY" = "1" ]; then
-              derivehash primary || { echo -e "${CClear}\n"; exit 1; }
-            # Read per-backup nonce and derive the unique decryption key for this backup set
-            ENCPRINONCE=$(cat "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/enc.nonce" 2>/dev/null)
-            if [ -z "$ENCPRINONCE" ]; then
-              echo -e "${CRed}ERROR: enc.nonce file not found. Cannot derive decryption key. Exiting.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: enc.nonce missing from backup folder ${BACKUPDATE}. Cannot decrypt." >> $LOGFILE
-              echo -e "${CClear}\n"; exit 1
-            fi
-            ENCPRIKEY=$(printf '%s%s' "$ENCPRIPASSD" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
+              derivepkikey primary "${UNCDRIVE}${BKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
 
             if [ "$ENCPRIMARY" = "1" ]; then
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs" >> $LOGFILE
-              (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
-                -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" \
-                | tar -xzf - -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+              TMPDECR="/tmp/bm_restore_$$.tar.gz"
+              openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" -out "$TMPDECR" 2>/dev/null
+              DECRESULT=$?
+              if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
+                rm -f "$TMPDECR"
+                echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
+                echo "1" > $TE
+              else
+                (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                rm -f "$TMPDECR"
+              fi
             else
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs" >> $LOGFILE
               (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
             fi
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}No TAR errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
               echo ""
@@ -6227,20 +6314,27 @@ restore () {
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               if [ "$ENCPRIMARY" = "1" ]; then
-                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
-                (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
-                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" \
+                DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" 2>"$DECRSTDERR" \
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                if [ -s "$DECRSTDERR" ]; then
+                  echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                  echo "1" > $TE
+                fi
+                rm -f "$DECRSTDERR"
               else
-                echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
               fi
               TEresult=$(cat $TE)
               rm -f $TE
               if [ $TEresult -eq 0 ]; then
-                echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
               else
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
@@ -6264,30 +6358,31 @@ restore () {
 
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             if [ "$ENCPRIMARY" = "1" ]; then
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
-              openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
+              openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                 -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP"
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
               (nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
             fi
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               echo ""
             fi
-            echo ""
             echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
             echo ""
+            # Clean up PKI symmetric key temp file
+            rm -f "$PKISYMKEYFILE" 2>/dev/null
             rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
@@ -6307,26 +6402,31 @@ restore () {
           if promptyn "(y/n): "; then
             echo ""
             echo ""
+            echo -e "${CWhite}Messages:${CClear}"
+            echo ""
             # Run the TAR commands to restore backups to their original locations
             if echo "$ADVJFFS" | grep -q '\.enc$'; then
-              derivehash primary || { echo -e "${CClear}\n"; exit 1; }
-              ENCPRINONCE=$(cat "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/enc.nonce" 2>/dev/null)
-              if [ -z "$ENCPRINONCE" ]; then
-                echo -e "${CRed}ERROR: enc.nonce file not found. Cannot derive decryption key. Exiting.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: enc.nonce missing from backup folder ${BACKUPDATE}. Cannot decrypt." >> $LOGFILE
-                echo -e "${CClear}\n"; exit 1
-              fi
-              ENCPRIKEY=$(printf '%s%s' "$ENCPRIPASSD" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
+              derivepkikey primary "${UNCDRIVE}${BKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
 
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
             case "$ADVJFFS" in
               *.enc)
-                (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
-                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS}" \
-                  | tar -xzf - -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                TMPDECR="/tmp/bm_restore_$$.tar.gz"
+                openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS}" -out "$TMPDECR" 2>/dev/null
+                DECRESULT=$?
+                if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
+                  rm -f "$TMPDECR"
+                  echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
+                  echo "1" > $TE
+                else
+                  (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                  rm -f "$TMPDECR"
+                fi
                 ;;
               *)
                 (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS}" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -6335,20 +6435,27 @@ restore () {
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}No TAR errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
               echo ""
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               case "$ADVUSB" in
                 *.enc)
-                  (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
-                    -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB}" \
+                  DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                  (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                    -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB}" 2>"$DECRSTDERR" \
                     | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                  if [ -s "$DECRSTDERR" ]; then
+                    echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                    echo "1" > $TE
+                  fi
+                  rm -f "$DECRSTDERR"
                   ;;
                 *)
                   (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB}" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -6357,7 +6464,7 @@ restore () {
               TEresult=$(cat $TE)
               rm -f $TE
               if [ $TEresult -eq 0 ]; then
-                echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
               else
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
@@ -6379,13 +6486,13 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: External USB drive not found. Skipping restore." >> $LOGFILE
             fi
 
-            echo -e "${CGreen}Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM" >> $LOGFILE
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             case "$ADVNVRAM" in
               *.enc)
                 NVRAMTMP="/tmp/nvram_restore_$$.cfg"
-                openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCPRIKEY" \
+                openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                   -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP"
                 (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$NVRAMTMP"
@@ -6397,15 +6504,16 @@ restore () {
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               echo ""
             fi
-            echo ""
             echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
             echo ""
+            # Clean up PKI symmetric key temp file
+            rm -f "$PKISYMKEYFILE" 2>/dev/null
             rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
@@ -6463,7 +6571,7 @@ restore () {
         echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: Secondary External drive mount point not set. Created under: $SECONDARYUNCDRIVE" >> $LOGFILE
     fi
 
-    ENCSECPASSD=""
+    PKISYMKEYFILE=""
 
     mountsecondary
 
@@ -6651,35 +6759,39 @@ restore () {
           if promptyn "(y/n): "; then
             echo ""
             echo ""
+            echo -e "${CWhite}Messages:${CClear}"
+            echo ""
             # Run the TAR commands to restore backups to their original locations
             if [ "$ENCSECONDARY" = "1" ]; then
-              derivehash secondary || { echo -e "${CClear}\n"; exit 1; }
-            # Read per-backup nonce and derive the unique decryption key for this backup set
-            ENCPRINONCE=$(cat "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/enc.nonce" 2>/dev/null)
-            if [ -z "$ENCPRINONCE" ]; then
-              echo -e "${CRed}ERROR: enc.nonce file not found. Cannot derive decryption key. Exiting.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: enc.nonce missing from backup folder ${BACKUPDATE}. Cannot decrypt." >> $LOGFILE
-              echo -e "${CClear}\n"; exit 1
-            fi
-            ENCSECKEY=$(printf '%s%s' "$ENCSECPASSD" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
+              derivepkikey secondary "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
 
             if [ "$ENCSECONDARY" = "1" ]; then
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs" >> $LOGFILE
-              (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
-                -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" \
-                | tar -xzf - -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+              TMPDECR="/tmp/bm_restore_$$.tar.gz"
+              openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" -out "$TMPDECR" 2>/dev/null
+              DECRESULT=$?
+              if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
+                rm -f "$TMPDECR"
+                echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
+                echo "1" > $TE
+              else
+                (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                rm -f "$TMPDECR"
+              fi
             else
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs" >> $LOGFILE
               (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
             fi
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS${CClear}"
               echo ""
@@ -6687,20 +6799,27 @@ restore () {
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               if [ "$ENCSECONDARY" = "1" ]; then
-                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
-                (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
-                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" \
+                DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" 2>"$DECRSTDERR" \
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                if [ -s "$DECRSTDERR" ]; then
+                  echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                  echo "1" > $TE
+                fi
+                rm -f "$DECRSTDERR"
               else
-                echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
               fi
               TEresult=$(cat $TE)
               rm -f $TE
               if [ $TEresult -eq 0 ]; then
-                echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
               else
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
@@ -6724,30 +6843,31 @@ restore () {
 
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             if [ "$ENCSECONDARY" = "1" ]; then
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
-              openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
+              openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                 -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP"
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
               (nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
             fi
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               echo ""
             fi
-            echo ""
             echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
             echo ""
+            # Clean up PKI symmetric key temp file
+            rm -f "$PKISYMKEYFILE" 2>/dev/null
             rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
@@ -6767,26 +6887,31 @@ restore () {
           if promptyn "(y/n): "; then
             echo ""
             echo ""
+            echo -e "${CWhite}Messages:${CClear}"
+            echo ""
             # Run the TAR commands to restore backups to their original locations
             if echo "$ADVJFFS" | grep -q '\.enc$'; then
-              derivehash secondary || { echo -e "${CClear}\n"; exit 1; }
-              ENCPRINONCE=$(cat "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/enc.nonce" 2>/dev/null)
-              if [ -z "$ENCPRINONCE" ]; then
-                echo -e "${CRed}ERROR: enc.nonce file not found. Cannot derive decryption key. Exiting.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: enc.nonce missing from backup folder ${BACKUPDATE}. Cannot decrypt." >> $LOGFILE
-                echo -e "${CClear}\n"; exit 1
-              fi
-              ENCSECKEY=$(printf '%s%s' "$ENCSECPASSD" "$ENCPRINONCE" | openssl dgst -sha256 | awk '{print $2}')
+              derivepkikey secondary "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
 
-            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
             case "$ADVJFFS" in
               *.enc)
-                (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
-                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS}" \
-                  | tar -xzf - -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                TMPDECR="/tmp/bm_restore_$$.tar.gz"
+                openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS}" -out "$TMPDECR" 2>/dev/null
+                DECRESULT=$?
+                if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
+                  rm -f "$TMPDECR"
+                  echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
+                  echo "1" > $TE
+                else
+                  (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                  rm -f "$TMPDECR"
+                fi
                 ;;
               *)
                 (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS}" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -6795,20 +6920,27 @@ restore () {
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS${CClear}"
               echo ""
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               case "$ADVUSB" in
                 *.enc)
-                  (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
-                    -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB}" \
+                  DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                  (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
+                    -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB}" 2>"$DECRSTDERR" \
                     | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                  if [ -s "$DECRSTDERR" ]; then
+                    echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                    echo "1" > $TE
+                  fi
+                  rm -f "$DECRSTDERR"
                   ;;
                 *)
                   (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB}" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -6817,7 +6949,7 @@ restore () {
               TEresult=$(cat $TE)
               rm -f $TE
               if [ $TEresult -eq 0 ]; then
-                echo -e "${CGreen}No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
               else
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
@@ -6839,13 +6971,13 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: External USB drive not found. Skipping restore." >> $LOGFILE
             fi
 
-            echo -e "${CGreen}Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM" >> $LOGFILE
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             case "$ADVNVRAM" in
               *.enc)
                 NVRAMTMP="/tmp/nvram_restore_$$.cfg"
-                openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass pass:"$ENCSECKEY" \
+                openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                   -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP"
                 (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$NVRAMTMP"
@@ -6857,15 +6989,16 @@ restore () {
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               echo ""
             fi
-            echo ""
             echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
             echo ""
+            # Clean up PKI symmetric key temp file
+            rm -f "$PKISYMKEYFILE" 2>/dev/null
             rm -f /jffs/scripts/backupmon.cfg
             /sbin/service 'reboot'
           fi
@@ -7390,7 +7523,7 @@ echo -e "${InvGreen} ${CClear}${CWhite} Backup directory location: ${CGreen}${BK
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Retention: ${CGreen}$FREQEXPANDED"
 echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Mode: ${CGreen}$MODE"
 if [ "$ENCPRIMARY" = "1" ]; then
-	echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Encryption: ${CGreen}AES-${ENCPRICIPHER}-CBC"
+	echo -e "${InvGreen} ${CClear}${CWhite} Primary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCPRICIPHER}-CBC"
 fi
 if [ "$SECONDARYSTATUS" == "1" ]; then
   if [ $SECONDARYFREQUENCY == "W" ]; then SECFREQEXPANDED="Weekly"; fi
@@ -7400,7 +7533,7 @@ if [ "$SECONDARYSTATUS" == "1" ]; then
   echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Retention: ${CGreen}$SECFREQEXPANDED"
   echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Mode: ${CGreen}$SECONDARYMODE"
   if [ "$ENCSECONDARY" = "1" ]; then
-	echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Encryption: ${CGreen}AES-${ENCSECCIPHER}-CBC"
+	echo -e "${InvGreen} ${CClear}${CWhite} Secondary Backup Encryption: ${CGreen}RSA-4096 + AES-${ENCSECCIPHER}-CBC"
   fi
 fi
 echo -e "${InvGreen} ${CClear}${CClear}${CDkGray}--------------------------------------------------------------------------------------------------------------${CClear}"
