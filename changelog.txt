@@ -1,4 +1,4 @@
-v1.10.0b8 - (TBA)
+v1.10.0b12- (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
@@ -12,9 +12,18 @@ v1.10.0b8 - (TBA)
             and nonce file to uniquely encrypt each backup. You will now see a unique enc.nonce file
             being written along with your backups that is used to decrypt your backups when needed.
             Don't delete these!
+          - PATCH: Reworked the encryption methodology a 3rd time after some discussion with @rung, and
+            have now implmented encryption using PKI RSA-4096/AES-256-CBC (public/private key pairs).
+            These key pairs are located in the backupmon.cfg for ease of use and encryption/decryption
+            purposes. 
+          - PATCH: Added functionality to the main setup and operations menu that allows for the
+            selection and decryption of a single file in a location of your choosing. This option is
+            available using (de)crypt, and will prompt you through a successful file decryption.
           - PATCH: Various bugfixes, wording changes and cleanup!
           - PATCH: Added the 'unset LD_LIBRARY_PATH' as per recent reports of crashing on issues with
             incompatibility with the latest rounds of Entware updates.
+          - PATCH: Made BACKUPMON compliant with the amtmupdate functionality to allow for autoupdates
+            through AMTM.
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
