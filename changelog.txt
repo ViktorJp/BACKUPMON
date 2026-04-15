@@ -1,4 +1,4 @@
-v1.10.0b12- (TBA)
+v1.10.0b13- (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
@@ -28,6 +28,11 @@ v1.10.0b12- (TBA)
             @Martinski for his advice.
           - PATCH: Made BACKUPMON compliant with the amtmupdate functionality to allow for autoupdates
             through AMTM.
+          - PATCH: Per suggestion from @Visortgw, removed the functionality that doesn't allow you to set
+            up encryption on the Secondary backup if the Secondary backup is currently disabled. This
+            feature will also not automatically remove any previously set Public/Private keys if it sees
+            that the Secondary backups are disabled, and leaves them in place unless you specifically
+            disable the Secondary backup encryption settings.
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
