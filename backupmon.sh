@@ -15,11 +15,15 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2026-Apr-12
+# Last Modified: 2026-Apr-14
 ######################################################################################
 
+#Preferred standard router binaries path
+export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
+unset LD_LIBRARY_PATH
+
 # Variable list -- please do not change any of these
-Version="1.10.0b12"                                             # Current version
+Version="1.10.0b13"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -159,10 +163,6 @@ InvCyan="\e[1;46m"
 CWhite="\e[1;37m"
 InvWhite="\e[1;107m"
 CClear="\e[0m"
-
-#Preferred standard router binaries path
-export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
-unset LD_LIBRARY_PATH
 
 # -------------------------------------------------------------------------------------------------------------------------
 # Functions
@@ -309,7 +309,7 @@ ScriptUpdateFromAMTM()
         printf "Automatic script updates via AMTM are currently disabled.\n\n"
         return 1
     fi
-    
+
     if [ $# -gt 0 ] && [ "$1" = "check" ]
     then return 0
     fi
@@ -4158,6 +4158,7 @@ vsetup () {
               1)
                 echo ""
                 echo -e "\n${CClear}Please validate you wish to enable/disable Encryption on your Primary Backups.${CClear}"
+                echo -e "WARNING: Disabling previously enabled Encryption will reset any current Public and Private keys."
                 if promptyn "(Enable = Y, Disable = N  [y/n]: "
                 then
                   ENCPRIMARY=1
@@ -4222,92 +4223,69 @@ vsetup () {
               ;;
 
               4)
-                if [ $SECONDARYSTATUS -eq 0 ]; then
+                echo ""
+                echo -e "\n${CClear}Please validate you wish to enable/disable Encryption on your Secondary Backups.${CClear}"
+                echo -e "WARNING: Disabling previously enabled Encryption will reset any current Public and Private keys."
+                if promptyn "(Enable = Y, Disable = N  [y/n]: "
+                then
+                  ENCSECONDARY=1
+                  ENCSECCIPHER=256
+                else
                   ENCSECONDARY=0
                   ENCSECCIPHER=0
                   ENCSECPUBKEY=""
                   ENCSECPRIVKEY=""
-                  saveconfig
-                else
-                  echo ""
-                  echo -e "\n${CClear}Please validate you wish to enable/disable Encryption on your Secondary Backups.${CClear}"
-                  if promptyn "(Enable = Y, Disable = N  [y/n]: "
-                  then
-                    ENCSECONDARY=1
-                    ENCSECCIPHER=256
-                  else
-                    ENCSECONDARY=0
-                    ENCSECCIPHER=0
-                    ENCSECPUBKEY=""
-                    ENCSECPRIVKEY=""
-                  fi
                 fi
               ;;
 
               5)
-                if [ $SECONDARYSTATUS -eq 0 ]; then
-                  ENCSECONDARY=0
-                  ENCSECCIPHER=0
-                  ENCSECPUBKEY=""
-                  ENCSECPRIVKEY=""
-                  saveconfig
-                else
-                  echo ""
-                  read -p "Please choose preferred AES Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher2
-                  case $SelectCipher2 in
-                    1) ENCSECCIPHER=256 ;;
-                    2) ENCSECCIPHER=128 ;;
-                    [Ee]) ;;
-                  esac
-                fi
+                echo ""
+                read -p "Please choose preferred AES Cipher (1=AES-256, 2=AES-128, e=Exit): " SelectCipher2
+                case $SelectCipher2 in
+                  1) ENCSECCIPHER=256 ;;
+                  2) ENCSECCIPHER=128 ;;
+                  [Ee]) ;;
+                esac
               ;;
 
               6)
-                if [ $SECONDARYSTATUS -eq 0 ]; then
-                  ENCSECONDARY=0
-                  ENCSECCIPHER=0
-                  ENCSECPUBKEY=""
-                  ENCSECPRIVKEY=""
-                  saveconfig
-                else
+                echo ""
+                echo -e "${CClear}This will generate a new RSA-4096 secondary key pair for backup encryption.${CClear}"
+                if [ -n "$ENCSECPUBKEY" ]; then
+                  echo -e "${CRed}WARNING: A secondary key pair already exists. Regenerating will make ALL existing${CClear}"
+                  echo -e "${CRed}secondary encrypted backups permanently unrestorable!${CClear}"
+                fi
+                echo -e "${CYellow}Your passphrase is never stored. You MUST remember it for restore operations.${CClear}"
+                echo ""
+                read -rsp 'Secondary Key Pair Passphrase (enter=Cancel): ' PKIPASS1
+                echo ""
+                if [ -n "$PKIPASS1" ]; then
+                  read -rsp 'Verify Passphrase: ' PKIPASS2
                   echo ""
-                  echo -e "${CClear}This will generate a new RSA-4096 secondary key pair for backup encryption.${CClear}"
-                  if [ -n "$ENCSECPUBKEY" ]; then
-                    echo -e "${CRed}WARNING: A secondary key pair already exists. Regenerating will make ALL existing${CClear}"
-                    echo -e "${CRed}secondary encrypted backups permanently unrestorable!${CClear}"
-                  fi
-                  echo -e "${CYellow}Your passphrase is never stored. You MUST remember it for restore operations.${CClear}"
-                  echo ""
-                  read -rsp 'Secondary Key Pair Passphrase (enter=Cancel): ' PKIPASS1
-                  echo ""
-                  if [ -n "$PKIPASS1" ]; then
-                    read -rsp 'Verify Passphrase: ' PKIPASS2
+                  if [ "$PKIPASS1" = "$PKIPASS2" ]; then
                     echo ""
-                    if [ "$PKIPASS1" = "$PKIPASS2" ]; then
+                    echo -e "${CGreen}STATUS: Generating RSA-4096 secondary key pair. Please wait 30-60 seconds...${CClear}"
+                    TMPKEYDIR="/tmp/bm_keygen_$$"
+                    mkdir -p "$TMPKEYDIR"
+                    openssl genrsa -aes256 -passout pass:"$PKIPASS1" -out "$TMPKEYDIR/privkey.pem" 4096 2>/dev/null
+                    if [ $? -eq 0 ]; then
+                      openssl rsa -in "$TMPKEYDIR/privkey.pem" -passin pass:"$PKIPASS1" -pubout -out "$TMPKEYDIR/pubkey.pem" 2>/dev/null
+                      ENCSECPUBKEY=$(tr '\n' '|' < "$TMPKEYDIR/pubkey.pem")
+                      ENCSECPRIVKEY=$(tr '\n' '|' < "$TMPKEYDIR/privkey.pem")
+                      rm -rf "$TMPKEYDIR"
                       echo ""
-                      echo -e "${CGreen}STATUS: Generating RSA-4096 secondary key pair. Please wait 30-60 seconds...${CClear}"
-                      TMPKEYDIR="/tmp/bm_keygen_$$"
-                      mkdir -p "$TMPKEYDIR"
-                      openssl genrsa -aes256 -passout pass:"$PKIPASS1" -out "$TMPKEYDIR/privkey.pem" 4096 2>/dev/null
-                      if [ $? -eq 0 ]; then
-                        openssl rsa -in "$TMPKEYDIR/privkey.pem" -passin pass:"$PKIPASS1" -pubout -out "$TMPKEYDIR/pubkey.pem" 2>/dev/null
-                        ENCSECPUBKEY=$(tr '\n' '|' < "$TMPKEYDIR/pubkey.pem")
-                        ENCSECPRIVKEY=$(tr '\n' '|' < "$TMPKEYDIR/privkey.pem")
-                        rm -rf "$TMPKEYDIR"
-                        echo ""
-                        echo -e "${CGreen}STATUS: RSA-4096 secondary key pair generated and saved to config.${CClear}"
-                        sleep 2
-                      else
-                        rm -rf "$TMPKEYDIR"
-                        echo ""
-                        echo -e "${CRed}ERROR: Key generation failed. Please try again.${CClear}"
-                        sleep 2
-                      fi
+                      echo -e "${CGreen}STATUS: RSA-4096 secondary key pair generated and saved to config.${CClear}"
+                      sleep 2
                     else
+                      rm -rf "$TMPKEYDIR"
                       echo ""
-                      echo -e "${CRed}ERROR: Passphrases do not match. No changes made.${CClear}"
+                      echo -e "${CRed}ERROR: Key generation failed. Please try again.${CClear}"
                       sleep 2
                     fi
+                  else
+                    echo ""
+                    echo -e "${CRed}ERROR: Passphrases do not match. No changes made.${CClear}"
+                    sleep 2
                   fi
                 fi
               ;;
@@ -6369,7 +6347,7 @@ ${d%/}"
   sleep 10
   echo ""
   read -rsp $'Press any key to acknowledge...\n' -n1 key
-  
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
