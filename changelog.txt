@@ -1,4 +1,4 @@
-v1.10.0b13- (TBA)
+v1.10.0b14- (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
@@ -33,6 +33,9 @@ v1.10.0b13- (TBA)
             feature will also not automatically remove any previously set Public/Private keys if it sees
             that the Secondary backups are disabled, and leaves them in place unless you specifically
             disable the Secondary backup encryption settings.
+          - PATCH: Per suggestion from @Ripshod, firmed up the language in the instructions.txt file to
+            address encrypted backup restores. Also, firmed up some of the language and logic around
+            unsuccessful restores due to missing files, or wrong Private Key passwords.
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
