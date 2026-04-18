@@ -1,4 +1,4 @@
-v1.10.0b14- (TBA)
+v1.10.0b15- (TBA)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
@@ -36,6 +36,9 @@ v1.10.0b14- (TBA)
           - PATCH: Per suggestion from @Ripshod, firmed up the language in the instructions.txt file to
             address encrypted backup restores. Also, firmed up some of the language and logic around
             unsuccessful restores due to missing files, or wrong Private Key passwords.
+          - PATCH: Per suggestion from @radon, added the total backup disk space consumed under the
+            specified backup folder location in the on-screen status messaging and the log, now showing
+            something like "INFO: Total Backup Space Consumed: 4.05GB".
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
