@@ -24,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.0b14"                                             # Current version
+Version="1.10.0b15"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -3199,6 +3199,7 @@ sendmessage () {
         _SendEMailNotification_ "BACKUPMON v$Version" "$emailSubject" "$tmpEMailBodyFile" "$emailBodyTitle"
     fi
   fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -5549,6 +5550,14 @@ backup () {
         fi
       fi
 
+      # Report total backup space consumed
+      BKUPSPACERAW=$(du -sk "${UNCDRIVE}${BKDIR}" 2>/dev/null | awk '{print $1}')
+      if [ -n "$BKUPSPACERAW" ]; then
+        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
+        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
+      fi
+
       if [ "$ENCPRIMARY" = "1" ]
       then
         echo -e "${CGreen}STATUS: Primary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCPRICIPHER}-CBC.${CClear}"
@@ -5825,6 +5834,14 @@ secondary () {
           echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Daily Secondary Backup Directory successfully created." >> $LOGFILE
         fi
+      fi
+
+      # Report total secondary backup space consumed
+      BKUPSPACERAW=$(du -sk "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" 2>/dev/null | awk '{print $1}')
+      if [ -n "$BKUPSPACERAW" ]; then
+        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
+        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
       fi
 
       if [ "$ENCSECONDARY" = "1" ]
