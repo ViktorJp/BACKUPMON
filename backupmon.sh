@@ -15,7 +15,8 @@
 # and external USB drive environments.
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
-# Last Modified: 2026-Apr-14
+#
+# Last Modified: 2026-Apr-18
 ######################################################################################
 
 #Preferred standard router binaries path
@@ -23,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.0b13"                                             # Current version
+Version="1.10.0b14"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -5693,7 +5694,13 @@ backup () {
         echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
         echo '6.) Run "sh backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
         echo '7.) Run "sh backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
-        echo '8.) After the restore finishes, perform another reboot. Everything should be restored as normal!'
+        echo '8.) After the restore finishes, a forced reboot occurs. Everything should be restored as normal!'
+        echo ''
+        echo '**NOTE** FOR THOSE USING THE ENCRYPTED BACKUP OPTION:'
+        echo '1.) Follow the same steps as listed above.'
+        echo '2.) Ensure all encrypted (.enc) files (NVRAM, JFFS, EXT Backup and symkey.enc) are in their original backup location.'
+        echo '3.) Do not generate a new Public/Private Key Pair. These are stored in your backupmon.cfg file.'
+        echo '4.) During the restore, you will be prompted for your Private Key password. Do not lose this.'
       } > "${UNCDRIVE}${BKDIR}/instructions.txt"
       echo -e "${CGreen}STATUS: Finished copying restoration ${CYellow}instructions.txt${CGreen} file to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying restoration instructions.txt file to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
@@ -5963,7 +5970,13 @@ secondary () {
         echo '5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder.'
         echo '6.) Run "sh backupmon.sh -setup" and ensure that all of the settings are correct before running a restore.'
         echo '7.) Run "sh backupmon.sh -restore", pick which backup you want to restore, and confirm before proceeding!'
-        echo '8.) After the restore finishes, perform another reboot. Everything should be restored as normal!'
+        echo '8.) After the restore finishes, a forced reboot occurs. Everything should be restored as normal!'
+        echo ''
+        echo '**NOTE** FOR THOSE USING THE ENCRYPTED BACKUP OPTION:'
+        echo '1.) Follow the same steps as listed above.'
+        echo '2.) Ensure all encrypted (.enc) files (NVRAM, JFFS, EXT Backup and symkey.enc) are in their original backup location.'
+        echo '3.) Do not generate a new Public/Private Key Pair. These are stored in your backupmon.cfg file.'
+        echo '4.) During the restore, you will be prompted for your Private Key password. Do not lose this.'
       } > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/instructions.txt"
       echo -e "${CGreen}STATUS: Finished secondary copy of restoration ${CYellow}instructions.txt${CGreen} file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary copy of restoration instructions.txt file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" >> $LOGFILE
@@ -6429,13 +6442,19 @@ restore () {
   echo -e "${InvGreen} ${CClear} Please ensure your have performed the following before restoring your backups:"
   echo -e "${InvGreen} ${CClear} 1.) Enable SSH in router UI, and connect via an SSH Terminal (like PuTTY)."
   echo -e "${InvGreen} ${CClear} 2.) Run 'AMTM' and format a new USB drive on your router - label it exactly the same name as before! Reboot."
-  echo -e "${InvGreen} ${CClear}     (please refer to your restore instruction.txt file to find your original EXT USB drive label)"
+  echo -e "${InvGreen} ${CClear}     (please refer to your restore instructions.txt file to find your original EXT USB drive label)"
   echo -e "${InvGreen} ${CClear} 3.) After reboot, SSH back in to AMTM, create your swap file (if required). This action should automatically enable JFFS."
   echo -e "${InvGreen} ${CClear} 4.) From the UI, verify JFFS scripting enabled in the router OS, if not, enable and perform another reboot."
   echo -e "${InvGreen} ${CClear} 5.) Restore the backupmon.sh & backupmon.cfg files (located under your backup folder) into your /jffs/scripts folder."
   echo -e "${InvGreen} ${CClear} 6.) Run 'sh backupmon.sh -setup' and ensure that all of the settings are correct before running a restore."
   echo -e "${InvGreen} ${CClear} 7.) Run 'sh backupmon.sh -restore', pick which backup you want to restore, and confirm before proceeding!"
-  echo -e "${InvGreen} ${CClear} 8.) After the restore finishes, perform another reboot.  Everything should be restored as normal!"
+  echo -e "${InvGreen} ${CClear} 8.) After the restore finishes, a forced reboot occurs. Everything should be restored as normal!"
+  echo -e "${InvGreen} ${CClear}"
+  echo -e "${InvGreen} ${CClear} **NOTE** FOR THOSE USING THE ENCRYPTED BACKUP OPTION:"
+  echo -e "${InvGreen} ${CClear} 1.) Follow the same steps as listed above."
+  echo -e "${InvGreen} ${CClear} 2.) Ensure all encrypted (.enc) files (NVRAM, JFFS, EXT Backup and symkey.enc) are in their original backup location."
+  echo -e "${InvGreen} ${CClear} 3.) Do not generate a new Public/Private Key Pair. These are stored in your backupmon.cfg file."
+  echo -e "${InvGreen} ${CClear} 4.) During the restore, you will be prompted for your Private Key password. Do not lose this."
   echo -e "${InvGreen} ${CClear}${CDkGray}---------------------------------------------------------------------------------------${CClear}"
 
   # Display instructions
@@ -6663,6 +6682,7 @@ restore () {
               derivepkikey primary "${UNCDRIVE}${BKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
+            RESTORE_ERRORS=0
 
             if [ "$ENCPRIMARY" = "1" ]; then
               echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
@@ -6672,10 +6692,13 @@ restore () {
                 -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" -out "$TMPDECR" 2>/dev/null
               DECRESULT=$?
               if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
-                rm -f "$TMPDECR"
+                rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
-                echo "1" > $TE
+                echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                flagerror
+                echo -e "${CClear}\n"; exit 1
               else
                 (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$TMPDECR"
@@ -6690,8 +6713,12 @@ restore () {
             if [ $TEresult -eq 0 ]; then
               echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
             else
-              echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
-              echo ""
+              echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              flagerror
+              rm -f "$PKISYMKEYFILE" 2>/dev/null
+              echo -e "${CClear}\n"; exit 1
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
@@ -6699,37 +6726,36 @@ restore () {
                 echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
                 DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                EXT_DECRYPT_ERR=0
                 (openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                   -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" 2>"$DECRSTDERR" \
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 if [ -s "$DECRSTDERR" ]; then
                   echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
-                  echo "1" > $TE
+                  RESTORE_ERRORS=$((RESTORE_ERRORS+1))
+                  EXT_DECRYPT_ERR=1
                 fi
                 rm -f "$DECRSTDERR"
               else
                 echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                EXT_DECRYPT_ERR=0
               fi
-              TEresult=$(cat $TE)
-              rm -f $TE
-              if [ $TEresult -eq 0 ]; then
+              TEresult=$(cat $TE 2>/dev/null); rm -f $TE
+              if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
                 echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
-              else
+              elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
-                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                RESTORE_ERRORS=$((RESTORE_ERRORS+1))
+                echo -e "${CRed}Would you like to proceed with the NVRAM restoration despite EXT Drive errors?${CClear}"
                 echo ""
                 if promptyn "(y/n): "; then
-                  echo ""
-                  echo -e "\n${CGreen}Proceeding...${CClear}\n"
-                  sleep 1
+                  echo ""; echo -e "\n${CGreen}Proceeding...${CClear}\n"; sleep 1
                 else
-                  echo ""
-                  echo -e "${CRed}Exiting...${CClear}\n"
-                  echo ""
-                  exit 1
+                  echo ""; echo -e "${CRed}Exiting...${CClear}\n"
+                  rm -f "$PKISYMKEYFILE" 2>/dev/null; exit 1
                 fi
               fi
             else
@@ -6744,7 +6770,17 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
               openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
-                -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP"
+                -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP" 2>/dev/null
+              DECRESULT=$?
+              if [ $DECRESULT -ne 0 ] || [ ! -s "$NVRAMTMP" ]; then
+                rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
+                echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                flagerror
+                echo -e "${CClear}\n"; exit 1
+              fi
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
@@ -6758,15 +6794,21 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
+              RESTORE_ERRORS=$((RESTORE_ERRORS+1))
               echo ""
             fi
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
-            echo ""
-            # Clean up PKI symmetric key temp file
             rm -f "$PKISYMKEYFILE" 2>/dev/null
-            rm -f /jffs/scripts/backupmon.cfg
-            /sbin/service 'reboot'
+            if [ $RESTORE_ERRORS -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
+              echo ""; rm -f /jffs/scripts/backupmon.cfg; /sbin/service 'reboot'
+            else
+              echo -e "${CRed}WARNING: Restore completed with $RESTORE_ERRORS error(s). Review the messages above before rebooting.${CClear}"
+              echo -e "${CRed}WARNING: Reboot suppressed due to restore errors. Reboot manually after reviewing.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with $RESTORE_ERRORS error(s). Reboot suppressed." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with errors. Manual review required before reboot." >> $ERRORLOGFILE
+              flagerror; echo ""
+            fi
           fi
 
         elif [ $MODE == "Advanced" ]; then
@@ -6791,6 +6833,7 @@ restore () {
               derivepkikey primary "${UNCDRIVE}${BKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
+            RESTORE_ERRORS=0
 
             echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
@@ -6801,10 +6844,12 @@ restore () {
                   -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS}" -out "$TMPDECR" 2>/dev/null
                 DECRESULT=$?
                 if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
-                  rm -f "$TMPDECR"
+                  rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
-                  echo "1" > $TE
+                  echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                  flagerror; echo -e "${CClear}\n"; exit 1
                 else
                   (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   rm -f "$TMPDECR"
@@ -6819,13 +6864,16 @@ restore () {
             if [ $TEresult -eq 0 ]; then
               echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
             else
-              echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS${CClear}"
-              echo ""
+              echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
+              EXT_DECRYPT_ERR=0
               case "$ADVUSB" in
                 *.enc)
                   DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
@@ -6835,7 +6883,7 @@ restore () {
                   if [ -s "$DECRSTDERR" ]; then
                     echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
-                    echo "1" > $TE
+                    RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                   fi
                   rm -f "$DECRSTDERR"
                   ;;
@@ -6843,23 +6891,19 @@ restore () {
                   (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB}" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   ;;
               esac
-              TEresult=$(cat $TE)
-              rm -f $TE
-              if [ $TEresult -eq 0 ]; then
+              TEresult=$(cat $TE 2>/dev/null); rm -f $TE
+              if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
                 echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
-              else
+              elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
-                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                RESTORE_ERRORS=$((RESTORE_ERRORS+1))
+                echo -e "${CRed}Would you like to proceed with the NVRAM restoration despite EXT Drive errors?${CClear}"
                 echo ""
                 if promptyn "(y/n): "; then
-                  echo ""
-                  echo -e "\n${CGreen}Proceeding...${CClear}\n"
-                  sleep 1
+                  echo ""; echo -e "\n${CGreen}Proceeding...${CClear}\n"; sleep 1
                 else
-                  echo ""
-                  echo -e "${CRed}Exiting...${CClear}\n"
-                  echo ""
-                  exit 1
+                  echo ""; echo -e "${CRed}Exiting...${CClear}\n"
+                  rm -f "$PKISYMKEYFILE" 2>/dev/null; exit 1
                 fi
               fi
             else
@@ -6875,7 +6919,16 @@ restore () {
               *.enc)
                 NVRAMTMP="/tmp/nvram_restore_$$.cfg"
                 openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
-                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP"
+                  -in "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP" 2>/dev/null
+                DECRESULT=$?
+                if [ $DECRESULT -ne 0 ] || [ ! -s "$NVRAMTMP" ]; then
+                  rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
+                  echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                  flagerror; echo -e "${CClear}\n"; exit 1
+                fi
                 (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$NVRAMTMP"
                 ;;
@@ -6889,15 +6942,20 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
-              echo ""
+              RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
             fi
-            echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
-            echo ""
-            # Clean up PKI symmetric key temp file
             rm -f "$PKISYMKEYFILE" 2>/dev/null
-            rm -f /jffs/scripts/backupmon.cfg
-            /sbin/service 'reboot'
+            if [ $RESTORE_ERRORS -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Backups were successfully restored to their original locations. Forcing reboot now!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Backups were successfully restored to their original locations. Forcing reboot!" >> $LOGFILE
+              echo ""; rm -f /jffs/scripts/backupmon.cfg; /sbin/service 'reboot'
+            else
+              echo -e "${CRed}WARNING: Restore completed with $RESTORE_ERRORS error(s). Review the messages above before rebooting.${CClear}"
+              echo -e "${CRed}WARNING: Reboot suppressed due to restore errors. Reboot manually after reviewing.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with $RESTORE_ERRORS error(s). Reboot suppressed." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with errors. Manual review required before reboot." >> $ERRORLOGFILE
+              flagerror; echo ""
+            fi
           fi
         fi
 
@@ -7148,6 +7206,7 @@ restore () {
               derivepkikey secondary "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
+            RESTORE_ERRORS=0
 
             if [ "$ENCSECONDARY" = "1" ]; then
               echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
@@ -7157,10 +7216,12 @@ restore () {
                 -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc" -out "$TMPDECR" 2>/dev/null
               DECRESULT=$?
               if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
-                rm -f "$TMPDECR"
+                rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
-                echo "1" > $TE
+                echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                flagerror; echo -e "${CClear}\n"; exit 1
               else
                 (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$TMPDECR"
@@ -7175,8 +7236,10 @@ restore () {
             if [ $TEresult -eq 0 ]; then
               echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
             else
-              echo -e "${CRed}ERROR: Errors detected on restore to JFFS${CClear}"
-              echo ""
+              echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
@@ -7184,37 +7247,35 @@ restore () {
                 echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
                 DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
+                EXT_DECRYPT_ERR=0
                 (openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
                   -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc" 2>"$DECRSTDERR" \
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 if [ -s "$DECRSTDERR" ]; then
                   echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
-                  echo "1" > $TE
+                  RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                 fi
                 rm -f "$DECRSTDERR"
               else
                 echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
+                EXT_DECRYPT_ERR=0
               fi
-              TEresult=$(cat $TE)
-              rm -f $TE
-              if [ $TEresult -eq 0 ]; then
+              TEresult=$(cat $TE 2>/dev/null); rm -f $TE
+              if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
                 echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
-              else
+              elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
-                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                RESTORE_ERRORS=$((RESTORE_ERRORS+1))
+                echo -e "${CRed}Would you like to proceed with the NVRAM restoration despite EXT Drive errors?${CClear}"
                 echo ""
                 if promptyn "(y/n): "; then
-                  echo ""
-                  echo -e "\n${CGreen}Proceeding...${CClear}\n"
-                  sleep 1
+                  echo ""; echo -e "\n${CGreen}Proceeding...${CClear}\n"; sleep 1
                 else
-                  echo ""
-                  echo -e "${CRed}Exiting...${CClear}\n"
-                  echo ""
-                  exit 1
+                  echo ""; echo -e "${CRed}Exiting...${CClear}\n"
+                  rm -f "$PKISYMKEYFILE" 2>/dev/null; exit 1
                 fi
               fi
             else
@@ -7229,7 +7290,16 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
               openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
-                -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP"
+                -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc" -out "$NVRAMTMP" 2>/dev/null
+              DECRESULT=$?
+              if [ $DECRESULT -ne 0 ] || [ ! -s "$NVRAMTMP" ]; then
+                rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
+                echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                flagerror; echo -e "${CClear}\n"; exit 1
+              fi
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
@@ -7243,15 +7313,20 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
-              echo ""
+              RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
             fi
-            echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
-            echo ""
-            # Clean up PKI symmetric key temp file
             rm -f "$PKISYMKEYFILE" 2>/dev/null
-            rm -f /jffs/scripts/backupmon.cfg
-            /sbin/service 'reboot'
+            if [ $RESTORE_ERRORS -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
+              echo ""; rm -f /jffs/scripts/backupmon.cfg; /sbin/service 'reboot'
+            else
+              echo -e "${CRed}WARNING: Restore completed with $RESTORE_ERRORS error(s). Review the messages above before rebooting.${CClear}"
+              echo -e "${CRed}WARNING: Reboot suppressed due to restore errors. Reboot manually after reviewing.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with $RESTORE_ERRORS error(s). Reboot suppressed." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with errors. Manual review required before reboot." >> $ERRORLOGFILE
+              flagerror; echo ""
+            fi
           fi
 
         elif [ $SECONDARYMODE == "Advanced" ]; then
@@ -7276,6 +7351,7 @@ restore () {
               derivepkikey secondary "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}" || { echo -e "${CClear}\n"; exit 1; }
             fi
             TE="/jffs/addons/backupmon.d/tarexit.txt"
+            RESTORE_ERRORS=0
 
             echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
@@ -7286,10 +7362,12 @@ restore () {
                   -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS}" -out "$TMPDECR" 2>/dev/null
                 DECRESULT=$?
                 if [ $DECRESULT -ne 0 ] || [ ! -s "$TMPDECR" ]; then
-                  rm -f "$TMPDECR"
+                  rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed during restore." >> $LOGFILE
-                  echo "1" > $TE
+                  echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                  flagerror; echo -e "${CClear}\n"; exit 1
                 else
                   (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   rm -f "$TMPDECR"
@@ -7304,13 +7382,16 @@ restore () {
             if [ $TEresult -eq 0 ]; then
               echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
             else
-              echo -e "${CRed}ERROR: Errors detected on restore to JFFS${CClear}"
-              echo ""
+              echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
+              EXT_DECRYPT_ERR=0
               case "$ADVUSB" in
                 *.enc)
                   DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
@@ -7320,7 +7401,7 @@ restore () {
                   if [ -s "$DECRSTDERR" ]; then
                     echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
-                    echo "1" > $TE
+                    RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                   fi
                   rm -f "$DECRSTDERR"
                   ;;
@@ -7328,23 +7409,19 @@ restore () {
                   (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB}" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   ;;
               esac
-              TEresult=$(cat $TE)
-              rm -f $TE
-              if [ $TEresult -eq 0 ]; then
+              TEresult=$(cat $TE 2>/dev/null); rm -f $TE
+              if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
                 echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
-              else
+              elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
-                echo -e "${CRed}Would you like to proceed with the restoration process?${CClear}"
+                RESTORE_ERRORS=$((RESTORE_ERRORS+1))
+                echo -e "${CRed}Would you like to proceed with the NVRAM restoration despite EXT Drive errors?${CClear}"
                 echo ""
                 if promptyn "(y/n): "; then
-                  echo ""
-                  echo -e "\n${CGreen}Proceeding...${CClear}\n"
-                  sleep 1
+                  echo ""; echo -e "\n${CGreen}Proceeding...${CClear}\n"; sleep 1
                 else
-                  echo ""
-                  echo -e "${CRed}Exiting...${CClear}\n"
-                  echo ""
-                  exit 1
+                  echo ""; echo -e "${CRed}Exiting...${CClear}\n"
+                  rm -f "$PKISYMKEYFILE" 2>/dev/null; exit 1
                 fi
               fi
             else
@@ -7360,7 +7437,16 @@ restore () {
               *.enc)
                 NVRAMTMP="/tmp/nvram_restore_$$.cfg"
                 openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
-                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP"
+                  -in "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM}" -out "$NVRAMTMP" 2>/dev/null
+                DECRESULT=$?
+                if [ $DECRESULT -ne 0 ] || [ ! -s "$NVRAMTMP" ]; then
+                  rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
+                  echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
+                  echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                  flagerror; echo -e "${CClear}\n"; exit 1
+                fi
                 (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
                 rm -f "$NVRAMTMP"
                 ;;
@@ -7374,15 +7460,20 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
-              echo ""
+              RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
             fi
-            echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
-            echo ""
-            # Clean up PKI symmetric key temp file
             rm -f "$PKISYMKEYFILE" 2>/dev/null
-            rm -f /jffs/scripts/backupmon.cfg
-            /sbin/service 'reboot'
+            if [ $RESTORE_ERRORS -eq 0 ]; then
+              echo -e "${CGreen}STATUS: Secondary backups were successfully restored to their original locations.  Forcing reboot now!${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Secondary backups were successfully restored to their original locations.  Forcing reboot!" >> $LOGFILE
+              echo ""; rm -f /jffs/scripts/backupmon.cfg; /sbin/service 'reboot'
+            else
+              echo -e "${CRed}WARNING: Restore completed with $RESTORE_ERRORS error(s). Review the messages above before rebooting.${CClear}"
+              echo -e "${CRed}WARNING: Reboot suppressed due to restore errors. Reboot manually after reviewing.${CClear}"
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with $RESTORE_ERRORS error(s). Reboot suppressed." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **WARNING**: Restore completed with errors. Manual review required before reboot." >> $ERRORLOGFILE
+              flagerror; echo ""
+            fi
           fi
         fi
 
