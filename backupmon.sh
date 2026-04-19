@@ -16,7 +16,7 @@
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 #
-# Last Modified: 2026-Apr-18
+# Last Modified: 2026-Apr-19
 ######################################################################################
 
 #Preferred standard router binaries path
@@ -24,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.0b15"                                             # Current version
+Version="1.10.0b16"                                             # Current version
 Beta=1                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -3628,6 +3628,12 @@ autopurge () {
   # If the UNC is successfully mounted, proceed
   if [ -n "$(mount | grep "$UNCDRIVE")" ]
   then
+      # Report total backup space consumed before purge
+      BKUPSPACERAWBEFORE=$(du -sk "${UNCDRIVE}${BKDIR}" 2>/dev/null | awk '{print $1}')
+      BKUPSPACEGBBEFORE=$(awk "BEGIN {printf \"%.2f\", ${BKUPSPACERAWBEFORE:-0}/1048576}")
+      echo -e "${CGreen}STATUS: Total Primary Backup Space Consumed Before Purge: ${BKUPSPACEGBBEFORE}GB${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Primary Backup Space Consumed Before Purge: ${BKUPSPACEGBBEFORE}GB" >> $LOGFILE
+
       # Continue with deleting backups permanently
       count=0
       for FOLDER in $(ls -1 "${UNCDRIVE}${BKDIR}")
@@ -3649,6 +3655,14 @@ autopurge () {
       else
 
         echo -e "${CGreen}STATUS: Perpetual backup folders older than $PURGELIMIT days deleted.${CClear}"
+
+        # Report total backup space consumed after purge and space reclaimed
+        BKUPSPACERAWAFTER=$(du -sk "${UNCDRIVE}${BKDIR}" 2>/dev/null | awk '{print $1}')
+        BKUPSPACEGBAFTER=$(awk "BEGIN {printf \"%.2f\", ${BKUPSPACERAWAFTER:-0}/1048576}")
+        BKUPSPACERECLAIMED=$(awk "BEGIN {printf \"%.2f\", (${BKUPSPACERAWBEFORE:-0}-${BKUPSPACERAWAFTER:-0})/1048576}")
+        echo -e "${CGreen}STATUS: Total Primary Backup Space Consumed After Purge: ${BKUPSPACEGBAFTER}GB | Total Primary Backup Space Reclaimed: ${BKUPSPACERECLAIMED}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Primary Backup Space Consumed After Purge: ${BKUPSPACEGBAFTER}GB | Total Primary Backup Space Reclaimed: ${BKUPSPACERECLAIMED}GB" >> $LOGFILE
+
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
 
@@ -3824,6 +3838,12 @@ autopurgesecondaries () {
   # If the UNC is successfully mounted, proceed
   if [ -n "$(mount | grep "$SECONDARYUNCDRIVE")" ]
   then
+      # Report total secondary backup space consumed before purge
+      BKUPSPACERAWBEFORE=$(du -sk "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" 2>/dev/null | awk '{print $1}')
+      BKUPSPACEGBBEFORE=$(awk "BEGIN {printf \"%.2f\", ${BKUPSPACERAWBEFORE:-0}/1048576}")
+      echo -e "${CGreen}STATUS: Total Secondary Backup Space Consumed Before Purge: ${BKUPSPACEGBBEFORE}GB${CClear}"
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Secondary Backup Space Consumed Before Purge: ${BKUPSPACEGBBEFORE}GB" >> $LOGFILE
+
       # Continue with deleting backups permanently
       count=0
       for FOLDER in $(ls -1 "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}")
@@ -3845,6 +3865,14 @@ autopurgesecondaries () {
       else
 
         echo -e "${CGreen}STATUS: Perpetual secondary backup folders older than $SECONDARYPURGELIMIT days deleted.${CClear}"
+
+        # Report total secondary backup space consumed after purge and space reclaimed
+        BKUPSPACERAWAFTER=$(du -sk "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" 2>/dev/null | awk '{print $1}')
+        BKUPSPACEGBAFTER=$(awk "BEGIN {printf \"%.2f\", ${BKUPSPACERAWAFTER:-0}/1048576}")
+        BKUPSPACERECLAIMED=$(awk "BEGIN {printf \"%.2f\", (${BKUPSPACERAWBEFORE:-0}-${BKUPSPACERAWAFTER:-0})/1048576}")
+        echo -e "${CGreen}STATUS: Total Secondary Backup Space Consumed After Purge: ${BKUPSPACEGBAFTER}GB | Total Secondary Backup Space Reclaimed: ${BKUPSPACERECLAIMED}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Secondary Backup Space Consumed After Purge: ${BKUPSPACEGBAFTER}GB | Total Secondary Backup Space Reclaimed: ${BKUPSPACERECLAIMED}GB" >> $LOGFILE
+
         echo -e "${CGreen}STATUS: Settling for 10 seconds..."
         sleep 10
 
@@ -5550,14 +5578,6 @@ backup () {
         fi
       fi
 
-      # Report total backup space consumed
-      BKUPSPACERAW=$(du -sk "${UNCDRIVE}${BKDIR}" 2>/dev/null | awk '{print $1}')
-      if [ -n "$BKUPSPACERAW" ]; then
-        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
-        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
-      fi
-
       if [ "$ENCPRIMARY" = "1" ]
       then
         echo -e "${CGreen}STATUS: Primary Backup Encrypted with ${CYellow}RSA-4096 + AES-${ENCPRICIPHER}-CBC.${CClear}"
@@ -5713,6 +5733,15 @@ backup () {
       } > "${UNCDRIVE}${BKDIR}/instructions.txt"
       echo -e "${CGreen}STATUS: Finished copying restoration ${CYellow}instructions.txt${CGreen} file to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying restoration instructions.txt file to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
+      
+      # Report total backup space consumed
+      BKUPSPACERAW=$(du -sk "${UNCDRIVE}${BKDIR}" 2>/dev/null | awk '{print $1}')
+      if [ -n "$BKUPSPACERAW" ]; then
+        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
+        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
+      fi
+      
       # Clean up PKI primary symmetric key temp file
       if [ -n "$PKISYMKEYFILE" ] && [ -f "$PKISYMKEYFILE" ]; then rm -f "$PKISYMKEYFILE"; fi
       echo -e "${CGreen}STATUS: Settling for 10 seconds..."
@@ -5834,14 +5863,6 @@ secondary () {
           echo -e "${CGreen}STATUS: Daily Secondary Backup Directory successfully created.${CClear}"
           echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Daily Secondary Backup Directory successfully created." >> $LOGFILE
         fi
-      fi
-
-      # Report total secondary backup space consumed
-      BKUPSPACERAW=$(du -sk "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" 2>/dev/null | awk '{print $1}')
-      if [ -n "$BKUPSPACERAW" ]; then
-        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
-        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
       fi
 
       if [ "$ENCSECONDARY" = "1" ]
@@ -5997,6 +6018,16 @@ secondary () {
       } > "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/instructions.txt"
       echo -e "${CGreen}STATUS: Finished secondary copy of restoration ${CYellow}instructions.txt${CGreen} file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary copy of restoration instructions.txt file to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" >> $LOGFILE
+
+      # Report total secondary backup space consumed
+      BKUPSPACERAW=$(du -sk "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" 2>/dev/null | awk '{print $1}')
+      if [ -n "$BKUPSPACERAW" ]; then
+        BKUPSPACEGB=$(awk "BEGIN {printf \"%.2f\", $BKUPSPACERAW/1048576}")
+        echo -e "${CGreen}STATUS: Total Backup Space Consumed: ${BKUPSPACEGB}GB${CClear}"
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Total Backup Space Consumed: ${BKUPSPACEGB}GB" >> $LOGFILE
+      fi
+      
+      if [ -n "$PKISECSYMKEYFILE" ] && [ -f "$PKISECSYMKEYFILE" ]; then rm -f "$PKISECSYMKEYFILE"; fi
       echo -e "${CGreen}STATUS: Settling for 10 seconds..."
       sleep 10
 
@@ -6685,7 +6716,7 @@ restore () {
         if [ $MODE == "Basic" ]; then
           echo ""
           echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+          echo -e "USB drive and NVRAM back to their original locations. You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo ""
           echo -e "${CClear}LAST CHANCE: Are you absolutely sure you like to continue to restore from backup?"
@@ -6702,7 +6733,7 @@ restore () {
             RESTORE_ERRORS=0
 
             if [ "$ENCPRIMARY" = "1" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc ${CGreen}to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs" >> $LOGFILE
               TMPDECR="/tmp/bm_restore_$$.tar.gz"
               openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
@@ -6721,14 +6752,14 @@ restore () {
                 rm -f "$TMPDECR"
               fi
             else
-              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz ${CGreen}to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs" >> $LOGFILE
               (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/jffs.tar.gz" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
             fi
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
@@ -6740,7 +6771,7 @@ restore () {
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               if [ "$ENCPRIMARY" = "1" ]; then
-                echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc ${CGreen}to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
                 DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
                 EXT_DECRYPT_ERR=0
@@ -6755,14 +6786,14 @@ restore () {
                 fi
                 rm -f "$DECRSTDERR"
               else
-                echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz ${CGreen}to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 EXT_DECRYPT_ERR=0
               fi
               TEresult=$(cat $TE 2>/dev/null); rm -f $TE
               if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
-                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}$EXTDRIVE${CClear}"
               elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 RESTORE_ERRORS=$((RESTORE_ERRORS+1))
@@ -6783,7 +6814,7 @@ restore () {
 
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             if [ "$ENCPRIMARY" = "1" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
               openssl enc -d -aes-${ENCPRICIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
@@ -6801,14 +6832,14 @@ restore () {
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
-              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
               (nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
             fi
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on ${CYellow}NVRAM ${CGreen}restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               RESTORE_ERRORS=$((RESTORE_ERRORS+1))
@@ -6831,7 +6862,7 @@ restore () {
         elif [ $MODE == "Advanced" ]; then
           echo ""
           echo -e "${CRed}WARNING: You will be restoring a backup of your JFFS, the entire contents of your External"
-          echo -e "USB drive and NVRAM back to their original locations.  You will be restoring from this backup location:"
+          echo -e "USB drive and NVRAM back to their original locations. You will be restoring from this backup location:"
           echo -e "${CBlue}${UNCDRIVE}${BKDIR}/$BACKUPDATE/"
           echo -e "JFFS filename: $ADVJFFS"
           if [ "$EXTLABEL" != "NOTFOUND" ]; then
@@ -6852,7 +6883,7 @@ restore () {
             TE="/jffs/addons/backupmon.d/tarexit.txt"
             RESTORE_ERRORS=0
 
-            echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} ${CGreen}to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
             case "$ADVJFFS" in
               *.enc)
@@ -6879,7 +6910,7 @@ restore () {
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No TAR errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
@@ -6888,7 +6919,7 @@ restore () {
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} ${CGreen}to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               EXT_DECRYPT_ERR=0
               case "$ADVUSB" in
@@ -6910,7 +6941,7 @@ restore () {
               esac
               TEresult=$(cat $TE 2>/dev/null); rm -f $TE
               if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
-                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}$EXTDRIVE${CClear}"
               elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 RESTORE_ERRORS=$((RESTORE_ERRORS+1))
@@ -6929,7 +6960,7 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: External USB drive not found. Skipping restore." >> $LOGFILE
             fi
 
-            echo -e "${CGreen}STATUS: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} ${CGreen}to NVRAM${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM" >> $LOGFILE
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             case "$ADVNVRAM" in
@@ -6956,7 +6987,7 @@ restore () {
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on ${CYellow}NVRAM ${CGreen}restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
@@ -7226,7 +7257,7 @@ restore () {
             RESTORE_ERRORS=0
 
             if [ "$ENCSECONDARY" = "1" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc ${CGreen}to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz.enc to /jffs" >> $LOGFILE
               TMPDECR="/tmp/bm_restore_$$.tar.gz"
               openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
@@ -7244,14 +7275,14 @@ restore () {
                 rm -f "$TMPDECR"
               fi
             else
-              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz ${CGreen}to /jffs${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz to /jffs" >> $LOGFILE
               (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/jffs.tar.gz" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
             fi
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
@@ -7261,7 +7292,7 @@ restore () {
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
               if [ "$ENCSECONDARY" = "1" ]; then
-                echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc ${CGreen}to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz.enc to $EXTDRIVE" >> $LOGFILE
                 DECRSTDERR="/tmp/bm_decr_stderr_$$.txt"
                 EXT_DECRYPT_ERR=0
@@ -7275,14 +7306,14 @@ restore () {
                 fi
                 rm -f "$DECRSTDERR"
               else
-                echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz ${CGreen}to $EXTDRIVE${CClear}"
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz to $EXTDRIVE" >> $LOGFILE
                 (tar -xzf "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${EXTLABEL}.tar.gz" -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 EXT_DECRYPT_ERR=0
               fi
               TEresult=$(cat $TE 2>/dev/null); rm -f $TE
               if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
-                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}$EXTDRIVE${CClear}"
               elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 RESTORE_ERRORS=$((RESTORE_ERRORS+1))
@@ -7303,7 +7334,7 @@ restore () {
 
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             if [ "$ENCSECONDARY" = "1" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg.enc to NVRAM" >> $LOGFILE
               NVRAMTMP="/tmp/nvram_restore_$$.cfg"
               openssl enc -d -aes-${ENCSECCIPHER}-cbc -pbkdf2 -iter 100000 -pass file:"$PKISYMKEYFILE" \
@@ -7320,14 +7351,14 @@ restore () {
               (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
               rm -f "$NVRAMTMP"
             else
-              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
               (nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
             fi
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on ${CYellow}NVRAM ${CGreen}restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
@@ -7370,7 +7401,7 @@ restore () {
             TE="/jffs/addons/backupmon.d/tarexit.txt"
             RESTORE_ERRORS=0
 
-            echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} ${CGreen}to /jffs${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVJFFS} to /jffs" >> $LOGFILE
             case "$ADVJFFS" in
               *.enc)
@@ -7397,7 +7428,7 @@ restore () {
             TEresult=$(cat $TE)
             rm -f $TE
             if [ $TEresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on restore to JFFS${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
@@ -7406,7 +7437,7 @@ restore () {
             fi
 
             if [ "$EXTLABEL" != "NOTFOUND" ]; then
-              echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE${CClear}"
+              echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} ${CGreen}to $EXTDRIVE${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVUSB} to $EXTDRIVE" >> $LOGFILE
               EXT_DECRYPT_ERR=0
               case "$ADVUSB" in
@@ -7428,7 +7459,7 @@ restore () {
               esac
               TEresult=$(cat $TE 2>/dev/null); rm -f $TE
               if [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ] && [ "$TEresult" = "0" ]; then
-                echo -e "${CGreen}STATUS: No TAR errors detected on restore to $EXTDRIVE${CClear}"
+                echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}$EXTDRIVE${CClear}"
               elif [ "${EXT_DECRYPT_ERR:-0}" -eq 0 ]; then
                 echo -e "${CRed}ERROR: TAR errors detected on restore to $EXTDRIVE${CClear}"
                 RESTORE_ERRORS=$((RESTORE_ERRORS+1))
@@ -7447,7 +7478,7 @@ restore () {
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: External USB drive not found. Skipping restore." >> $LOGFILE
             fi
 
-            echo -e "${CGreen}STATUS: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM${CClear}"
+            echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} ${CGreen}to NVRAM${CClear}"
             echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM} to NVRAM" >> $LOGFILE
             NS="/jffs/addons/backupmon.d/nvsexit.txt"
             case "$ADVNVRAM" in
@@ -7474,7 +7505,7 @@ restore () {
             NSresult=$(cat $NS)
             rm -f $NS
             if [ $NSresult -eq 0 ]; then
-              echo -e "${CGreen}STATUS: No errors detected on NVRAM restore${CClear}"
+              echo -e "${CGreen}STATUS: No errors detected on ${CYellow}NVRAM ${CGreen}restore${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on NVRAM restore${CClear}"
               RESTORE_ERRORS=$((RESTORE_ERRORS+1)); echo ""
