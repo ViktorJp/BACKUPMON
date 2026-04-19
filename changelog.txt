@@ -38,7 +38,8 @@ v1.10.0b15- (TBA)
             unsuccessful restores due to missing files, or wrong Private Key passwords.
           - PATCH: Per suggestion from @radon, added the total backup disk space consumed under the
             specified backup folder location in the on-screen status messaging and the log, now showing
-            something like "INFO: Total Backup Space Consumed: 4.05GB".
+            something like "INFO: Total Backup Space Consumed: 4.05GB". Additionally, added more backup
+            space stats before and after a purge, showing total space reclaimed.
 
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
