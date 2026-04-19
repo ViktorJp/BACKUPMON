@@ -1,4 +1,4 @@
-v1.10.0b15- (TBA)
+v1.10.0   - (April 19, 2026)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
             under me. This was a fun exercise. ;) New item under the main setup and operations menu,
