@@ -1,3 +1,46 @@
+v1.10.0   - (April 19, 2026)
+          - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
+            secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
+            under me. This was a fun exercise. ;) New item under the main setup and operations menu,
+            using option (en)cryption. Complete sub-menu that allows you to configure your encryption
+            options for both your primary and secondary backups, as well as choosing between the
+            AES-256 and AES-128 ciphers. The latter is still a very strong and secure encryption, but
+            may perform better on older devices, or larger backup sets. Major rework had to be done
+            to ensure integrity can still be checked, now needing to decrypt before checking for this.
+          - PATCH: Reworked the encryption methodology after some suggestions from @salvo. BACKUPMON no 
+            longer saves your master password in the config file, but uses a combination of a salt, hash
+            and nonce file to uniquely encrypt each backup. You will now see a unique enc.nonce file
+            being written along with your backups that is used to decrypt your backups when needed.
+            Don't delete these!
+          - PATCH: Reworked the encryption methodology a 3rd time after some discussion with @rung, and
+            replaced the salt/hash/nonce method in favor of using PKI RSA-4096/AES-256-CBC (public/
+            private key pairs). These key pairs are located in the backupmon.cfg for ease of use and
+            encryption/decryption purposes. Your private key is encrypted with a Master Password that
+            you must know to successfully decrypt any file. 
+          - PATCH: Added functionality to the main setup and operations menu that allows for the
+            selection and decryption of a single file in a location of your choosing. This option is
+            available using (de)crypt, and will prompt you through a successful file decryption.
+          - PATCH: Various bugfixes, wording changes and cleanup!
+          - PATCH: Added "unset LD_LIBRARY_PATH" statement due to the latest Entware binaries using the
+            RUNPATH embedded library search path mechanism instead of the previous RPATH method.
+            RUNPATH is searched *AFTER* the LD_LIBRARY_PATH definitions, whereas RPATH has higher
+            priority than the LD_LIBRARY_PATH environment variable, so it's searched FIRST. Thanks to
+            @Martinski for his advice.
+          - PATCH: Made BACKUPMON compliant with the amtmupdate functionality to allow for autoupdates
+            through AMTM.
+          - PATCH: Per suggestion from @Visortgw, removed the functionality that doesn't allow you to set
+            up encryption on the Secondary backup if the Secondary backup is currently disabled. This
+            feature will also not automatically remove any previously set Public/Private keys if it sees
+            that the Secondary backups are disabled, and leaves them in place unless you specifically
+            disable the Secondary backup encryption settings.
+          - PATCH: Per suggestion from @Ripshod, firmed up the language in the instructions.txt file to
+            address encrypted backup restores. Also, firmed up some of the language and logic around
+            unsuccessful restores due to missing files, or wrong Private Key passwords.
+          - PATCH: Per suggestion from @radon, added the total backup disk space consumed under the
+            specified backup folder location in the on-screen status messaging and the log, now showing
+            something like "INFO: Total Backup Space Consumed: 4.05GB". Additionally, added more backup
+            space stats before and after a purge, showing total space reclaimed.
+
 v1.9.1    - (October 28, 2025)
           - PATCH: Through keen observation, @visortgw suggested writing the nvram.txt reference file to
             the actual backup folder in order to keep that as part of the archive, instead of writing a
