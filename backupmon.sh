@@ -16,7 +16,7 @@
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 #
-# Last Modified: 2026-Apr-19
+# Last Modified: 2026-Apr-25
 ######################################################################################
 
 #Preferred standard router binaries path
@@ -24,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.0"                                                # Current version
+Version="1.10.1"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -6829,12 +6829,40 @@ restore () {
                 flagerror
                 echo -e "${CClear}\n"; exit 1
               fi
-              (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              echo $? > $NS
               rm -f "$NVRAMTMP"
+              if [ "$(cat $NS)" = "0" ]; then
+                echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                NCRESULT=$?
+                if [ $NCRESULT -ne 0 ]; then
+                  echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo "1" > $NS
+                else
+                  echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                fi
+              fi
             else
               echo -e "${CGreen}STATUS: Restoring ${CYellow}${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
-              (nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/nvram.cfg" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              echo $? > $NS
+              if [ "$(cat $NS)" = "0" ]; then
+                echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                NCRESULT=$?
+                if [ $NCRESULT -ne 0 ]; then
+                  echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo "1" > $NS
+                else
+                  echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                fi
+              fi
             fi
             NSresult=$(cat $NS)
             rm -f $NS
@@ -6977,11 +7005,39 @@ restore () {
                   echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 fi
-                (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                echo $? > $NS
                 rm -f "$NVRAMTMP"
+                if [ "$(cat $NS)" = "0" ]; then
+                  echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                  nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                  NCRESULT=$?
+                  if [ $NCRESULT -ne 0 ]; then
+                    echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo "1" > $NS
+                  else
+                    echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                  fi
+                fi
                 ;;
               *)
-                (nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM}" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                nvram restore "${UNCDRIVE}${BKDIR}/${BACKUPDATE}/${ADVNVRAM}" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                echo $? > $NS
+                if [ "$(cat $NS)" = "0" ]; then
+                  echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                  nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                  NCRESULT=$?
+                  if [ $NCRESULT -ne 0 ]; then
+                    echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo "1" > $NS
+                  else
+                    echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                  fi
+                fi
                 ;;
             esac
             NSresult=$(cat $NS)
@@ -7348,12 +7404,40 @@ restore () {
                 echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                 flagerror; echo -e "${CClear}\n"; exit 1
               fi
-              (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              echo $? > $NS
               rm -f "$NVRAMTMP"
+              if [ "$(cat $NS)" = "0" ]; then
+                echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                NCRESULT=$?
+                if [ $NCRESULT -ne 0 ]; then
+                  echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo "1" > $NS
+                else
+                  echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                fi
+              fi
             else
               echo -e "${CGreen}STATUS: Restoring ${CYellow}${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg ${CGreen}to NVRAM${CClear}"
               echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Restoring ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg to NVRAM" >> $LOGFILE
-              (nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/nvram.cfg" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+              echo $? > $NS
+              if [ "$(cat $NS)" = "0" ]; then
+                echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                NCRESULT=$?
+                if [ $NCRESULT -ne 0 ]; then
+                  echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo "1" > $NS
+                else
+                  echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                fi
+              fi
             fi
             NSresult=$(cat $NS)
             rm -f $NS
@@ -7495,11 +7579,39 @@ restore () {
                   echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 fi
-                (nvram restore "$NVRAMTMP" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                echo $? > $NS
                 rm -f "$NVRAMTMP"
+                if [ "$(cat $NS)" = "0" ]; then
+                  echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                  nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                  NCRESULT=$?
+                  if [ $NCRESULT -ne 0 ]; then
+                    echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo "1" > $NS
+                  else
+                    echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                  fi
+                fi
                 ;;
               *)
-                (nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM}" ; echo $? >$NS) 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                nvram restore "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${BACKUPDATE}/${ADVNVRAM}" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                echo $? > $NS
+                if [ "$(cat $NS)" = "0" ]; then
+                  echo -e "${CGreen}STATUS: Committing ${CYellow}NVRAM ${CGreen}settings to flash...${CClear}"
+                  nvram commit 2>&1 | teelogger $ERRORLOGFILE >/dev/null
+                  NCRESULT=$?
+                  if [ $NCRESULT -ne 0 ]; then
+                    echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo "1" > $NS
+                  else
+                    echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
+                  fi
+                fi
                 ;;
             esac
             NSresult=$(cat $NS)
