@@ -1,3 +1,12 @@
+v1.10.1   - (April 25, 2026)
+          - PATCH: Thanks to the keen eye of @ExtremeFiretop, he noticed that an NVRAM restore was not
+            restoring the settings correctly from a previous nvram.cfg backup. Through his trouble-
+            shooting, he determined that an 'nvram commit' was necessary to make the restoration stick
+            and survive a reboot. Somewhere along the way, this requirement must have been introduced
+            as the old method of 'nvram restore' was always good enough, it seemed. The script now has
+            a commit in there as well as a failsafe, and won't hurt this process. Additional messaging
+            was added to confirm the commit and check for errors. Thank you, @ExtremeFiretop!
+
 v1.10.0   - (April 19, 2026)
           - MINOR: Added the ability to apply enterprise-strength encryption to your primary and
             secondary backup sets. Huge thanks to @salvo for the encouragement, and lighting a fire
