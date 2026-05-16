@@ -1,4 +1,4 @@
-v1.10.2   - (TBA)
+v1.10.2b1 - (TBA)
           - PATCH: Built in some new logic per @Ripshod so that if the primary backup fails, that it
             will gracefully continue with the secondary backup (if configured). This included some new
             on-screen and email messaging to indicate a primary backup failure, but continuing on with
