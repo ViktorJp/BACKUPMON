@@ -1,4 +1,4 @@
-v1.10.2b1 - (TBA)
+v1.10.2   - (May 24, 2026)
           - PATCH: Built in some new logic per @Ripshod so that if the primary backup fails, that it
             will gracefully continue with the secondary backup (if configured). This included some new
             on-screen and email messaging to indicate a primary backup failure, but continuing on with
@@ -10,6 +10,7 @@ v1.10.2b1 - (TBA)
             corrected to relay that the local backup folder structure is not being excluded. This can
             quickly spiral out of control if not excluded, as your backups will include your backup
             folder structure, which would incrementally grow in size and time to backup.
+
 v1.10.1   - (April 25, 2026)
           - PATCH: Thanks to the keen eye of @ExtremeFiretop, he noticed that an NVRAM restore was not
             restoring the settings correctly from a previous nvram.cfg backup. Through his trouble-
