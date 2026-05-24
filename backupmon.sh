@@ -16,7 +16,7 @@
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 #
-# Last Modified: 2026-May-16
+# Last Modified: 2026-May-24
 ######################################################################################
 
 #Preferred standard router binaries path
@@ -24,8 +24,8 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.2b1"                                              # Current version
-Beta=1                                                          # Beta release Y/N
+Version="1.10.2"                                                # Current version
+Beta=0                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
 DLVERPATH="/jffs/addons/backupmon.d/version.txt"                # Path to the backupmon version file
@@ -2280,8 +2280,8 @@ vupdate () {
         else
           echo ""
           echo -e "${CRed}Download unsuccessful! Please exit to investigate issues.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $LOGFILE
-          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $ERRORLOGFILE
+          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $LOGFILE
+          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $ERRORLOGFILE
           flagerror
           echo ""
           read -rsp $'Press any key to exit BACKUPMON...\n' -n1 key
@@ -2312,8 +2312,8 @@ vupdate () {
         else
           echo ""
           echo -e "${CRed}Download unsuccessful! Please exit to investigate issues.${CClear}"
-          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $LOGFILE
-          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $ERRORLOGFILE
+          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $LOGFILE
+          echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: BACKUPMON was not successfully downloaded or installed. Please investigate!" >> $ERRORLOGFILE
           flagerror
           echo ""
           read -rsp $'Press any key to exit BACKUPMON...\n' -n1 key
@@ -2541,7 +2541,7 @@ _GetMountPointSelection_()
 {
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ] || \
       ! echo "$1" | grep -qE "^(USBmp|NFSmp|SMBmp)[+]?"
-   then printf "\n${REDct}**ERROR**${NOct}: No Parameters.\n" ; return 1 ; fi
+   then printf "\n${REDct}ERROR${NOct}: No Parameters.\n" ; return 1 ; fi
 
    local mountPointRegExp  mounPointCnt  mounPointVar=""  mounPointTmp=""
    local IPv4RegEx="([0-9]{1,3}\.){3}([0-9]{1,3})"
@@ -2565,7 +2565,7 @@ _GetMountPointSelection_()
    mounPointCnt="$(mount | grep -Ec "$mountPointRegExp")"
    if [ "$mounPointCnt" -eq 0 ]
    then
-       printf "\n${REDct}**ERROR**${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
+       printf "\n${REDct}ERROR${NOct}: Mount Points for USB-attached drives are *NOT* found.\n"
        return 1
    fi
    if [ "$mounPointCnt" -eq 1 ]
@@ -2802,8 +2802,8 @@ OFF_DownloadCEMLibraryFile_OFF()
    else
        retCode=1
        echo -e "${CRed}ERROR: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME].${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $LOGFILE
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $ERRORLOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $LOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to download the shared library script file [$CEMAIL_LIB_FILE_NAME]." >> $ERRORLOGFILE
        flagerror
    fi
    return "$retCode"
@@ -2825,7 +2825,7 @@ _DownloadCEMLibraryScript_()
 {
    if [ $# -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]
    then
-       printf "\n**ERROR**: NO parameters were provided to download library file.\n"
+       printf "\nERROR: NO parameters were provided to download library file.\n"
        return 1
    fi
 
@@ -2842,7 +2842,7 @@ _DownloadCEMLibraryScript_()
           if [ "$2" -eq "$urlDLMax" ] || "$cemIsVerboseMode" || "$doDL_ShowErrorMsgs"
           then
               [ -s "$libScriptFileDL" ] && { echo ; cat "$libScriptFileDL" ; }
-              printf "\n**ERROR**: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
+              printf "\nERROR: Unable to download the library script [$CEMAIL_LIB_FILE_NAME]\n"
               [ "$2" -lt "$urlDLMax" ] && printf "Trying again with a different URL...\n"
           fi
           rm -f "$libScriptFileDL"
@@ -2872,7 +2872,7 @@ _DownloadCEMLibraryScript_()
    mkdir -m 755 -p "$1"
    if [ ! -d "$1" ]
    then
-       printf "\n**ERROR**: Directory Path [$1] *NOT* FOUND.\n"
+       printf "\nERROR: Directory Path [$1] *NOT* FOUND.\n"
        return 1
    fi
 
@@ -2958,8 +2958,8 @@ _SendEMailNotification_()
    if [ -z "${amtmIsEMailConfigFileEnabled:+xSETx}" ]
    then
        echo -e "${CRed}ERROR: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND.${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $LOGFILE
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $ERRORLOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $LOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Email library script [$CEMAIL_LIB_FILE_PATH] *NOT* FOUND." >> $ERRORLOGFILE
        flagerror
        return 1
    fi
@@ -2967,8 +2967,8 @@ _SendEMailNotification_()
    if [ $# -lt 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]
    then
        echo -e "${CRed}ERROR: INSUFFICIENT email parameters${CClear}"
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: INSUFFICIENT email parameters." >> $LOGFILE
-       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: INSUFFICIENT email parameters." >> $ERRORLOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: INSUFFICIENT email parameters." >> $LOGFILE
+       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: INSUFFICIENT email parameters." >> $ERRORLOGFILE
        flagerror
        return 1
    fi
@@ -2986,8 +2986,8 @@ _SendEMailNotification_()
      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Email notification was sent successfully [$2]." >> $LOGFILE
    else
      echo -e "${CRed}ERROR: Failure to send email notification [Error Code: $retCode][$2].${CClear}"
-     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failure to send email notification [$2]." >> $LOGFILE
-     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failure to send email notification [$2]." >> $ERRORLOGFILE
+     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failure to send email notification [$2]." >> $LOGFILE
+     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failure to send email notification [$2]." >> $ERRORLOGFILE
      flagerror
    fi
 
@@ -3384,8 +3384,8 @@ mountprimary () {
       if [ -z "${UNC}" ] || [ -z "$UNCDRIVE" ]; then
         echo -e "${CRed}ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values are missing. Exiting.${CClear}"
         logger "BACKUPMON ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
         flagerror
         sendmessage 1 "Unable to mount network drive - UNC/DRIVE values missing"
         errorcheck
@@ -3422,8 +3422,8 @@ mountprimary () {
               if [ $CNT -eq $TRIES ];then
                 echo -e "${CRed}ERROR: Unable to mount to external network drive [$UNCDRIVE]. Please check your configuration. Exiting.${CClear}"
                 logger "BACKUPMON ERROR: Unable to mount to external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Please check your configuration!" >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. Please check your configuration!" >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. Please check your configuration!" >> $ERRORLOGFILE
                 flagerror
                 sendmessage 1 "Unable to mount network drive"
                 errorcheck
@@ -3461,8 +3461,8 @@ mountprimary () {
               if [ $CNT -eq $TRIES ];then
                 echo -e "${CRed}ERROR: Unable to mount to external NFS network drive [$UNCDRIVE]. Please check your configuration. Exiting.${CClear}"
                 logger "BACKUPMON ERROR: Unable to mount to external NFS network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external NFS network drive. Please check your configuration!" >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external NFS network drive. Please check your configuration!" >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external NFS network drive. Please check your configuration!" >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external NFS network drive. Please check your configuration!" >> $ERRORLOGFILE
                 flagerror
                 sendmessage 1 "Unable to mount network drive"
                 errorcheck
@@ -3494,8 +3494,8 @@ mountsecondary () {
       then
         echo -e "${CRed}ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values are missing. Exiting.${CClear}"
         logger "BACKUPMON ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $LOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to external network drive. Secondary UNC or UNCDRIVE values missing. Please check your configuration!" >> $ERRORLOGFILE
         flagerror
         sendmessage 1 "Unable to mount network drive - Secondary UNC/DRIVE values missing"
         errorcheck
@@ -3534,8 +3534,8 @@ mountsecondary () {
               if [ $CNT -eq $TRIES ];then
                 echo -e "${CRed}ERROR: Unable to mount to secondary external network drive [$SECONDARYUNCDRIVE]. Please check your configuration. Exiting.${CClear}"
                 logger "BACKUPMON ERROR: Unable to mount to secondary external network drive. Please check your configuration!"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external network drive. Please check your configuration!" >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to secondary external network drive. Please check your configuration!" >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to secondary external network drive. Please check your configuration!" >> $ERRORLOGFILE
                 flagerror
                 sendmessage 1 "Unable to mount secondary network drive"
                 errorcheck
@@ -3574,8 +3574,8 @@ mountsecondary () {
             if [ $CNT -eq $TRIES ];then
               echo -e "${CRed}ERROR: Unable to mount to secondary external NFS network drive [$SECONDARYUNCDRIVE]. Please check your configuration. Exiting.${CClear}"
               logger "BACKUPMON ERROR: Unable to mount to secondaryexternal NFS network drive. Please check your configuration!"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external NFS network drive. Please check your configuration!" >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to mount to secondary external NFS network drive. Please check your configuration!" >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to secondary external NFS network drive. Please check your configuration!" >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to mount to secondary external NFS network drive. Please check your configuration!" >> $ERRORLOGFILE
               flagerror
               sendmessage 1 "Unable to mount secondary network drive"
               errorcheck
@@ -4508,8 +4508,8 @@ basicjffsnvram () {
     if [ $PKIENCRESULT -ne 0 ]; then
       rm -f "$PKISYMKEYFILE" "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
       echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid primary key pair is configured.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
       flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
       return 1
     fi
@@ -4534,8 +4534,8 @@ basicjffsnvram () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating JFFS tar file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating JFFS tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating JFFS tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating JFFS tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating JFFS tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error encrypting JFFS tar file"
       errorcheck
@@ -4556,8 +4556,8 @@ basicjffsnvram () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating JFFS tar file.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
@@ -4583,8 +4583,8 @@ basicjffsnvram () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
@@ -4605,8 +4605,8 @@ basicjffsnvram () {
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       rm -f "$NVRAMTMP"
       echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -4617,8 +4617,8 @@ basicjffsnvram () {
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while encrypting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config encryption failure"
       errorcheck
@@ -4631,8 +4631,8 @@ basicjffsnvram () {
     rm -f $NS
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -4692,8 +4692,8 @@ basicextdrv () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating EXT Drive tar file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating EXT Drive tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating EXT Drive tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating EXT Drive tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating EXT Drive tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error encrypting EXT USB tar file"
       errorcheck
@@ -4714,8 +4714,8 @@ basicextdrv () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
@@ -4744,8 +4744,8 @@ basicextdrv () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
@@ -4780,8 +4780,8 @@ advjffsnvram () {
     if [ $PKIENCRESULT -ne 0 ]; then
       rm -f "$PKISYMKEYFILE" "${UNCDRIVE}${BKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
       echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid primary key pair is configured.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for primary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for primary backup." >> $ERRORLOGFILE
       flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
       return 1
     fi
@@ -4806,8 +4806,8 @@ advjffsnvram () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating JFFS tar file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating JFFS tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating JFFS tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating JFFS tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating JFFS tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error encrypting JFFS tar file"
       errorcheck
@@ -4828,8 +4828,8 @@ advjffsnvram () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating JFFS tar file.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating JFFS tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating JFFS tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
@@ -4855,8 +4855,8 @@ advjffsnvram () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in JFFS tar file integrity.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in JFFS tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
@@ -4877,8 +4877,8 @@ advjffsnvram () {
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       rm -f "$NVRAMTMP"
       echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -4889,8 +4889,8 @@ advjffsnvram () {
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while encrypting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config encryption failure"
       errorcheck
@@ -4903,8 +4903,8 @@ advjffsnvram () {
     rm -f $NS
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: Errors detected while exporting NVRAM config file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -4964,8 +4964,8 @@ advextdrv () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating EXT Drive tar file.${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating EXT Drive tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating EXT Drive tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating EXT Drive tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating EXT Drive tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error encrypting EXT USB tar file"
       errorcheck
@@ -4986,8 +4986,8 @@ advextdrv () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating EXT Drive tar file.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating EXT Drive tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating EXT Drive tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
@@ -5016,8 +5016,8 @@ advextdrv () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in EXT Drive tar file integrity.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in EXT Drive tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
@@ -5052,8 +5052,8 @@ basicsecjffsnvram () {
     if [ $PKIENCRESULT -ne 0 ]; then
       rm -f "$PKISECSYMKEYFILE" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
       echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid secondary key pair is configured. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
       flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
       echo -e "${CClear}\n"; exit 1
     fi
@@ -5078,8 +5078,8 @@ basicsecjffsnvram () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating secondary JFFS tar file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary JFFS tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary JFFS tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary JFFS tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary JFFS tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error encrypting secondary JFFS tar file"
       errorcheck
@@ -5101,8 +5101,8 @@ basicsecjffsnvram () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating secondary JFFS tar file"
     errorcheck
@@ -5129,8 +5129,8 @@ basicsecjffsnvram () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in secondary JFFS tar file integrity. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary JFFS tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Secondary JFFS tar file integrity failure"
     errorcheck
@@ -5152,8 +5152,8 @@ basicsecjffsnvram () {
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       rm -f "$NVRAMTMP"
       echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Secondary NVRAM config export failure"
       errorcheck
@@ -5165,8 +5165,8 @@ basicsecjffsnvram () {
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Secondary NVRAM config encryption failure"
       errorcheck
@@ -5180,8 +5180,8 @@ basicsecjffsnvram () {
     rm -f $NS
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Secondary NVRAM config export failure"
       errorcheck
@@ -5242,8 +5242,8 @@ basicsecextdrv () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error creating JFFS tar file"
       errorcheck
@@ -5265,8 +5265,8 @@ basicsecextdrv () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating JFFS tar file"
     errorcheck
@@ -5296,8 +5296,8 @@ basicsecextdrv () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "JFFS tar file integrity failure"
     errorcheck
@@ -5333,8 +5333,8 @@ advsecjffsnvram () {
     if [ $PKIENCRESULT -ne 0 ]; then
       rm -f "$PKISECSYMKEYFILE" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/${freqtmp}/symkey.enc" 2>/dev/null
       echo -e "${CRed}ERROR: RSA encryption of symmetric key failed. Check that a valid secondary key pair is configured. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for secondary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA encryption of symmetric key failed for secondary backup." >> $ERRORLOGFILE
       flagerror; sendmessage 1 "Error encrypting JFFS tar file"; errorcheck
       echo -e "${CClear}\n"; exit 1
     fi
@@ -5359,8 +5359,8 @@ advsecjffsnvram () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating secondary JFFS tar file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary JFFS tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary JFFS tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary JFFS tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary JFFS tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error creating EXT USB tar file"
       errorcheck
@@ -5382,8 +5382,8 @@ advsecjffsnvram () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating secondary JFFS tar file. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary JFFS tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary JFFS tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
@@ -5410,8 +5410,8 @@ advsecjffsnvram () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in Secondary JFFS tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
@@ -5433,8 +5433,8 @@ advsecjffsnvram () {
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       rm -f "$NVRAMTMP"
       echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -5446,8 +5446,8 @@ advsecjffsnvram () {
     rm -f "$NVRAMTMP"
     if [ "$NSOEresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while encrypting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -5461,8 +5461,8 @@ advsecjffsnvram () {
     rm -f $NS
     if [ -z "$NSresult" ] || [ "$NSresult" -ne 0 ]; then
       echo -e "${CRed}ERROR: Errors detected while exporting secondary NVRAM config file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected while exporting secondary NVRAM config file. Exiting." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "NVRAM config export failure"
       errorcheck
@@ -5523,8 +5523,8 @@ advsecextdrv () {
     rm -f $OE
     if [ "${OEresult:-1}" -ne 0 ]; then
       echo -e "${CRed}ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: OpenSSL encryption failed while creating secondary EXT Drive tar file." >> $ERRORLOGFILE
       flagerror
       sendmessage 1 "Error creating EXT USB tar file"
       errorcheck
@@ -5546,8 +5546,8 @@ advsecextdrv () {
   rm -f $TE
   if [ -z "$TEresult" ] || [ "$TEresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected creating secondary EXT Drive tar file. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected creating secondary EXT Drive tar file." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected creating secondary EXT Drive tar file." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "Error creating EXT USB tar file"
     errorcheck
@@ -5577,8 +5577,8 @@ advsecextdrv () {
   rm -f $TI
   if [ -z "$TIresult" ] || [ "$TIresult" -ne 0 ]; then
     echo -e "${CRed}ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting Script!${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Errors detected in secondary EXT Drive tar file integrity. Exiting." >> $ERRORLOGFILE
     flagerror
     sendmessage 1 "EXT USB tar file integrity failure"
     errorcheck
@@ -5624,8 +5624,8 @@ backup () {
     echo ""
     echo -e "${CRed}ERROR: Primary backup drive could not be mounted. Primary backup will not run.${CClear}"
     echo -e "${CGreen}STATUS: Proceeding to secondary backup if configured...${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup mount failed. Proceeding to secondary backup." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup mount failed. Proceeding to secondary backup." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup mount failed. Proceeding to secondary backup." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup mount failed. Proceeding to secondary backup." >> $ERRORLOGFILE
     sendmessage 1 "Primary backup failed - Secondary backup initiated"
     PRIMARY_BACKUP_FAILED=1
     return
@@ -5871,8 +5871,8 @@ backup () {
         # Primary backup sub-function failed; specific error and email reported above.
         echo -e "${CRed}ERROR: Primary backup did not complete successfully. Review the errors reported above.${CClear}"
         echo -e "${CGreen}STATUS: Proceeding to secondary backup if configured...${CClear}"
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup failed. Proceeding to secondary backup." >> $LOGFILE
-        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup failed. Proceeding to secondary backup." >> $ERRORLOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup failed. Proceeding to secondary backup." >> $LOGFILE
+        echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup failed. Proceeding to secondary backup." >> $ERRORLOGFILE
         sendmessage 1 "Primary backup failed - Secondary backup initiated"
         PRIMARY_BACKUP_FAILED=1
 
@@ -5891,16 +5891,16 @@ backup () {
       # There's problems with mounting the drive - check paths and permissions!
       echo -e "${CRed}ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!${CClear}"
       logger "BACKUPMON ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failed to run Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failed to run Backup Script -- Drive mount failed. Please check your configuration!" >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failed to run Backup Script -- Drive mount failed. Please check your configuration!" >> $ERRORLOGFILE
       sleep 3
       flagerror
       sendmessage 1 "Unable to mount network drive"
       errorcheck
       echo -e "${CClear}\n"
       echo -e "${CGreen}STATUS: Proceeding to secondary backup if configured...${CClear}"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup mount failed. Proceeding to secondary backup." >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Primary backup mount failed. Proceeding to secondary backup." >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup mount failed. Proceeding to secondary backup." >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Primary backup mount failed. Proceeding to secondary backup." >> $ERRORLOGFILE
       sendmessage 1 "Primary backup failed - Secondary backup initiated"
       PRIMARY_BACKUP_FAILED=1
       return
@@ -6180,8 +6180,8 @@ secondary () {
       # There's problems with mounting the drive - check paths and permissions!
       echo -e "${CRed}ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!${CClear}"
       logger "BACKUPMON ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!" >> $ERRORLOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!" >> $LOGFILE
+      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Failed to run Secondary Backup Script -- Drive mount failed. Please check your configuration!" >> $ERRORLOGFILE
       sleep 3
       flagerror
       sendmessage 1 "Unable to mount network drive"
@@ -6535,8 +6535,8 @@ ${d%/}"
     rm -f "$DEOUTFILE" 2>/dev/null
     echo -e "${CRed}ERROR: Decryption failed. The output file was not produced or is empty.${CClear}"
     echo -e "${CRed}ERROR: Verify your passphrase is correct and the backup files are intact.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of $DEFILE failed." >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of $DEFILE failed." >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of $DEFILE failed." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of $DEFILE failed." >> $ERRORLOGFILE
     flagerror
   else
     echo -e "${CGreen}STATUS: Decryption successful!${CClear}"
@@ -6570,13 +6570,13 @@ derivepkikey () {
 
   if [ -z "$PRIVKEYB64" ]; then
     echo -e "${CRed}ERROR: No RSA private key found in config for $1 backups. Cannot decrypt.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: No RSA private key found for $1 backups. Cannot decrypt." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: No RSA private key found for $1 backups. Cannot decrypt." >> $LOGFILE
     return 1
   fi
 
   if [ ! -f "$2/symkey.enc" ]; then
     echo -e "${CRed}ERROR: symkey.enc not found in backup folder. Cannot decrypt.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: symkey.enc not found in backup folder $2. Cannot decrypt." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: symkey.enc not found in backup folder $2. Cannot decrypt." >> $LOGFILE
     return 1
   fi
 
@@ -6604,7 +6604,7 @@ derivepkikey () {
   if [ $PKRESULT -ne 0 ]; then
     rm -f "$PKISYMKEYFILE" 2>/dev/null
     echo -e "${CRed}ERROR: RSA decryption failed. Incorrect passphrase or corrupted key/symkey file.${CClear}"
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: RSA decryption of symmetric key failed for $1 backup in $2." >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: RSA decryption of symmetric key failed for $1 backup in $2." >> $LOGFILE
     return 1
   fi
 
@@ -6756,8 +6756,8 @@ restore () {
             if [ -z "$BACKUPDATE1" ]; then
               echo ""
               echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Invalid backup set chosen. Exiting script..." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
               flagerror
               errorcheck
               echo -e "${CClear}\n"
@@ -6810,8 +6810,8 @@ restore () {
             echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
             echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
             logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router model is different from target router model. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             echo ""
             echo -e "${CClear}Would you like to continue to restore from backup?"
@@ -6836,8 +6836,8 @@ restore () {
             echo -e "${CRed}ERROR: Restorations can only be performed on the same router firmware/build or you may brick your router!"
             echo -e "${CRed}ERROR: If you are certain router firmware/build is the same, please check and re-save your configuration!${CClear}"
             logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             echo ""
             echo -e "${CClear}Would you like to continue to restore from backup?"
@@ -6884,8 +6884,8 @@ restore () {
                 rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                 echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
                 flagerror
                 echo -e "${CClear}\n"; exit 1
               else
@@ -6903,8 +6903,8 @@ restore () {
               echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
               flagerror
               rm -f "$PKISYMKEYFILE" 2>/dev/null
               echo -e "${CClear}\n"; exit 1
@@ -6921,7 +6921,7 @@ restore () {
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 if [ -s "$DECRSTDERR" ]; then
                   echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
                   RESTORE_ERRORS=$((RESTORE_ERRORS+1))
                   EXT_DECRYPT_ERR=1
                 fi
@@ -6965,8 +6965,8 @@ restore () {
                 rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                 echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                 flagerror
                 echo -e "${CClear}\n"; exit 1
               fi
@@ -6979,8 +6979,8 @@ restore () {
                 NCRESULT=$?
                 if [ $NCRESULT -ne 0 ]; then
                   echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                   echo "1" > $NS
                 else
                   echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -6997,8 +6997,8 @@ restore () {
                 NCRESULT=$?
                 if [ $NCRESULT -ne 0 ]; then
                   echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                   echo "1" > $NS
                 else
                   echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7064,8 +7064,8 @@ restore () {
                   rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 else
                   (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -7082,8 +7082,8 @@ restore () {
               echo -e "${CGreen}STATUS: No TAR errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: TAR errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
               flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
@@ -7099,7 +7099,7 @@ restore () {
                     | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   if [ -s "$DECRSTDERR" ]; then
                     echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
                     RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                   fi
                   rm -f "$DECRSTDERR"
@@ -7142,8 +7142,8 @@ restore () {
                   rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 fi
                 nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
@@ -7155,8 +7155,8 @@ restore () {
                   NCRESULT=$?
                   if [ $NCRESULT -ne 0 ]; then
                     echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                     echo "1" > $NS
                   else
                     echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7172,8 +7172,8 @@ restore () {
                   NCRESULT=$?
                   if [ $NCRESULT -ne 0 ]; then
                     echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                     echo "1" > $NS
                   else
                     echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7336,8 +7336,8 @@ restore () {
             if [ -z "$BACKUPDATE1" ]; then
               echo ""
               echo -e "${CRed}ERROR: Invalid backup set chosen. Exiting script...${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Invalid backup set chosen. Exiting script..." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Invalid backup set chosen. Exiting script..." >> $ERRORLOGFILE
               flagerror
               errorcheck
               echo -e "${CClear}\n"
@@ -7390,8 +7390,8 @@ restore () {
             echo -e "${CRed}ERROR: Restorations can only be performed on the same source/target router model or you may brick your router!"
             echo -e "${CRed}ERROR: If you are certain source/target routers are the same, please check and re-save your configuration!${CClear}"
             logger "BACKUPMON ERROR: Original source router model is different from target router model. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router model is different from target router model. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router model is different from target router model. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router model is different from target router model. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             echo ""
             echo -e "${CClear}Would you like to continue to restore from backup?"
@@ -7416,8 +7416,8 @@ restore () {
             echo -e "${CRed}ERROR: Restorations can only be performed on the same router firmware/build or you may brick your router!"
             echo -e "${CRed}ERROR: If you are certain router firmware/build is the same, please check and re-save your configuration!${CClear}"
             logger "BACKUPMON ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Original source router firmware/build is different from target router firmware/build. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             echo ""
             echo -e "${CClear}Would you like to continue to restore from backup?"
@@ -7464,8 +7464,8 @@ restore () {
                 rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                 echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
                 flagerror; echo -e "${CClear}\n"; exit 1
               else
                 (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -7482,8 +7482,8 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
               flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
@@ -7498,7 +7498,7 @@ restore () {
                   | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                 if [ -s "$DECRSTDERR" ]; then
                   echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
                   RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                 fi
                 rm -f "$DECRSTDERR"
@@ -7541,8 +7541,8 @@ restore () {
                 rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
                 echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                 echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
-                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                 flagerror; echo -e "${CClear}\n"; exit 1
               fi
               nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
@@ -7554,8 +7554,8 @@ restore () {
                 NCRESULT=$?
                 if [ $NCRESULT -ne 0 ]; then
                   echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                   echo "1" > $NS
                 else
                   echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7572,8 +7572,8 @@ restore () {
                 NCRESULT=$?
                 if [ $NCRESULT -ne 0 ]; then
                   echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                   echo "1" > $NS
                 else
                   echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7638,8 +7638,8 @@ restore () {
                   rm -f "$TMPDECR" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of JFFS backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "${CRed}ERROR: Cannot safely restore without a valid JFFS backup. Aborting restore.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of JFFS backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 else
                   (tar -xzf "$TMPDECR" -C /jffs ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
@@ -7656,8 +7656,8 @@ restore () {
               echo -e "${CGreen}STATUS: No errors detected on restore to ${CYellow}JFFS${CClear}"
             else
               echo -e "${CRed}ERROR: Errors detected on restore to JFFS. Restore cannot safely continue.${CClear}"
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
-              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $LOGFILE
+              echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: TAR errors on JFFS restore. Restore aborted." >> $ERRORLOGFILE
               flagerror; rm -f "$PKISYMKEYFILE" 2>/dev/null; echo -e "${CClear}\n"; exit 1
             fi
 
@@ -7673,7 +7673,7 @@ restore () {
                     | tar -xzf - -C "$EXTDRIVE" ; echo $? >$TE) 2>&1 | grep "tar:" | teelogger $ERRORLOGFILE >/dev/null
                   if [ -s "$DECRSTDERR" ]; then
                     echo -e "${CRed}ERROR: Decryption of EXT Drive backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of EXT Drive backup failed during restore." >> $LOGFILE
                     RESTORE_ERRORS=$((RESTORE_ERRORS+1)); EXT_DECRYPT_ERR=1
                   fi
                   rm -f "$DECRSTDERR"
@@ -7716,8 +7716,8 @@ restore () {
                   rm -f "$NVRAMTMP" "$PKISYMKEYFILE" 2>/dev/null
                   echo -e "${CRed}ERROR: Decryption of NVRAM backup failed. Incorrect passphrase or corrupted symkey.enc.${CClear}"
                   echo -e "${CRed}ERROR: Cannot safely restore NVRAM. Aborting restore.${CClear}"
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
-                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $LOGFILE
+                  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Decryption of NVRAM backup failed. Restore aborted." >> $ERRORLOGFILE
                   flagerror; echo -e "${CClear}\n"; exit 1
                 fi
                 nvram restore "$NVRAMTMP" 2>&1 | teelogger $ERRORLOGFILE >/dev/null
@@ -7729,8 +7729,8 @@ restore () {
                   NCRESULT=$?
                   if [ $NCRESULT -ne 0 ]; then
                     echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                     echo "1" > $NS
                   else
                     echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7746,8 +7746,8 @@ restore () {
                   NCRESULT=$?
                   if [ $NCRESULT -ne 0 ]; then
                     echo -e "${CRed}ERROR: NVRAM commit to flash failed.${CClear}"
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $LOGFILE
-                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $LOGFILE
+                    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: NVRAM commit to flash failed after restore." >> $ERRORLOGFILE
                     echo "1" > $NS
                   else
                     echo -e "${CGreen}STATUS: NVRAM settings committed to flash successfully.${CClear}"
@@ -7851,8 +7851,8 @@ unmountdrv () {
           if [ $CNT -eq $TRIES ];then
             echo -e "${CRed}ERROR: Unable to unmount from external network drive [$UNCDRIVE]. Please check your configuration. Exiting.${CClear}"
             logger "BACKUPMON ERROR: Unable to unmount from external network drive. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to unmount from external network drive. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to unmount from external network drive. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to unmount from external network drive. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to unmount from external network drive. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             sendmessage 1 "Unable to unmount network drive"
             errorcheck
@@ -7892,8 +7892,8 @@ unmountsecondarydrv () {
           if [ $CNT -eq $TRIES ];then
             echo -e "${CRed}ERROR: Unable to unmount from secondary external network drive [$SECONDARYUNCDRIVE]. Please check your configuration. Exiting.${CClear}"
             logger "BACKUPMON ERROR: Unable to unmount from secondary external network drive. Please check your configuration!"
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to unmount from secondary external network drive. Please check your configuration!" >> $LOGFILE
-            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Unable to unmount from secondary external network drive. Please check your configuration!" >> $ERRORLOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to unmount from secondary external network drive. Please check your configuration!" >> $LOGFILE
+            echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Unable to unmount from secondary external network drive. Please check your configuration!" >> $ERRORLOGFILE
             flagerror
             sendmessage 1 "Unable to unmount secondary network drive"
             errorcheck
@@ -7951,8 +7951,8 @@ if [ ! -f "$PFEXCLUSION" ]; then
     } > "$PFEXCLUSION"
     echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Page File Backup Exclusion File created" >> $LOGFILE
   else
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Page File does not exist" >> $LOGFILE
-    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: Page File does not exist" >> $ERRORLOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Page File does not exist" >> $LOGFILE
+    echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: Page File does not exist" >> $ERRORLOGFILE
     flagerror
   fi
 
@@ -8057,8 +8057,8 @@ elif [ "$LABELSIZE" -le 1 ]; then
   echo ""
   echo -e "${CYellow}Should your drive be without a label, please give it a value, other than blank. Omit any spaces."
   echo -e "Example: EXTUSB, or SAMSUNG-SSD... etc.${CClear}"
-  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $LOGFILE
-  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - **ERROR**: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $ERRORLOGFILE
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $LOGFILE
+  echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - ERROR: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label. Please investigate." >> $ERRORLOGFILE
   flagerror
   echo ""
   echo -e "${CGreen}[Continuing in 10 seconds]..."
