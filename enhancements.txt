@@ -1,10 +1,14 @@
 Future Enhancements (Planned)
 -----------------------------
+* It would be nice if the editor used by BACKUPMON can be configured (or $EDITOR is honored). (@XIII)
+* build out -o parameter customizations to alleviate share write issues that can be resolved using noserverino parameter (@iris03)
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
-* Allow for gzip encryption (@salvo)
 
 Completed:
 ----------
+* If the primary fails, continue with the secondary, and if that fails, then exit. (@Ripshod)
+* Messaging is off when using local USB->USB and was erroneously saying that a tar exception wasn't present (@Visortgw)
+* Allow for gzip encryption (@salvo)
 * Write the nvram.txt to the backup folders instead of the root backup folder (@visortgw)
 * Remove the plaintextpasswords check.
 * Add the additional commands that @Jeffrey uncovered for NFS connections
