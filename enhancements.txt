@@ -1,6 +1,7 @@
 Future Enhancements (Planned)
 -----------------------------
 * It would be nice if the editor used by BACKUPMON can be configured (or $EDITOR is honored). (@XIII)
+* Allow VI to be used instead of Nano (@JGrana)
 * build out -o parameter customizations to alleviate share write issues that can be resolved using noserverino parameter (@iris03)
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 
