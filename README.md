@@ -1,5 +1,5 @@
-# BACKUPMON v1.10.2
-Updated on 2026-May-24
+# BACKUPMON v1.10.3
+Updated on 2026-July-05
 
 <img width="1010" height="267" alt="image" src="https://github.com/user-attachments/assets/84a01de5-3b4c-4d84-ba40-d6435f30325b" />
 
