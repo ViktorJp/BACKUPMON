@@ -1,3 +1,10 @@
+v1.10.3   - (July 5, 2026)
+          - PATCH: Built in the capability of honoring the $EDITOR variable that can be configured
+            under the /jffs/configs/profile.add file. (Ex: export EDITOR="vim" ) This allows you to
+            set your preferred default editor on your router, which BACKUPMON will then use when
+            displaying log or backup exclusion files. Huge thanks to @XIII for suggesting this
+            functionality, and for @JGrana to remind me to get this functionality added.
+
 v1.10.2   - (May 24, 2026)
           - PATCH: Built in some new logic per @Ripshod so that if the primary backup fails, that it
             will gracefully continue with the secondary backup (if configured). This included some new
