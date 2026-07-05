@@ -316,13 +316,16 @@ ScriptUpdateFromAMTM()
     fi
 
     # Force a BACKUPMON download and update
-    echo -e "${CClear}[i] Force Downloading BACKUPMON... Please stand by..."
+    echo ""
+    echo -e "${InvGreen} ${CClear} Downloading latest ${CGreen}BACKUPMON${CClear}... Please stand by while we enhance your disaster recovery resiliency..."
     curl --silent --retry 3 "https://raw.githubusercontent.com/ViktorJp/backupmon/master/backupmon.sh" -o "/jffs/scripts/backupmon.sh" && chmod 755 "/jffs/scripts/backupmon.sh"
     DLsuccess=$?
     if [ "$DLsuccess" -eq 0 ]; then
-      echo -e "${CClear}[i] BACKUPMON Download/Update Success."
+      echo -e "${InvGreen} ${CClear} BACKUPMON Download/Update Success."
+      echo ""
     else
-      echo -e "${CClear}[X] BACKUPMON Download/Update Failed."
+      echo -e "${InvRed} ${CClear} BACKUPMON Download/Update Failed. Please check all the things."
+      echo ""
     fi
 
     return "$DLsuccess"
