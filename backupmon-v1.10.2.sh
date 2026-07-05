@@ -16,7 +16,7 @@
 #
 # Please use the 'backupmon.sh -setup' command to configure the necessary parameters that match your environment the best!
 #
-# Last Modified: 2026-Jul-05
+# Last Modified: 2026-May-24
 ######################################################################################
 
 #Preferred standard router binaries path
@@ -24,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.3"                                                # Current version
+Version="1.10.2"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file
@@ -402,42 +402,21 @@ updatecheck () {
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# openeditor is a function that opens a given file using the user's preferred $EDITOR, chosen based on
-# what $EDITOR contains (nano/vim/vi), falling back to nano if $EDITOR is blank or unrecognized.
-# $1 = full path to the file to open
-
-openeditor () {
-
-EDITFILE="$1"
-export TERM=linux
-
-if [ -z "$EDITOR" ]; then
-  nano +999999 --linenumbers "$EDITFILE"
-elif echo "$EDITOR" | grep -qi "nano"; then
-  nano +999999 --linenumbers "$EDITFILE"
-elif echo "$EDITOR" | grep -qi "vim"; then
-  vim + +set\ nu "$EDITFILE"
-elif echo "$EDITOR" | grep -qi "vi"; then
-  vi "$EDITFILE"
-else
-  $EDITOR "$EDITFILE"
-fi
-}
-
-# -------------------------------------------------------------------------------------------------------------------------
-# vlogs is a function that calls the user's preferred text editor to view the BACKUPMON log file
+# vlogs is a function that calls the nano text editor to view the BACKUPMON log file
 
 vlogs () {
 
-openeditor "$LOGFILE"
+export TERM=linux
+nano +999999 --linenumbers $LOGFILE
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
-# velogs is a function that calls the user's preferred text editor to view the BACKUPMON error log file
+# velogs is a function that calls the nano text editor to view the BACKUPMON error log file
 
 velogs () {
 
-openeditor "$ERRORLOGFILE"
+export TERM=linux
+nano +999999 --linenumbers $ERRORLOGFILE
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -4464,12 +4443,14 @@ vsetup () {
             done
           ;;
           ep)
-            openeditor "$EXCLUSION"
+            export TERM=linux
+            nano +999999 --linenumbers "$EXCLUSION"
           ;;
 
           es)
             if [ $SECONDARYSTATUS -eq 1 ]; then
-              openeditor "$SECONDARYEXCLUSION"
+              export TERM=linux
+              nano +999999 --linenumbers "$SECONDARYEXCLUSION"
             fi
           ;;
 

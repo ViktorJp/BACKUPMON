@@ -1,11 +1,12 @@
 Future Enhancements (Planned)
 -----------------------------
-* It would be nice if the editor used by BACKUPMON can be configured (or $EDITOR is honored). (@XIII)
 * build out -o parameter customizations to alleviate share write issues that can be resolved using noserverino parameter (@iris03)
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 
 Completed:
 ----------
+* It would be nice if the editor used by BACKUPMON can be configured (or $EDITOR is honored). (@XIII)
+* Allow VI to be used instead of Nano (@JGrana)
 * If the primary fails, continue with the secondary, and if that fails, then exit. (@Ripshod)
 * Messaging is off when using local USB->USB and was erroneously saying that a tar exception wasn't present (@Visortgw)
 * Allow for gzip encryption (@salvo)
