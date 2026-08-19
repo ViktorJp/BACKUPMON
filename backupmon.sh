@@ -8604,19 +8604,59 @@ then
     exit "$?"
 fi
 
+main_menu() {
+    while true; do
+        # Startup Configuration Check
+        if [ ! -f "$CFGPATH" ] && [ ! -f "/jffs/scripts/backupmon.cfg" ]; then
+            vsetup_wizard
+        fi
+        
+        # Reload config to ensure we have the latest variables
+        if [ -f "$CFGPATH" ]; then
+            source "$CFGPATH"
+        fi
+        
+        if [ -z "$UNCDRIVE" ]; then
+            vsetup_wizard
+            if [ -f "$CFGPATH" ]; then
+                source "$CFGPATH"
+            fi
+        fi
+
+        printf "\033[H\033[J"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 Main Menu                                                            ${CClear}"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} [1] Start Backup Now"
+        echo -e "${InvGreen} ${CClear} [2] Restore from Backup"
+        echo -e "${InvGreen} ${CClear} [3] Configure Backup Settings"
+        echo -e "${InvGreen} ${CClear} [4] Run Setup Wizard Again"
+        echo -e "${InvGreen} ${CClear} [5] View Logs"
+        echo -e "${InvGreen} ${CClear}"
+        echo -e "${InvGreen} ${CClear} [e] Exit"
+        echo -e "${InvGreen} ${CClear}"
+        read -p " Selection: " menuchoice
+        case "$menuchoice" in
+            1) BSWITCH="True"; return ;;
+            2) restore; exit 0 ;;
+            3) vconfig ;;
+            4) rm -f "$CFGPATH" "/jffs/scripts/backupmon.cfg" 2>/dev/null; vsetup_wizard ;;
+            5) vlogs ;;
+            e|E) exit 0 ;;
+        esac
+    done
+}
+
 # Check and see if any commandline option is being used
-if [ $# -eq 0 ]
-then
-    clear
-    sh /jffs/scripts/backupmon.sh -noswitch
-    exit 0
+if [ $# -eq 0 ]; then
+    printf "\033[H\033[J"
+    main_menu
 fi
 
 # Check and see if an invalid commandline option is being used
 if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || \
    [ "$1" == "-backup" ] || [ "$1" == "-restore" ] || [ "$1" == "-noswitch" ] || \
    [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ] || \
-   [ "$1" == "amtmupdate" ]
+   [ "$1" == "amtmupdate" ] || [ -z "$1" ]
 then
     clear
 else
