@@ -2362,7 +2362,7 @@ checkusbexclusion () {
 
 if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
   BKDIREXCL="$(echo "$BKDIR" | sed 's/^.\{1\}//')"
-  if grep -q "$BKDIREXCL" "$EXCLUSION" ; then
+  if [ -n "$EXCLUSION" ] && [ -f "$EXCLUSION" ] && grep -q "$BKDIREXCL" "$EXCLUSION" ; then
     echo ""
     echo -e "${CGreen}SUCCESS: Primary USB Backup Folder already included in TAR Exclusion File${CClear}"
     sleep 2
@@ -2380,7 +2380,11 @@ if [ "$EXTDRIVE" == "$UNCDRIVE" ]; then
     echo ""
     echo -e "Would you like to exclude your USB backup folder from your regular backups?"
     if promptyn " (y/n): "; then
-      echo -e "$BKDIREXCL/*" >> "$EXCLUSION"
+      if [ -z "$EXCLUSION" ]; then
+        EXCLUSION="/jffs/addons/backupmon.d/exclusions.txt"
+      fi
+      mkdir -p "$(dirname "$EXCLUSION")"
+      echo "$BKDIREXCL" >> "$EXCLUSION"
       echo ""
       echo -e "\n${CGreen}SUCCESS: Primary USB Backup Folder added to TAR Exclusion File${CClear}"
       sleep 2
@@ -2401,7 +2405,7 @@ fi
 if [ $SECONDARYSTATUS -eq 1 ]; then
   if [ "$EXTDRIVE" == "$SECONDARYUNCDRIVE" ]; then
     SECONDARYBKDIREXCL="$(echo "$SECONDARYBKDIR" | sed 's/^.\{1\}//')"
-    if grep -q "$SECONDARYBKDIREXCL" "$SECONDARYEXCLUSION" ; then
+    if [ -n "$SECONDARYEXCLUSION" ] && [ -f "$SECONDARYEXCLUSION" ] && grep -q "$SECONDARYBKDIREXCL" "$SECONDARYEXCLUSION" ; then
       echo ""
       echo -e "${CGreen}SUCCESS: Secondary USB Backup Folder already included in TAR Exclusion File${CClear}"
       sleep 2
@@ -2419,7 +2423,11 @@ if [ $SECONDARYSTATUS -eq 1 ]; then
       echo ""
       echo -e "Would you like to exclude your USB backup folder from your regular backups?"
       if promptyn " (y/n): "; then
-        echo -e "$SECONDARYBKDIREXCL/*" >> "$SECONDARYEXCLUSION"
+        if [ -z "$SECONDARYEXCLUSION" ]; then
+          SECONDARYEXCLUSION="/jffs/addons/backupmon.d/pfexclusion.txt"
+        fi
+        mkdir -p "$(dirname "$SECONDARYEXCLUSION")"
+        echo "$SECONDARYBKDIREXCL" >> "$SECONDARYEXCLUSION"
         echo ""
         echo -e "\n${CGreen}SUCCESS: Secondary USB Backup Folder added to TAR Exclusion File${CClear}"
         sleep 2
@@ -2437,6 +2445,7 @@ if [ $SECONDARYSTATUS -eq 1 ]; then
     fi
   fi
 fi
+
 }
 
 # -------------------------------------------------------------------------------------------------------------------------
