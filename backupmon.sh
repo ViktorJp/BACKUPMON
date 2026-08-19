@@ -4463,6 +4463,88 @@ autopurgesecondaries () {
 # -------------------------------------------------------------------------------------------------------------------------
 # vsetup is a function that sets up, confiures and allows you to launch backupmon on your router...
 
+vsetup_wizard() {
+    printf "\033[H\033[J"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - First Time Setup Wizard                                              ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    
+    # Defaults if missing
+    if [ -z "$BACKUPMEDIA" ]; then BACKUPMEDIA="USB"; fi
+    if [ -z "$MODE" ]; then MODE="Basic"; fi
+    
+    # Step 1: Destination
+    echo -e "${CWhite}Where would you like to store your backups?${CClear}"
+    echo -e " [1] Attached USB Drive"
+    echo -e " [2] Network Share (SMB)"
+    read -p "Selection: " dest_sel
+    if [ "$dest_sel" == "2" ]; then
+        BACKUPMEDIA="Network"
+        read -p "Enter Network Username: " BTUSERNAME
+        read -rsp "Enter Network Password: " BTPASSWORD
+        echo ""
+        read -p "Enter Target IP and Path (e.g. \\192.168.1.100\Backups): " UNC
+        UNC=$(echo "$UNC" | sed 's/\/\\/g')
+        UNCDRIVE="/tmp/mnt/backups"
+        PRIMARYUNCUPDATED="True"
+    else
+        BACKUPMEDIA="USB"
+        if [ "$EXTDRIVE" == "/tmp/mnt/<selectusbdrive>" ] || [ -z "$EXTDRIVE" ]; then
+            EXTLABEL="$(_CheckForMountPointAndVolumeLabel_)"
+            if [ -n "$EXTLABEL" ] && [ "$EXTLABEL" != "NOTFOUND" ]; then
+                EXTDRIVE="/tmp/mnt/$EXTLABEL"
+            else
+                read -p "Enter USB Mount Point (e.g. /tmp/mnt/USB): " EXTDRIVE
+            fi
+        fi
+        UNCDRIVE="$EXTDRIVE"
+    fi
+    echo ""
+    
+    # Step 2: Scope
+    echo -e "${CWhite}What do you want to backup?${CClear}"
+    echo -e " [1] Basic    (JFFS and NVRAM only)"
+    echo -e " [2] Advanced (JFFS, NVRAM, and USB Drive)"
+    read -p "Selection: " scope_sel
+    if [ "$scope_sel" == "2" ]; then
+        MODE="Advanced"
+    else
+        MODE="Basic"
+    fi
+    echo ""
+    
+    if [ "$MODE" == "Advanced" ] && [ "$BACKUPMEDIA" == "USB" ]; then
+        echo -e "${CYellow}WARNING: You are backing up your USB drive to the same USB drive.${CClear}"
+        echo -e "${CWhite}Do you want to exclude the backup target folder (${UNCDRIVE}${BKDIR})? (y/n) [Recommended: y]${CClear}"
+        read -p "Selection: " excl_sel
+        if [ "$excl_sel" == "y" ] || [ "$excl_sel" == "Y" ] || [ -z "$excl_sel" ]; then
+            EXCLUSION="/jffs/addons/backupmon.d/exclusions.txt"
+            BKDIREXCL="$(echo "$BKDIR" | sed 's/^.\{1\}//')"
+            mkdir -p /jffs/addons/backupmon.d
+            echo "$BKDIREXCL" > "$EXCLUSION"
+            echo -e "${CGreen}Target folder successfully excluded!${CClear}"
+        fi
+        echo ""
+    fi
+    
+    # Step 3: Schedule
+    echo -e "${CWhite}Would you like to schedule automatic backups? (y/n)${CClear}"
+    read -p "Selection: " sched_sel
+    if [ "$sched_sel" == "y" ] || [ "$sched_sel" == "Y" ]; then
+        SCHEDULE="1"
+        read -p "What time? (e.g. 02:30): " BACKUPTIME
+    else
+        SCHEDULE="0"
+    fi
+    echo ""
+    
+    # Save config
+    CHANGES=1
+    saveconfig
+    
+    echo -e "${CGreen}Setup complete! Settings saved.${CClear}"
+    sleep 2
+}
+
 vsetup () {
 
   # Check for and add an alias for backupmon
