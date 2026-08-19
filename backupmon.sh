@@ -8733,25 +8733,9 @@ fi
 # Check to see if the setup option is being called
 if [ "$1" == "-setup" ]
   then
-
-    # Determine if the config is local or under /jffs/addons/backupmon.d
-    if [ -f "$CFGPATH" ]; then #Making sure file exists before proceeding
-      source "$CFGPATH"
-    elif [ -f /jffs/scripts/backupmon.cfg ]; then
-      source /jffs/scripts/backupmon.cfg
-      cp /jffs/scripts/backupmon.cfg "$CFGPATH"
-    else
-      clear
-      echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
-      echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
-      sleep 3
-      vconfig
-    fi
-
-    checklibupdate
-    updatecheck
-    logoNM
-    vsetup
+    printf "\033[H\033[J"
+    main_menu
+    exit 0
 fi
 
 # Check to see if the purge option is being called
