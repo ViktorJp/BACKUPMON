@@ -469,13 +469,13 @@ trimlogs () {
 # vconfig is a function that guides you through the various configuration options for backupmon
 
 
-# BACKUPMON ZER0 - Categorized Configuration Menus
+# BACKUPMON - Categorized Configuration Menus
 
 vconfig() {
   if [ -f "$CFGPATH" ]; then source "$CFGPATH"; fi
   while true; do
     printf "\033[H\033[J"
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 Configuration Menu                                                   ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Configuration Menu                                                       ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Primary Target Settings     (Destinations, Credentials)"
     echo -e "${InvGreen} ${CClear} [2] Secondary Target Settings   (Destinations, Credentials)"
@@ -506,7 +506,7 @@ vconfig() {
 vconfig_primary() {
   while true; do
     printf "\033[H\033[J"
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Primary Target Settings                                            ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Primary Target Settings                                                  ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Target Media Type         : ${CGreen}$BACKUPMEDIA"
     
@@ -586,7 +586,7 @@ vconfig_secondary() {
   while true; do
     printf "\033[H\033[J"
     local sec_disp="Disabled"; if [ "$SECONDARYSTATUS" == "1" ]; then sec_disp="Enabled"; fi
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Secondary Target Settings                                          ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Secondary Target Settings                                                ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Secondary Target Status   : ${CGreen}$sec_disp"
     if [ "$SECONDARYSTATUS" == "1" ]; then
@@ -674,7 +674,7 @@ vconfig_scope() {
     printf "\033[H\033[J"
     local swap_disp="No"; if [ "$BACKUPSWAP" == "1" ]; then swap_disp="Yes"; fi
     
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Backup Scope & Mode                                                ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Scope & Mode                                                      ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Primary Target Sub-Directory   : ${CGreen}$BKDIR"
     echo -e "${InvGreen} ${CClear} [2] Primary Backup Mode            : ${CGreen}$MODE"
@@ -733,7 +733,7 @@ vconfig_schedule() {
     local p_purge_disp="Disabled"; if [ "$PURGE" == "1" ]; then p_purge_disp="Enabled ($PURGELIMIT days)"; fi
     local s_purge_disp="Disabled"; if [ "$SECONDARYPURGE" == "1" ]; then s_purge_disp="Enabled ($SECONDARYPURGELIMIT days)"; fi
     
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Scheduling & Retention                                             ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Scheduling & Retention                                                   ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Scheduled Backups Status : ${CGreen}$sched_disp"
     if [ "$SCHEDULE" == "1" ]; then
@@ -813,7 +813,7 @@ vconfig_encryption() {
     local p_enc_disp="Disabled"; if [ "$ENCPRIMARY" == "1" ]; then p_enc_disp="AES-${ENCPRICIPHER}"; fi
     local s_enc_disp="Disabled"; if [ "$ENCSECONDARY" == "1" ]; then s_enc_disp="AES-${ENCSECCIPHER}"; fi
     
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Encryption Settings                                                ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Encryption Settings                                                      ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] Primary Target Encryption   : ${CGreen}$p_enc_disp"
     if [ "$SECONDARYSTATUS" == "1" ]; then
@@ -859,7 +859,7 @@ vconfig_alerts() {
     local succ_disp="Disabled"; if [ "$AMTMEMAILSUCCESS" == "1" ]; then succ_disp="Enabled"; fi
     local fail_disp="Disabled"; if [ "$AMTMEMAILFAILURE" == "1" ]; then fail_disp="Enabled"; fi
     
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Alerts & Notifications                                             ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Alerts & Notifications                                                   ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     echo -e "${InvGreen} ${CClear} [1] AMTM Email Alerts           : ${CGreen}$amtm_disp"
     if [ "$AMTMEMAIL" == "1" ]; then
@@ -4465,7 +4465,7 @@ autopurgesecondaries () {
 
 vsetup_wizard() {
     printf "\033[H\033[J"
-    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - First Time Setup Wizard                                              ${CClear}"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - First-Time Setup Wizard                                                  ${CClear}"
     echo -e "${InvGreen} ${CClear}"
     
     # Defaults if missing
@@ -8624,7 +8624,7 @@ main_menu() {
         fi
 
         printf "\033[H\033[J"
-        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 Main Menu                                                            ${CClear}"
+        echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Main Menu                                                                ${CClear}"
         echo -e "${InvGreen} ${CClear}"
         echo -e "${InvGreen} ${CClear} [1] Start Backup Now"
         echo -e "${InvGreen} ${CClear} [2] Restore from Backup"
