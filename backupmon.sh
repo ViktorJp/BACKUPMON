@@ -5837,7 +5837,7 @@ backup () {
 
       if [ $PBACKUP_ERR -eq 0 ]; then
         #added copies of the backupmon.sh, backupmon.cfg, exclusions list and NVRAM to backup location for easy copy/restore
-        cp /jffs/scripts/backupmon.sh "${UNCDRIVE}${BKDIR}/backupmon.sh"
+        cp "$0" "${UNCDRIVE}${BKDIR}/backupmon.sh"
       echo -e "${CGreen}STATUS: Finished copying ${CYellow}backupmon.sh${CGreen} script to ${UNCDRIVE}${BKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished copying backupmon.sh script to ${UNCDRIVE}${BKDIR}" >> $LOGFILE
       cp "$CFGPATH" "${UNCDRIVE}${BKDIR}/backupmon.cfg"
@@ -6139,7 +6139,7 @@ secondary () {
       fi
 
       #added copies of the backupmon.sh, backupmon.cfg, exclusions list and NVRAM to backup location for easy copy/restore
-      cp /jffs/scripts/backupmon.sh "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/backupmon.sh"
+      cp "$0" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/backupmon.sh"
       echo -e "${CGreen}STATUS: Finished secondary copy of ${CYellow}backupmon.sh${CGreen} script to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}.${CClear}"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - INFO: Finished secondary copy of backupmon.sh script to ${SECONDARYUNCDRIVE}${SECONDARYBKDIR}" >> $LOGFILE
       cp "$CFGPATH" "${SECONDARYUNCDRIVE}${SECONDARYBKDIR}/backupmon.cfg"
