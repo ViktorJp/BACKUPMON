@@ -468,7 +468,435 @@ trimlogs () {
 # -------------------------------------------------------------------------------------------------------------------------
 # vconfig is a function that guides you through the various configuration options for backupmon
 
-vconfig () {
+
+# BACKUPMON ZER0 - Categorized Configuration Menus
+
+vconfig() {
+  if [ -f "$CFGPATH" ]; then source "$CFGPATH"; fi
+  while true; do
+    printf "\033[H\033[J"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 Configuration Menu                                                   ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Primary Target Settings     (Destinations, Credentials)"
+    echo -e "${InvGreen} ${CClear} [2] Secondary Target Settings   (Destinations, Credentials)"
+    echo -e "${InvGreen} ${CClear} [3] Backup Scope & Mode         (Basic/Advanced, Exclusions)"
+    echo -e "${InvGreen} ${CClear} [4] Scheduling & Retention      (Frequency, Purge logic)"
+    echo -e "${InvGreen} ${CClear} [5] Encryption Settings"
+    echo -e "${InvGreen} ${CClear} [6] Alerts & Notifications      (AMTM Email setup)"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [7] Legacy Configuration Menu   (Original 15-item interface)"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back to Main Menu"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " conf_choice
+    case "$conf_choice" in
+        1) vconfig_primary ;;
+        2) vconfig_secondary ;;
+        3) vconfig_scope ;;
+        4) vconfig_schedule ;;
+        5) vconfig_encryption ;;
+        6) vconfig_alerts ;;
+        7) old_vconfig ;;
+        e|E) saveconfig; return ;;
+    esac
+  done
+}
+
+vconfig_primary() {
+  while true; do
+    printf "\033[H\033[J"
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Primary Target Settings                                            ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Target Media Type         : ${CGreen}$BACKUPMEDIA"
+    
+    if [ "$BACKUPMEDIA" == "USB" ]; then
+      echo -e "${InvGreen} ${CClear} [2] USB Mount Point           : ${CGreen}$EXTDRIVE"
+    else
+      echo -e "${InvGreen} ${CClear} [2] Network Username          : ${CGreen}$BTUSERNAME"
+      echo -e "${InvGreen} ${CClear} [3] Network Password          : ${CGreen}********"
+      echo -e "${InvGreen} ${CClear} [4] Network Path (UNC)        : ${CGreen}$UNC"
+      if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+          echo -e "${InvGreen} ${CClear} [5] NFS Mount Options         : ${CGreen}$NFSMOUNTOPT"
+      else
+          echo -e "${InvGreen} ${CClear} [5] SMB Version               : ${CGreen}$SMBVER"
+      fi
+      echo -e "${InvGreen} ${CClear} [6] Router Mount Point        : ${CGreen}$UNCDRIVE"
+      
+      local unmount_disp="No"; if [ "$UNMOUNTNET" == "1" ]; then unmount_disp="Yes"; fi
+      echo -e "${InvGreen} ${CClear} [7] Unmount After Completion  : ${CGreen}$unmount_disp"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) 
+           echo -e "\n [1] Network share (SMB)\n [2] Attached EXT USB Drive\n [3] Network share (NFS)"
+           read -p " Enter Selection (1-3): " med_sel
+           if [ "$med_sel" == "1" ]; then BACKUPMEDIA="Network"; fi
+           if [ "$med_sel" == "2" ]; then BACKUPMEDIA="USB"; UNCDRIVE="$EXTDRIVE"; fi
+           if [ "$med_sel" == "3" ]; then BACKUPMEDIA="Network-NFS"; fi
+           ;;
+        2) 
+           if [ "$BACKUPMEDIA" == "USB" ]; then
+               read -p " Enter USB Mount Point (e.g. /tmp/mnt/USB): " EXTDRIVE
+               UNCDRIVE="$EXTDRIVE"
+           else
+               read -p " Enter Network Username: " BTUSERNAME
+           fi
+           ;;
+        3) 
+           if [ "$BACKUPMEDIA" != "USB" ]; then
+               read -rsp " Enter Network Password: " BTPASSWORD
+               echo ""
+           fi
+           ;;
+        4) 
+           if [ "$BACKUPMEDIA" != "USB" ]; then
+               read -p " Enter Target IP and Path (e.g. \\\\192.168.1.100\\Backups): " UNC_RAW
+               UNC="$(echo "$UNC_RAW" | sed 's/\\/\\\\/g')"
+               PRIMARYUNCUPDATED="True"
+           fi
+           ;;
+        5) 
+           if [ "$BACKUPMEDIA" == "Network-NFS" ]; then
+               read -p " Enter NFS Mount Options (leave blank for defaults): " NFSMOUNTOPT
+           elif [ "$BACKUPMEDIA" == "Network" ]; then
+               read -p " Enter SMB Version (e.g. 2.1 or 3.0): " SMBVER
+           fi
+           ;;
+        6) 
+           if [ "$BACKUPMEDIA" != "USB" ]; then
+               read -p " Enter Router Mount Point (e.g. /tmp/mnt/backups): " UNCDRIVE
+           fi
+           ;;
+        7) 
+           if [ "$BACKUPMEDIA" != "USB" ]; then
+               read -p " Unmount network drive after completion? (0=No, 1=Yes): " UNMOUNTNET
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+vconfig_secondary() {
+  while true; do
+    printf "\033[H\033[J"
+    local sec_disp="Disabled"; if [ "$SECONDARYSTATUS" == "1" ]; then sec_disp="Enabled"; fi
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Secondary Target Settings                                          ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Secondary Target Status   : ${CGreen}$sec_disp"
+    if [ "$SECONDARYSTATUS" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [2] Target Media Type         : ${CGreen}$SECONDARYBACKUPMEDIA"
+        if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+            echo -e "${InvGreen} ${CClear} [3] Router Mount Point        : ${CGreen}$SECONDARYUNCDRIVE"
+        else
+            echo -e "${InvGreen} ${CClear} [3] Network Username          : ${CGreen}$SECONDARYUSER"
+            echo -e "${InvGreen} ${CClear} [4] Network Password          : ${CGreen}********"
+            echo -e "${InvGreen} ${CClear} [5] Network Path (UNC)        : ${CGreen}$SECONDARYUNC"
+            if [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+                echo -e "${InvGreen} ${CClear} [6] NFS Mount Options         : ${CGreen}$SECONDARYNFSMOUNTOPT"
+            fi
+            echo -e "${InvGreen} ${CClear} [7] Router Mount Point        : ${CGreen}$SECONDARYUNCDRIVE"
+            local unmount_disp="No"; if [ "$SECONDARYUNMOUNTNET" == "1" ]; then unmount_disp="Yes"; fi
+            echo -e "${InvGreen} ${CClear} [8] Unmount After Completion  : ${CGreen}$unmount_disp"
+        fi
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) 
+           read -p " Enable Secondary Backup? (0=No, 1=Yes): " SECONDARYSTATUS
+           ;;
+        2) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               echo -e "\n [1] Network share (SMB)\n [2] Attached EXT USB Drive\n [3] Network share (NFS)"
+               read -p " Enter Selection (1-3): " med_sel
+               if [ "$med_sel" == "1" ]; then SECONDARYBACKUPMEDIA="Network"; fi
+               if [ "$med_sel" == "2" ]; then SECONDARYBACKUPMEDIA="USB"; fi
+               if [ "$med_sel" == "3" ]; then SECONDARYBACKUPMEDIA="Network-NFS"; fi
+           fi
+           ;;
+        3) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               if [ "$SECONDARYBACKUPMEDIA" == "USB" ]; then
+                   read -p " Enter USB Mount Point (e.g. /tmp/mnt/USB2): " SECONDARYUNCDRIVE
+               else
+                   read -p " Enter Network Username: " SECONDARYUSER
+               fi
+           fi
+           ;;
+        4) 
+           if [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" != "USB" ]; then
+               read -rsp " Enter Network Password: " SECONDARYPWD
+               echo ""
+           fi
+           ;;
+        5) 
+           if [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" != "USB" ]; then
+               read -p " Enter Target IP and Path (e.g. \\\\192.168.1.100\\Backups2): " UNC_RAW
+               SECONDARYUNC="$(echo "$UNC_RAW" | sed 's/\\/\\\\/g')"
+               SECONDARYUNCUPDATED="True"
+           fi
+           ;;
+        6) 
+           if [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+               read -p " Enter NFS Mount Options: " SECONDARYNFSMOUNTOPT
+           elif [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+               read -p " Enter Router Mount Point: " SECONDARYUNCDRIVE
+           fi
+           ;;
+        7) 
+           if [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+               read -p " Enter Router Mount Point: " SECONDARYUNCDRIVE
+           elif [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" == "Network" ]; then
+               read -p " Unmount network drive after completion? (0=No, 1=Yes): " SECONDARYUNMOUNTNET
+           fi
+           ;;
+        8)
+           if [ "$SECONDARYSTATUS" == "1" ] && [ "$SECONDARYBACKUPMEDIA" == "Network-NFS" ]; then
+               read -p " Unmount network drive after completion? (0=No, 1=Yes): " SECONDARYUNMOUNTNET
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+vconfig_scope() {
+  while true; do
+    printf "\033[H\033[J"
+    local swap_disp="No"; if [ "$BACKUPSWAP" == "1" ]; then swap_disp="Yes"; fi
+    
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Backup Scope & Mode                                                ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Primary Target Sub-Directory   : ${CGreen}$BKDIR"
+    echo -e "${InvGreen} ${CClear} [2] Primary Backup Mode            : ${CGreen}$MODE"
+    if [ "$SECONDARYSTATUS" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [3] Secondary Target Sub-Directory : ${CGreen}$SECONDARYBKDIR"
+        echo -e "${InvGreen} ${CClear} [4] Secondary Backup Mode          : ${CGreen}$SECONDARYMODE"
+    fi
+    echo -e "${InvGreen} ${CClear} [5] Backup Router Swap File        : ${CGreen}$swap_disp"
+    echo -e "${InvGreen} ${CClear} [6] Exclusions (Comma separated)   : ${CGreen}$EXCLUSION"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) read -p " Enter Primary Sub-Directory (e.g. /router/Backups): " BKDIR ;;
+        2) 
+           echo -e "\n [1] Basic (JFFS/NVRAM)\n [2] Advanced (JFFS/NVRAM/USB)"
+           read -p " Enter Selection (1-2): " mode_sel
+           if [ "$mode_sel" == "1" ]; then MODE="Basic"; fi
+           if [ "$mode_sel" == "2" ]; then MODE="Advanced"; fi
+           ;;
+        3) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               read -p " Enter Secondary Sub-Directory (e.g. /router/Secondary): " SECONDARYBKDIR
+           fi
+           ;;
+        4) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               echo -e "\n [1] Basic (JFFS/NVRAM)\n [2] Advanced (JFFS/NVRAM/USB)"
+               read -p " Enter Selection (1-2): " mode_sel
+               if [ "$mode_sel" == "1" ]; then SECONDARYMODE="Basic"; fi
+               if [ "$mode_sel" == "2" ]; then SECONDARYMODE="Advanced"; fi
+           fi
+           ;;
+        5) read -p " Backup swap file? (0=No, 1=Yes): " BACKUPSWAP ;;
+        6) 
+           read -p " Enter exclusions (comma separated) [leave blank to clear]: " input_excl
+           if [ "$input_excl" == "e" ] || [ "$input_excl" == "E" ]; then
+               :
+           else
+               EXCLUSION="$input_excl"
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+vconfig_schedule() {
+  while true; do
+    printf "\033[H\033[J"
+    local sched_disp="Disabled"; if [ "$SCHEDULE" == "1" ]; then sched_disp="Enabled"; fi
+    local p_freq="Weekly"; if [ "$FREQUENCY" == "M" ]; then p_freq="Monthly"; elif [ "$FREQUENCY" == "Y" ]; then p_freq="Yearly"; elif [ "$FREQUENCY" == "P" ]; then p_freq="Perpetual"; fi
+    local s_freq="Weekly"; if [ "$SECONDARYFREQUENCY" == "M" ]; then s_freq="Monthly"; elif [ "$SECONDARYFREQUENCY" == "Y" ]; then s_freq="Yearly"; elif [ "$SECONDARYFREQUENCY" == "P" ]; then s_freq="Perpetual"; fi
+    local p_purge_disp="Disabled"; if [ "$PURGE" == "1" ]; then p_purge_disp="Enabled ($PURGELIMIT days)"; fi
+    local s_purge_disp="Disabled"; if [ "$SECONDARYPURGE" == "1" ]; then s_purge_disp="Enabled ($SECONDARYPURGELIMIT days)"; fi
+    
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Scheduling & Retention                                             ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Scheduled Backups Status : ${CGreen}$sched_disp"
+    if [ "$SCHEDULE" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [2] Execution Time           : ${CGreen}$(printf '%02d' $SCHEDULEHRS):$(printf '%02d' $SCHEDULEMIN)"
+        echo -e "${InvGreen} ${CClear} [3] Schedule Mode            : ${CGreen}$SCHEDULEMODE"
+    fi
+    echo -e "${InvGreen} ${CClear} [4] Primary Frequency        : ${CGreen}$p_freq"
+    echo -e "${InvGreen} ${CClear} [5] Primary Purge            : ${CGreen}$p_purge_disp"
+    if [ "$SECONDARYSTATUS" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [6] Secondary Frequency      : ${CGreen}$s_freq"
+        echo -e "${InvGreen} ${CClear} [7] Secondary Purge          : ${CGreen}$s_purge_disp"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) read -p " Enable Scheduled Backups? (0=No, 1=Yes): " SCHEDULE ;;
+        2) 
+           if [ "$SCHEDULE" == "1" ]; then
+               read -p " Enter Execution Time (HH:MM) (e.g. 02:30): " time_input
+               SCHEDULEHRS=$(echo "$time_input" | cut -d: -f1 | sed 's/^0*//')
+               SCHEDULEMIN=$(echo "$time_input" | cut -d: -f2 | sed 's/^0*//')
+               if [ -z "$SCHEDULEHRS" ]; then SCHEDULEHRS=0; fi
+               if [ -z "$SCHEDULEMIN" ]; then SCHEDULEMIN=0; fi
+           fi
+           ;;
+        3) 
+           if [ "$SCHEDULE" == "1" ]; then
+               echo -e "\n [1] Primary Only\n [2] Primary and Secondary"
+               read -p " Enter Selection (1-2): " mode_sel
+               if [ "$mode_sel" == "1" ]; then SCHEDULEMODE="BackupOnly"; fi
+               if [ "$mode_sel" == "2" ]; then SCHEDULEMODE="Secondary"; fi
+           fi
+           ;;
+        4) 
+           echo -e "\n [W]eekly, [M]onthly, [Y]early, [P]erpetual"
+           read -p " Enter Selection: " freq_sel
+           if [ "$freq_sel" == "W" ] || [ "$freq_sel" == "w" ]; then FREQUENCY="W"; fi
+           if [ "$freq_sel" == "M" ] || [ "$freq_sel" == "m" ]; then FREQUENCY="M"; fi
+           if [ "$freq_sel" == "Y" ] || [ "$freq_sel" == "y" ]; then FREQUENCY="Y"; fi
+           if [ "$freq_sel" == "P" ] || [ "$freq_sel" == "p" ]; then FREQUENCY="P"; fi
+           ;;
+        5) 
+           read -p " Enable Primary Purge? (0=No, 1=Yes): " PURGE
+           if [ "$PURGE" == "1" ]; then
+               read -p " Enter Purge Limit in Days: " PURGELIMIT
+           fi
+           ;;
+        6) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               echo -e "\n [W]eekly, [M]onthly, [Y]early, [P]erpetual"
+               read -p " Enter Selection: " freq_sel
+               if [ "$freq_sel" == "W" ] || [ "$freq_sel" == "w" ]; then SECONDARYFREQUENCY="W"; fi
+               if [ "$freq_sel" == "M" ] || [ "$freq_sel" == "m" ]; then SECONDARYFREQUENCY="M"; fi
+               if [ "$freq_sel" == "Y" ] || [ "$freq_sel" == "y" ]; then SECONDARYFREQUENCY="Y"; fi
+               if [ "$freq_sel" == "P" ] || [ "$freq_sel" == "p" ]; then SECONDARYFREQUENCY="P"; fi
+           fi
+           ;;
+        7) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               read -p " Enable Secondary Purge? (0=No, 1=Yes): " SECONDARYPURGE
+               if [ "$SECONDARYPURGE" == "1" ]; then
+                   read -p " Enter Purge Limit in Days: " SECONDARYPURGELIMIT
+               fi
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+vconfig_encryption() {
+  while true; do
+    printf "\033[H\033[J"
+    local p_enc_disp="Disabled"; if [ "$ENCPRIMARY" == "1" ]; then p_enc_disp="AES-${ENCPRICIPHER}"; fi
+    local s_enc_disp="Disabled"; if [ "$ENCSECONDARY" == "1" ]; then s_enc_disp="AES-${ENCSECCIPHER}"; fi
+    
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Encryption Settings                                                ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] Primary Target Encryption   : ${CGreen}$p_enc_disp"
+    if [ "$SECONDARYSTATUS" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [2] Secondary Target Encryption : ${CGreen}$s_enc_disp"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) 
+           read -p " Enable Primary Encryption? (0=No, 1=Yes): " ENCPRIMARY
+           if [ "$ENCPRIMARY" == "1" ]; then
+               echo -e "\n [1] AES-128\n [2] AES-192\n [3] AES-256"
+               read -p " Enter Selection (1-3): " enc_sel
+               if [ "$enc_sel" == "1" ]; then ENCPRICIPHER="128"; fi
+               if [ "$enc_sel" == "2" ]; then ENCPRICIPHER="192"; fi
+               if [ "$enc_sel" == "3" ]; then ENCPRICIPHER="256"; fi
+           fi
+           ;;
+        2) 
+           if [ "$SECONDARYSTATUS" == "1" ]; then
+               read -p " Enable Secondary Encryption? (0=No, 1=Yes): " ENCSECONDARY
+               if [ "$ENCSECONDARY" == "1" ]; then
+                   echo -e "\n [1] AES-128\n [2] AES-192\n [3] AES-256"
+                   read -p " Enter Selection (1-3): " enc_sel
+                   if [ "$enc_sel" == "1" ]; then ENCSECCIPHER="128"; fi
+                   if [ "$enc_sel" == "2" ]; then ENCSECCIPHER="192"; fi
+                   if [ "$enc_sel" == "3" ]; then ENCSECCIPHER="256"; fi
+               fi
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+vconfig_alerts() {
+  while true; do
+    printf "\033[H\033[J"
+    local amtm_disp="Disabled"; if [ "$AMTMEMAIL" == "1" ]; then amtm_disp="Enabled"; fi
+    local succ_disp="Disabled"; if [ "$AMTMEMAILSUCCESS" == "1" ]; then succ_disp="Enabled"; fi
+    local fail_disp="Disabled"; if [ "$AMTMEMAILFAILURE" == "1" ]; then fail_disp="Enabled"; fi
+    
+    echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON ZER0 - Alerts & Notifications                                             ${CClear}"
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [1] AMTM Email Alerts           : ${CGreen}$amtm_disp"
+    if [ "$AMTMEMAIL" == "1" ]; then
+        echo -e "${InvGreen} ${CClear} [2] Email on Success            : ${CGreen}$succ_disp"
+        echo -e "${InvGreen} ${CClear} [3] Email on Failure            : ${CGreen}$fail_disp"
+        echo -e "${InvGreen} ${CClear} [4] Rate Limit (Hours)          : ${CGreen}$RATELIMIT"
+    fi
+    echo -e "${InvGreen} ${CClear}"
+    echo -e "${InvGreen} ${CClear} [e] Back"
+    echo -e "${InvGreen} ${CClear}"
+    
+    read -p " Selection: " sel
+    case "$sel" in
+        1) read -p " Enable AMTM Email Alerts? (0=No, 1=Yes): " AMTMEMAIL ;;
+        2) 
+           if [ "$AMTMEMAIL" == "1" ]; then
+               read -p " Send Email on Success? (0=No, 1=Yes): " AMTMEMAILSUCCESS
+           fi
+           ;;
+        3) 
+           if [ "$AMTMEMAIL" == "1" ]; then
+               read -p " Send Email on Failure? (0=No, 1=Yes): " AMTMEMAILFAILURE
+           fi
+           ;;
+        4) 
+           if [ "$AMTMEMAIL" == "1" ]; then
+               read -p " Enter Rate Limit in Hours (0 to disable): " RATELIMIT
+           fi
+           ;;
+        e|E) return ;;
+    esac
+  done
+}
+
+
+
+old_vconfig () {
 
   if [ -f /jffs/scripts/backupmon.cfg ]; then
      source /jffs/scripts/backupmon.cfg
