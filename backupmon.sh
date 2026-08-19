@@ -172,7 +172,7 @@ CClear="\e[0m"
 # LogoNM is a function that displays the BACKUPMON script name in a cool ASCII font without menu options
 
 logoNM () {
-  clear
+  printf "\033[H\033[J"
   echo ""
   echo ""
   echo ""
@@ -185,7 +185,7 @@ logoNM () {
   echo ""
   printf "\r                            ${CGreen}    [ INITIALIZING ]     ${CClear}"
   sleep 1
-  clear
+  printf "\033[H\033[J"
   echo ""
   echo ""
   echo ""
@@ -203,7 +203,7 @@ logoNM () {
 }
 
 logoNMexit () {
-  clear
+  printf "\033[H\033[J"
   echo ""
   echo ""
   echo ""
@@ -216,7 +216,7 @@ logoNMexit () {
   echo ""
   printf "\r                            ${CGreen}    [ SHUTTING DOWN ]     ${CClear}"
   sleep 1
-  clear
+  printf "\033[H\033[J"
   echo ""
   echo ""
   echo ""
@@ -488,7 +488,7 @@ vconfig () {
     CHANGES=0 #track notification to save your changes
 
     while true; do
-      clear
+      printf "\033[H\033[J"
 
       DLVersionPF=$(printf "%-8s" $DLVersion)
       LCLVersionPF=$(printf "%-8s" $Version)
@@ -678,7 +678,7 @@ vconfig () {
           case "$ConfigSelection" in
 
             1) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - SOURCE Mount Point                                                        ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Please choose the SOURCE Mount Point of your attached external USB Drive that contains${CClear}"
@@ -697,7 +697,7 @@ vconfig () {
             ;;
 
             2) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Media Type                                                  ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} What is the TARGET Backup Media Type? This is the type of device that you want your${CClear}"
@@ -742,7 +742,7 @@ vconfig () {
             3) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" = "Network" ]
               then
-                clear
+                printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Network Backup Username                                            ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} What is the TARGET Network Backup Username?${CClear}"
@@ -759,7 +759,7 @@ vconfig () {
             4) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" = "Network" ]
               then
-                clear
+                printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Network Backup Password                                            ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} What is the TARGET Network Backup Password?${CClear}"
@@ -781,7 +781,7 @@ vconfig () {
             5) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" = "Network" ]
               then
-                 clear
+                 printf "\033[H\033[J"
                  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup UNC Path                                                    ${CClear}"
                  echo -e "${InvGreen} ${CClear}"
                  echo -e "${InvGreen} ${CClear} What is the TARGET Backup UNC Path? This is the path of a local network backup device${CClear}"
@@ -802,7 +802,7 @@ vconfig () {
                  PRIMARYUNCUPDATED="True"
               elif [ "$BACKUPMEDIA" = "Network-NFS" ]
               then
-                 clear
+                 printf "\033[H\033[J"
                  echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup NFS Path                                                    ${CClear}"
                  echo -e "${InvGreen} ${CClear}"
                  echo -e "${InvGreen} ${CClear} What is the TARGET Backup NFS Path? This is the path of a local network backup device${CClear}"
@@ -839,7 +839,7 @@ vconfig () {
 
               if [ "$BACKUPMEDIA" = "Network" ] || [ "$BACKUPMEDIA" = "Network-NFS" ]
               then
-                clear
+                printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Drive Mount Point                                           ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} What would you like to name the TARGET Network Backup Drive Mount Point? This mount${CClear}"
@@ -891,7 +891,7 @@ vconfig () {
 
               elif [ "$BACKUPMEDIA" = "USB" ]
               then
-                clear
+                printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup USB Drive Mount Point                                       ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} Please choose the TARGET USB Backup Drive Mount Point assigned to your external USB${CClear}"
@@ -908,7 +908,7 @@ vconfig () {
             ;;
 
             7) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - TARGET Backup Directory Path                                              ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} What is the TARGET Backup Directory Path? This is the path that is created on your${CClear}"
@@ -928,7 +928,7 @@ vconfig () {
             ;;
 
             8) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Exclusion Path + File Name                                         ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Would you like to use a Backup Exclusion File Name? This file contains a list of${CClear}"
@@ -956,7 +956,7 @@ vconfig () {
             ;;
 
             9) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Your Swap File?                                                    ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Would you like to back up your Swap File? This file usually ranges in the 1GB, 2GB or${CClear}"
@@ -984,7 +984,7 @@ vconfig () {
             10) # -----------------------------------------------------------------------------------------
               if [ "$BACKUPMEDIA" = "Network" ]
               then
-                clear
+                printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - CIFS/SMB Protocol Version                                                 ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} What version of the CIFS/SMB protocol would you like to use? This protocol is used by${CClear}"
@@ -1014,7 +1014,7 @@ vconfig () {
 
 
             11) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Backup Retention                                                          ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} What backup retention would you like BACKUPMON to use for daily backup jobs each day?${CClear}"
@@ -1114,7 +1114,7 @@ vconfig () {
             ;;
 
             12) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Basic vs. Advanced Operations                                             ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} What mode of operation would you like BACKUPMON to run in? You have 2 different${CClear}"
@@ -1154,7 +1154,7 @@ vconfig () {
             ;;
 
             13) # -----------------------------------------------------------------------------------------
-              clear
+              printf "\033[H\033[J"
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - Scheduled Backups                                                         ${CClear}"
               echo -e "${InvGreen} ${CClear}"
               echo -e "${InvGreen} ${CClear} Would you like BACKUPMON to automatically run at a scheduled time each day? Please${CClear}"
@@ -1286,7 +1286,7 @@ vconfig () {
 
             14) # -----------------------------------------------------------------------------------------
               while true; do
-              clear
+              printf "\033[H\033[J"
                 echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON - AMTM Email Notifications                                                  ${CClear}"
                 echo -e "${InvGreen} ${CClear}"
                 echo -e "${InvGreen} ${CClear} Would you like BACKUPMON to send you email notifications on backup success or failure,${CClear}"
@@ -1377,7 +1377,7 @@ vconfig () {
 
             15) # -----------------------------------------------------------------------------------------
             while true; do
-              clear
+              printf "\033[H\033[J"
               DLVersionPF=$(printf "%-8s" $DLVersion)
               LCLVersionPF=$(printf "%-8s" $Version)
               echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Secondary Backup Configuration Options Menu                                 ${CClear}"
@@ -1804,7 +1804,7 @@ TESTUNCUPDATED="False"
 TESTSMBVER="2.1"
 
 while true; do
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Backup Target Network Connection Tester                                     ${CClear}"
@@ -2220,7 +2220,7 @@ while true; do
 # vuninstall is a function that uninstalls and removes all traces of backupmon from your router...
 
 vuninstall () {
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Uninstall Utility                                                           ${CClear}"
@@ -2239,7 +2239,7 @@ vuninstall () {
     echo ""
     echo -e "\n${CClear}Are you sure? Please type 'y' to validate you want to proceed.${CClear}"
       if promptyn "(y/n): "; then
-        clear
+        printf "\033[H\033[J"
         rm -f -r /jffs/addons/backupmon.d
         rm -f /jffs/scripts/backupmon.sh
         sed -i -e '/backupmon.sh/d' /jffs/scripts/services-start
@@ -2267,7 +2267,7 @@ vuninstall () {
 
 vupdate () {
   updatecheck # Check for the latest version from source repository
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Update Utility                                                              ${CClear}"
@@ -3628,7 +3628,7 @@ purgebackups () {
     return
   fi
 
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Perpetual Backups Utility                                             ${CClear}"
@@ -3834,7 +3834,7 @@ purgesecondaries () {
     return
   fi
 
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Purge Secondary Perpetual Backups Utility                                   ${CClear}"
@@ -4065,7 +4065,7 @@ vsetup () {
   elif [ $tzonechars = 5 ]; then tzspaces="  "; fi
 
   while true; do
-    clear
+    printf "\033[H\033[J"
     DLVersionPF=$(printf "%-8s" $DLVersion)
     LCLVersionPF=$(printf "%-8s" $Version)
     echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF -- Main Setup and Operations Menu                                 ${CClear}"
@@ -4136,7 +4136,7 @@ vsetup () {
         case "$InstallSelection" in
 
           bk)
-            clear
+            printf "\033[H\033[J"
             DLVersionPF=$(printf "%-8s" $DLVersion)
             LCLVersionPF=$(printf "%-8s" $Version)
             echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
@@ -4161,7 +4161,7 @@ vsetup () {
           ;;
 
           rs)
-            clear
+            printf "\033[H\033[J"
             DLVersionPF=$(printf "%-8s" $DLVersion)
             LCLVersionPF=$(printf "%-8s" $Version)
             echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON v$LCLVersionPF                                                                                          ${CClear}"
@@ -4174,38 +4174,38 @@ vsetup () {
           ;;
 
           pg)
-            clear
+            printf "\033[H\033[J"
             if [ $FREQUENCY == "P" ]; then
               purgebackups
             fi
           ;;
 
           ps)
-            clear
+            printf "\033[H\033[J"
             if [ $SECONDARYFREQUENCY == "P" ]; then
               purgesecondaries
             fi
           ;;
 
           de)
-            clear
+            printf "\033[H\033[J"
             if [ "$ENCPRIMARY" = "1" ] || [ "$ENCSECONDARY" = "1" ]; then
               decryptfile
             fi
           ;;
 
           sc)
-            clear
+            printf "\033[H\033[J"
             vconfig
           ;;
 
           ts)
-            clear
+            printf "\033[H\033[J"
             testtarget
           ;;
 
           te)
-            clear
+            printf "\033[H\033[J"
             DLVersionPF=$(printf "%-8s" $DLVersion)
             LCLVersionPF=$(printf "%-8s" $Version)
             echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON AMTM Email Communications Testing Utility                                   ${CClear}"
@@ -4243,7 +4243,7 @@ vsetup () {
           en)
             while true
             do
-            clear
+            printf "\033[H\033[J"
             echo -e "${InvGreen} ${InvDkGray}${CWhite} Backup Encryption Configuration                                                       ${CClear}"
             echo -e "${InvGreen} ${CClear}"
             echo -e "${InvGreen} ${CClear} Backupmon uses RSA-4096 + AES-CBC hybrid encryption. A fresh random AES symmetric${CClear}"
@@ -6219,7 +6219,7 @@ secondary () {
 
 decryptfile () {
 
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Decrypt Single Backup File Utility                                          ${CClear}"
@@ -6639,7 +6639,7 @@ derivepkikey () {
 
 restore () {
 
-  clear
+  printf "\033[H\033[J"
   DLVersionPF=$(printf "%-8s" $DLVersion)
   LCLVersionPF=$(printf "%-8s" $Version)
   echo -e "${InvGreen} ${InvDkGray}${CWhite} BACKUPMON Restore Backup Utility                                                      ${CClear}"
@@ -8072,7 +8072,7 @@ LABELSIZE="$(echo "$EXTLABEL" | sed 's/ //g' | wc -m)"
 if [ -z "$EXTLABEL" ] && [ -z "$USBPRODUCT" ]; then
   EXTLABEL="NOTFOUND"
 elif [ "$LABELSIZE" -le 1 ]; then
-  clear
+  printf "\033[H\033[J"
   echo -e "${CYellow}WARNING: External USB Drive Label Name is not sufficient, or unable to detect default sda drive label."
   echo ""
   echo -e "${CRed}BACKUPMON MAY NOT FUNCTION CORRECTLY IN THIS SCENARIO${CClear}"
@@ -8097,7 +8097,7 @@ fi
 # Check and see if any commandline option is being used
 if [ $# -eq 0 ]
 then
-    clear
+    printf "\033[H\033[J"
     sh /jffs/scripts/backupmon.sh -noswitch
     exit 0
 fi
@@ -8108,9 +8108,9 @@ if [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "-setup" ] || \
    [ "$1" == "-purge" ] || [ "$1" == "-secondary" ] || [ "$1" = "-checkupdate" ] || \
    [ "$1" == "amtmupdate" ]
 then
-    clear
+    printf "\033[H\033[J"
 else
-    clear
+    printf "\033[H\033[J"
     echo ""
     echo " BACKUPMON v$Version"
     echo ""
@@ -8124,7 +8124,7 @@ fi
 # Check to see if the help option is being called
 if [ "$1" == "-h" ] || [ "$1" == "-help" ]
 then
-  clear
+  printf "\033[H\033[J"
   echo ""
   echo " BACKUPMON v$Version Commandline Option Usage:"
   echo ""
@@ -8168,7 +8168,7 @@ then
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
@@ -8191,7 +8191,7 @@ if [ "$1" == "-setup" ]
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}WARNING: BACKUPMON is not configured. Proceding with 1st time setup!"
       echo -e "$(date +'%b %d %Y %X') $ROUTERNAME BACKUPMON[$$] - WARNING: BACKUPMON is not configured. Proceding with 1st time setup!" >> $LOGFILE
       sleep 3
@@ -8221,7 +8221,7 @@ if [ "$1" == "-purge" ]
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
@@ -8245,7 +8245,7 @@ if [ "$1" == "-backup" ]
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}"
       exit 0
@@ -8265,7 +8265,7 @@ if [ "$1" == "-noswitch" ]
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}\n"
       exit 1
@@ -8283,7 +8283,7 @@ if [ "$1" == "-secondary" ]
       source /jffs/scripts/backupmon.cfg
       cp /jffs/scripts/backupmon.cfg "$CFGPATH"
     else
-      clear
+      printf "\033[H\033[J"
       echo -e "${CRed}ERROR: BACKUPMON is not configured.  Please run 'backupmon.sh -setup' first."
       echo -e "${CClear}\n"
       exit 1
@@ -8298,7 +8298,7 @@ fi
 checklibupdate
 updatecheck
 
-clear
+printf "\033[H\033[J"
 # Check for updates
 DLVersionPF=$(printf "%-8s" $DLVersion)
 LCLVersionPF=$(printf "%-8s" $Version)
