@@ -1,5 +1,6 @@
 Future Enhancements (Planned)
 -----------------------------
+* USB-to-USB auto-exclusion: Automatically verifies and registers the backup directory in the exclusion file when backing up USB to the same USB drive, preventing recursive backup growth and eliminating High Risk warnings. (@Underd0se)
 * build out -o parameter customizations to alleviate share write issues that can be resolved using noserverino parameter (@iris03)
 * Setting to allow for verbose TAR logging for troubleshooting purposes (@Ripshod)
 
