@@ -1,17 +1,6 @@
 # BACKUPMON v1.10.3
 Updated on 2026-July-05
 
-## ⚠️ Forking, Attribution, and AI "Vibe Coding" Policy
-
-I love open source and welcome genuine contributions and educational forks. However, **low-effort cloning is strictly prohibited.**
-
-If you intend to fork this project, please adhere to the following rules:
-* **No AI-washing:** Taking this codebase, using LLMs to superficially alter the UI/text ("vibe coding"), and releasing it as a novel product is not permitted. 
-* **Clear Attribution:** If you build upon this work, you must retain all original copyright notices and visibly credit this repository in your README.
-* **Meaningful Changes:** If you fork this repository to publish your own version, it must contain substantial, meaningful architectural or feature changes. Do not simply rebrand the project and claim it as your own.
-
-Violations of the attached `LICENSE.md` (such as stripping attribution) will result in immediate DMCA takedown notices to GitHub.
-
 -----
 
 <img width="1010" height="267" alt="image" src="https://github.com/user-attachments/assets/84a01de5-3b4c-4d84-ba40-d6435f30325b" />
