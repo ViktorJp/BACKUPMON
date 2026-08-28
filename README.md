@@ -32,3 +32,6 @@ If you do go down the path of backing your USB drive to your USB drive, it's pos
 * You now have the option to backup from USB1 to USB2, or USB to itself... though not recommended.
 * Your External USB should have a valid drive label. Having a blank label may create issues backing up or restoring.
 
+**Support and Discussion Forum**
+
+Full support of this script is available on SNB Forums: https://www.snbforums.com/threads/93052/
