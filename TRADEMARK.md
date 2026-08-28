@@ -12,7 +12,7 @@ BACKUPMON is free software. You can read it, modify it, run it, and redistribute
 
 # What counts as a violation
 
-Using the name "BACKUPMON," alone or combined with any other word, number, or symbol, as the name of a repository, package, release, binary, add-on, or fork — including but not limited to:
+Using the name "BACKUPMON," alone or combined with any other word, number, or symbol, as the name of a repository, package, release, binary, add-on, or fork, including but not limited to:
 
 * `BACKUPMON ZERO`
 * `BACKUPMON PRO` / `BACKUPMON+`
@@ -20,13 +20,13 @@ Using the name "BACKUPMON," alone or combined with any other word, number, or sy
 * `Backupmon-fork` / `Backupmon-community`
 * Any stylistic variant, translation, or l33t-speak substitution intended to evoke the same name
 
-The standard is likelihood of confusion, not exact match: if a reasonable user browsing GitHub or a package index would think your project is BACKUPMON, is an official variant of it, or is endorsed by its Author, it violates this policy.
+The standard is likelihood of confusion, not exact match: if a reasonable user browsing SNB Forums, GitHub or a package index would think your project is BACKUPMON, is an official variant of it, or is endorsed by its Author, it violates this policy.
 
 # What's totally fine
 
 * "A fork of BACKUPMON" — as a description, in prose, not as the project's own name.
 * "Built on BACKUPMON's encryption module" — descriptive, referential use is normal and expected.
-* Choosing your own distinct name — e.g. `RouterVaultSH`, `MerlinBackup-Zero`, `CipherGuard-Router`, and crediting BACKUPMON as the origin in your
+* Choosing your own distinct name: e.g. `RouterVaultSH`, `MerlinBackup-Zero`, `CipherGuard-Router`, and crediting BACKUPMON as the origin in your
 README and license notices.
 * Submitting improvements back as a pull request to this repository, the preferred outcome, honestly.
 
