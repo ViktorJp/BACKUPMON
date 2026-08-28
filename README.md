@@ -1,5 +1,5 @@
-# BACKUPMON v1.10.3
-Updated on 2026-July-05
+# BACKUPMON v1.10.4
+Updated on 2026-Aug-27
 
 > **License:** GPLv3 with additional terms (§7c/§7e) — see [`NOTICE.md`](./NOTICE.md). The code is free to fork and modify; the name **BACKUPMON** is reserved for this project — see [`TRADEMARK.md`](./TRADEMARK.md) before publishing a rebrand or fork.
 
