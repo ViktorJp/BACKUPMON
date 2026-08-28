@@ -4,13 +4,13 @@ TL;DR: Fork the code all you want under GPLv3. Just don't call it BACKUPMON.
 
 # Why this file exists
 
-BACKUPMON is free software — you can read it, modify it, run it, and redistribute it under the GPLv3. What you can't do is put "BACKUPMON" (or something a reasonable person would confuse with it) on a modified version and call it your own. GPLv3 §7 explicitly allows a copyright holder to reserve the project name while still freeing the code, and that's what this repository does. See `NOTICE.md` for the license clause this rests on.
+BACKUPMON is free software. You can read it, modify it, run it, and redistribute it under the GPLv3. What you can't do is put "BACKUPMON" (or something a reasonable person would confuse with it) on a modified version and call it your own. GPLv3 §7 explicitly allows a copyright holder to reserve the project name while still freeing the code, and that's what this repository does. See `NOTICE.md` for the license clause this rests on.
 
 # The name "BACKUPMON"
 
 "BACKUPMON" is the trade name of this project, maintained and originated by Viktor Jaep. It is asserted as a common-law trademark in connection with this software, independent of the copyright license on the code.
 
-#What counts as a violation
+# What counts as a violation
 
 Using the name "BACKUPMON," alone or combined with any other word, number, or symbol, as the name of a repository, package, release, binary, add-on, or fork — including but not limited to:
 
