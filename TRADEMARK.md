@@ -32,10 +32,8 @@ README and license notices.
 
 # If you already forked and named it after BACKUPMON
 
-No hard feelings — rename it and add a credit line. That fully resolves it. If you're unsure whether your chosen name is far enough away, open
-an issue or discussion here and ask before you publish widely.
+No hard feelings — rename it and add a credit line. That fully resolves it. If you're unsure whether your chosen name is far enough away, open an issue or discussion here and ask before you publish widely.
 
 # Reporting a violation
 
-If you spot a fork, package, or binary using this name in a way that violates this policy, open an issue in this repository, or contact the
-Author directly. Reports to GitHub Trust & Safety / the relevant package registry's trademark process are also an option for non-responsive cases.
+If you spot a fork, package, or binary using this name in a way that violates this policy, open an issue in this repository, or contact the Author directly. Reports to GitHub Trust & Safety / the relevant package registry's trademark process are also an option for non-responsive cases.
