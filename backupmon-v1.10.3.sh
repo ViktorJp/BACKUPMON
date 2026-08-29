@@ -1,10 +1,6 @@
 #!/bin/sh
-#
-# BACKUPMON — Copyright (C) Viktor Jaep
-# Licensed under GPLv3 with additional terms: see NOTICE.md and TRADEMARK.md. The name "BACKUPMON" or variations thereof
-# may not be used for modified or forked versions of this software.
-#
-# Original functional PoC backup script by: @Jeffrey Young, August 9, 2023
+
+# Original functional backup script by: @Jeffrey Young, August 9, 2023
 # BACKUPMON heavily modified and restore functionality added by @Viktor Jaep, 2023-2026
 #
 # BACKUPMON is a shell script that provides backup and restore capabilities for your Asus-Merlin firmware router's JFFS,
@@ -28,7 +24,7 @@ export PATH="/sbin:/bin:/usr/sbin:/usr/bin:$PATH"
 unset LD_LIBRARY_PATH
 
 # Variable list -- please do not change any of these
-Version="1.10.4"                                                # Current version
+Version="1.10.3"                                                # Current version
 Beta=0                                                          # Beta release Y/N
 ROUTERNAME="$(nvram get lan_hostname)"                          # Grabbing the router's hostname
 CFGPATH="/jffs/addons/backupmon.d/backupmon.cfg"                # Path to the backupmon config file

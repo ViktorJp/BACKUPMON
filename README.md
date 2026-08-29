@@ -1,5 +1,9 @@
-# BACKUPMON v1.10.3
-Updated on 2026-July-05
+# BACKUPMON v1.10.4
+Updated on 2026-Aug-27
+
+> **License:** GPLv3 with additional terms (§7c/§7e) — see [`NOTICE.md`](./NOTICE.md). The code is free to fork and modify; the name **BACKUPMON** is reserved for this project — see [`TRADEMARK.md`](./TRADEMARK.md) before publishing a rebrand or fork.
+
+-----
 
 <img width="1010" height="267" alt="image" src="https://github.com/user-attachments/assets/84a01de5-3b4c-4d84-ba40-d6435f30325b" />
 
@@ -28,3 +32,6 @@ If you do go down the path of backing your USB drive to your USB drive, it's pos
 * You now have the option to backup from USB1 to USB2, or USB to itself... though not recommended.
 * Your External USB should have a valid drive label. Having a blank label may create issues backing up or restoring.
 
+**Support and Discussion Forum**
+
+Full support of this script is available on SNB Forums: https://www.snbforums.com/threads/93052/
